@@ -3,7 +3,12 @@
 import { NextResponse, NextRequest } from "next/server";
 import { InsertQuery, SelectQuery } from "@/lib/database";
 import { z } from "zod";
-import { hashPassword } from "../../[...nextauth]/route";
+import bcrypt from "bcryptjs";
+
+async function hashPassword(password: string): Promise<string> {
+  const saltRounds = 10;
+  return await bcrypt.hash(password, saltRounds);
+}
 
 // Define the validation schema for the API body
 const registerSchema = z.object({
