@@ -15,7 +15,6 @@ const registerSchema = z.object({
   first_name: z.string().min(2, "First name is required."),
   last_name: z.string().min(2, "Last name is required."),
   mobile_no: z.string().min(10, "Mobile number is required and must be at least 10 digits."),
-  dob: z.string().refine(val => !isNaN(Date.parse(val)), "Date of Birth is required and must be a valid date."),
   email: z.string().email("Invalid email address."),
   password: z.string().min(6, "Password must be at least 6 characters."),
 });
@@ -33,7 +32,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const { first_name, last_name, mobile_no, dob, email, password } = validationResult.data;
+    const { first_name, last_name, mobile_no, email, password } = validationResult.data;
 
     // Check if the user already exists by email or user_name
     const existingUser = await SelectQuery(
@@ -55,7 +54,7 @@ export async function POST(request: NextRequest) {
       `INSERT INTO users (first_name, last_name, mobile_no, dob, email,  password, role_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7 )
        RETURNING id, first_name, last_name, email,   mobile_no, dob, role_id`,
-      [first_name, last_name, mobile_no, dob, email,   hashedPassword, defaultRoleId]
+      [first_name, last_name, mobile_no, null, email,   hashedPassword, defaultRoleId]
     );
     console.log("🚀 ~ POST ~ result:", result)
 
