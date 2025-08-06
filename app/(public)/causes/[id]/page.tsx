@@ -380,7 +380,7 @@ export default function CauseDetailsPage() {
                 Home
               </Link>
               <span>/</span>
-              <Link href="/campaigns" className="hover:text-blue-600 cursor-pointer truncate transition-colors">
+              <Link href="/causes" className="hover:text-blue-600 cursor-pointer truncate transition-colors">
                 Campaigns
               </Link>
               <span>/</span>
@@ -975,14 +975,7 @@ export default function CauseDetailsPage() {
           </div>
         </section>
       )}
-
-      {/* Contact Section - Mobile Responsive */}
-      <div className="px-3 sm:px-4">
-        <ContactSection />
-      </div>
-
-      {/* Footer - Mobile Responsive */}
-      <Footer />
+ 
     </div>
   )
 }

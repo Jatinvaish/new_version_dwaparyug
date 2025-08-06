@@ -1,8 +1,6 @@
-// File: components/CampaignForm.tsx
-
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm, Controller, useWatch, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -18,15 +16,86 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarIcon, X, Plus, Trash2 } from "lucide-react";
+import { CalendarIcon, X, Plus, Trash2, Upload, Loader2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import Image from "next/image";
-import dynamic from "next/dynamic";
 import type { Campaign, Product } from "@/lib/interface";
-import { campaignCategories, festivalTypes, initialProducts } from "@/lib/utils";
+import { festivalTypes } from "@/lib/utils";
+
+// Image upload function for API (only called on form submit)
+const uploadImages = async (images: (File | string)[]): Promise<string[]> => {
+  try {
+    // Separate files and base64 strings
+    const files = images.filter(img => img instanceof File) as File[];
+    const base64Images = images.filter(img => typeof img === 'string') as string[];
+    
+    const results: string[] = [];
+    
+    // Upload files via form data
+    if (files.length > 0) {
+      const formData = new FormData();
+      files.forEach(file => formData.append('files', file));
+      
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload file images');
+      }
+      
+      const data = await response.json();
+      const fileUrls = files.length === 1 ? [data.imageUrl] : data.imageUrls;
+      results.push(...fileUrls);
+    }
+    
+    // Upload base64 images via JSON
+    if (base64Images.length > 0) {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          images: base64Images,
+          type: base64Images.length === 1 ? 'single' : 'multiple'
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload base64 images');
+      }
+      
+      const data = await response.json();
+      const base64Urls = base64Images.length === 1 ? [data.imageUrl] : data.imageUrls;
+      results.push(...base64Urls);
+    }
+    
+    return results;
+  } catch (error) {
+    console.error('Error uploading images:', error);
+    throw error;
+  }
+};
+
+// Helper function to convert File to base64
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+};
+
+// Helper function to create preview URL for local files
+const createPreviewUrl = (file: File): string => {
+  return URL.createObjectURL(file);
+};
 
 // Simple but effective rich text editor using a textarea with formatting helpers
 const RichTextEditor = ({ value, onChange, placeholder }: { 
@@ -219,39 +288,40 @@ const RichTextEditor = ({ value, onChange, placeholder }: {
 const campaignFormSchema = z.object({
   id: z.number().optional(),
   title: z.string().min(3, "Title must be at least 3 characters long."),
-  category: z.string().min(1, "Category is required."),
-  festivalType: z.string().optional(),
+  category_id: z.number().min(1, "Category is required."),
+  festival_type: z.string().optional(),
   overview: z.string().min(10, "Overview must be at least 10 characters long."),
   details: z.string().min(20, "Details must be at least 20 characters long."),
-  goal: z.coerce.number().min(1, "Donation goal must be at least ₹1."),
-  raised: z.number().optional(),
+  donation_goal: z.coerce.number().min(1, "Donation goal must be at least ₹1."),
+  total_raised: z.number().optional(),
   status: z.enum(["Active", "Inactive", "Completed", "Draft"]).optional(),
-  bannerImage: z.union([z.instanceof(File), z.string()]).refine((file) => file, {
-    message: "Banner image is required.",
-  }),
-  additionalImages: z.array(z.union([z.instanceof(File), z.string()])).optional(),
+  image: z.string().min(1, "Banner image is required."),
+  images_array: z.array(z.string()).optional(),
   assignedProducts: z
     .array(
       z.object({
-        id: z.number(),
+        id: z.number().optional(),
         name: z.string(),
+        description: z.string().optional(),
         price: z.number(),
         image: z.string().optional(),
         stock: z.number().optional(),
-        unit: z.string().optional(),
+        unit_id: z.number().optional(),
+        min_qty: z.number().optional(),
+        max_qty: z.number().optional(),
+        increment_count: z.number().optional(),
       }),
     )
     .optional(),
-  endDate: z.date({
+  end_date: z.date({
     required_error: "End date is required.",
   }),
   priority: z.enum(["low", "medium", "high", "critical"]),
-  aboutCampaign: z.string().min(20, "About the campaign must be at least 20 characters long."),
-  // New fields
+  about_campaign: z.string().min(20, "About the campaign must be at least 20 characters long."),
   location: z.string().optional(),
   organizer: z.string().optional(),
   verified: z.boolean().optional(),
-  urgency: z.string().optional(),
+  urgency: z.enum(["low", "medium", "high", "urgent", "critical"]).optional(),
   faq_questions: z
     .array(
       z.object({
@@ -270,13 +340,42 @@ const campaignFormSchema = z.object({
 
 type CampaignFormValues = z.infer<typeof campaignFormSchema>;
 
+interface CampaignCategory {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+interface ProductUnit {
+  id: number;
+  name: string;
+  abbreviation?: string;
+}
+
 interface CampaignFormProps {
   campaign?: Campaign | null;
   onSave: (campaign: Campaign) => void;
   onCancel: () => void;
 }
 
+// Local image storage interfaces
+interface LocalImage {
+  file?: File;
+  base64?: string;
+  url: string;
+  isExisting: boolean;
+}
+
 export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFormProps) {
+  const [categories, setCategories] = useState<CampaignCategory[]>([]);
+  const [productUnits, setProductUnits] = useState<ProductUnit[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isLoadingUnits, setIsLoadingUnits] = useState(true);
+  
+  // Local image storage
+  const [bannerImage, setBannerImage] = useState<LocalImage | null>(null);
+  const [additionalImages, setAdditionalImages] = useState<LocalImage[]>([]);
+
   const {
     register,
     handleSubmit,
@@ -288,21 +387,21 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
     resolver: zodResolver(campaignFormSchema),
     defaultValues: {
       title: "",
-      category: "",
-      festivalType: "",
+      category_id: 0,
+      festival_type: "",
       overview: "",
       details: "",
-      goal: 0,
-      endDate: undefined,
-      bannerImage: undefined,
-      additionalImages: [],
+      donation_goal: 0,
+      end_date: undefined,
+      image: "",
+      images_array: [],
       assignedProducts: [],
       priority: "medium",
-      aboutCampaign: "",
+      about_campaign: "",
       location: "",
       organizer: "",
       verified: false,
-      urgency: "",
+      urgency: "medium",
       faq_questions: [],
       videoLinks: [],
     },
@@ -326,123 +425,248 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
     name: "faq_questions",
   });
 
+  const {
+    fields: productFields,
+    append: appendProduct,
+    remove: removeProduct,
+  } = useFieldArray({
+    control,
+    name: "assignedProducts",
+  });
+
+  // Fetch categories and units from API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [categoriesResponse, unitsResponse] = await Promise.all([
+          fetch('/api/campaign-categories'),
+          fetch('/api/campaign-product-units')
+        ]);
+
+        if (categoriesResponse.ok) {
+          const categoriesData = await categoriesResponse.json();
+          setCategories(categoriesData);
+        }
+
+        if (unitsResponse.ok) {
+          const unitsData = await unitsResponse.json();
+          setProductUnits(unitsData);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setIsLoadingCategories(false);
+        setIsLoadingUnits(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   useEffect(() => {
     if (campaign) {
       reset({
         ...campaign,
-        goal: campaign.goal,
-        endDate: campaign.endDate,
-        priority: campaign.priority || "medium",
-        aboutCampaign: campaign.aboutCampaign || "",
-        location: campaign.location || "",
-        organizer: campaign.organizer || "",
-        verified: campaign.verified || false,
-        urgency: campaign.urgency || "",
-        faq_questions: campaign.faq_questions,
-        videoLinks: campaign.videoLinks?.map(url => ({ url })) || [],
+        donation_goal: campaign?.donation_goal,
+        end_date: new Date(campaign?.end_date),
+        priority: campaign?.priority || "medium",
+        about_campaign: campaign?.about_campaign || "",
+        location: campaign?.location || "",
+        organizer: campaign?.organizer || "",
+        verified: campaign?.verified || false,
+        urgency: (campaign?.urgency as any) || "medium",
+        faq_questions: campaign?.faq_questions || [],
+        videoLinks: campaign?.videoLinks?.map(url => ({ url })) || [],
+        image: campaign?.image || "",
+        images_array: campaign?.images_array || [],
+        assignedProducts: campaign?.assignedProducts || [],
       });
+
+      // Set existing images
+      if (campaign?.image) {
+        setBannerImage({
+          url: campaign?.image,
+          isExisting: true
+        });
+      }
+
+      if (campaign?.images_array && campaign?.images_array.length > 0) {
+        setAdditionalImages(
+          campaign?.images_array.map(url => ({
+            url,
+            isExisting: true
+          }))
+        );
+      }
     }
   }, [campaign, reset]);
 
   const onSubmit = async (data: CampaignFormValues) => {
-    const formData = new FormData();
+    try {
+      // Prepare images for upload
+      let bannerImageUrl = data.image;
+      let allImageUrls: string[] = [];
 
-    formData.append("title", data.title);
-    formData.append("category", data.category);
-    if (data.festivalType) formData.append("festivalType", data.festivalType);
-    formData.append("overview", data.overview);
-    formData.append("details", data.details);
-    formData.append("goal", String(data.goal));
-    formData.append("endDate", data.endDate.toISOString());
-    formData.append("priority", data.priority);
-    formData.append("aboutCampaign", data.aboutCampaign);
-    
-    // Add new fields to form data
-    if (data.location) formData.append("location", data.location);
-    if (data.organizer) formData.append("organizer", data.organizer);
-    formData.append("verified", String(data.verified || false));
-    if (data.urgency) formData.append("urgency", data.urgency);
+      // Handle banner image upload
+      if (bannerImage) {
+        if (bannerImage.file) {
+          // New file upload
+          const uploadedUrls = await uploadImages([bannerImage.file]);
+          bannerImageUrl = uploadedUrls[0];
+        } else if (bannerImage.base64) {
+          // Base64 upload
+          const uploadedUrls = await uploadImages([bannerImage.base64]);
+          bannerImageUrl = uploadedUrls[0];
+        } else if (bannerImage.isExisting) {
+          // Existing image, use as is
+          bannerImageUrl = bannerImage.url;
+        }
+      }
 
-    if (data.videoLinks) {
-      formData.append("videoLinks", JSON.stringify(data.videoLinks.map(v => v.url)));
-    }
+      // Handle additional images upload
+      const imagesToUpload: (File | string)[] = [];
+      const existingImageUrls: string[] = [];
 
-    if (data.bannerImage instanceof File) {
-      formData.append("bannerImage", data.bannerImage);
-    } else if (typeof data.bannerImage === "string") {
-      formData.append("bannerImage_url", data.bannerImage);
-    }
-
-    if (data.additionalImages) {
-      data.additionalImages.forEach((image) => {
-        if (image instanceof File) {
-          formData.append("additionalImages", image);
-        } else if (typeof image === "string") {
-          formData.append("additionalImages_url", image);
+      additionalImages.forEach(img => {
+        if (img.file) {
+          imagesToUpload.push(img.file);
+        } else if (img.base64) {
+          imagesToUpload.push(img.base64);
+        } else if (img.isExisting) {
+          existingImageUrls.push(img.url);
         }
       });
-    }
-    
-    if (data.faq_questions) {
-      formData.append("faq_questions", JSON.stringify(data.faq_questions));
-    }
 
-    if (data.assignedProducts) {
-      formData.append("assignedProducts", JSON.stringify(data.assignedProducts || []));
-    }
+      if (imagesToUpload.length > 0) {
+        const uploadedUrls = await uploadImages(imagesToUpload);
+        allImageUrls = [...existingImageUrls, ...uploadedUrls];
+      } else {
+        allImageUrls = existingImageUrls;
+      }
 
-    try {
-      const response = await fetch("YOUR_API_ENDPOINT", {
-        method: campaign ? "PUT" : "POST",
-        body: formData,
+      const payload = {
+        ...data,
+        image: bannerImageUrl,
+        images_array: allImageUrls,
+        end_date: data.end_date.toISOString(),
+        videoLinks: data.videoLinks?.map(v => v.url) || [],
+        created_by: 1, // Replace with actual user ID from session/auth
+        updated_by: 1, // Replace with actual user ID from session/auth
+      };
+
+      const url = campaign ? `/api/campaigns/${campaign?.id}` : '/api/campaigns';
+      const method = campaign ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save campaign.");
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save campaign');
       }
 
       const savedCampaign = await response.json();
       onSave(savedCampaign);
     } catch (error) {
       console.error("Error saving campaign:", error);
+      alert(`Error: ${error instanceof Error ? error.message : 'Failed to save campaign'}`);
     }
   };
 
-  const category = useWatch({ control, name: "category" });
-  const assignedProducts = useWatch({ control, name: "assignedProducts" });
-  const additionalImages = useWatch({ control, name: "additionalImages" });
-  const bannerImage = useWatch({ control, name: "bannerImage" });
+  const category_id = useWatch({ control, name: "category_id" });
 
-  const handleBannerImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      setValue("bannerImage", e.target.files[0], { shouldValidate: true });
+  // Handle banner image selection (local storage)
+  const handleBannerImageSelection = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const base64 = await fileToBase64(file);
+      const previewUrl = createPreviewUrl(file);
+      
+      setBannerImage({
+        file,
+        base64,
+        url: previewUrl,
+        isExisting: false
+      });
+      setValue("image", "temp_banner_image", { shouldValidate: true });
+    } catch (error) {
+      console.error('Error processing banner image:', error);
+      alert('Error processing image. Please try again.');
     }
   };
 
-  const handleAdditionalImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newImages = Array.from(e.target.files);
-      setValue("additionalImages", [...(additionalImages || []), ...newImages], { shouldValidate: true });
+  // Handle multiple images selection (local storage)
+  const handleMultipleImagesSelection = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      const newImages: LocalImage[] = await Promise.all(
+        Array.from(files).map(async (file) => {
+          const base64 = await fileToBase64(file);
+          const previewUrl = createPreviewUrl(file);
+          
+          return {
+            file,
+            base64,
+            url: previewUrl,
+            isExisting: false
+          };
+        })
+      );
+
+      setAdditionalImages(prev => [...prev, ...newImages]);
+      setValue("images_array", [...(additionalImages.map(img => img.url)), ...(newImages.map(img => img.url))], { shouldValidate: true });
+    } catch (error) {
+      console.error('Error processing images:', error);
+      alert('Error processing some images. Please try again.');
     }
+  };
+
+  const removeBannerImage = () => {
+    if (bannerImage?.url && !bannerImage.isExisting) {
+      URL.revokeObjectURL(bannerImage.url);
+    }
+    setBannerImage(null);
+    setValue("image", "");
   };
 
   const removeAdditionalImage = (index: number) => {
-    setValue(
-      "additionalImages",
-      additionalImages?.filter((_, i) => i !== index),
-    );
+    const imageToRemove = additionalImages[index];
+    if (imageToRemove?.url && !imageToRemove.isExisting) {
+      URL.revokeObjectURL(imageToRemove.url);
+    }
+    
+    const updatedImages = additionalImages.filter((_, i) => i !== index);
+    setAdditionalImages(updatedImages);
+    setValue("images_array", updatedImages.map(img => img.url));
   };
 
-  const handleProductAssignment = (product: Product, isChecked: boolean) => {
-    if (isChecked) {
-      setValue("assignedProducts", [...(assignedProducts || []), product]);
-    } else {
-      setValue(
-        "assignedProducts",
-        assignedProducts?.filter((p) => p.id !== product.id),
-      );
-    }
-  };
+  // Clean up object URLs on component unmount
+  useEffect(() => {
+    return () => {
+      // Clean up banner image URL
+      if (bannerImage?.url && !bannerImage.isExisting) {
+        URL.revokeObjectURL(bannerImage.url);
+      }
+      
+      // Clean up additional image URLs
+      additionalImages.forEach(img => {
+        if (img.url && !img.isExisting) {
+          URL.revokeObjectURL(img.url);
+        }
+      });
+    };
+  }, []);
+
+  const selectedCategory = categories.find(cat => cat.id === category_id);
 
   return (
     <Card>
@@ -452,19 +676,20 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label>Total Raised (₹)</Label>
-                <Input disabled value={campaign.raised?.toLocaleString() || 0} />
+                <Input disabled value={campaign?.total_raised?.toLocaleString() || 0} />
               </div>
               <div className="space-y-2">
                 <Label>Beneficiaries</Label>
-                <Input disabled value={campaign.total_beneficiary?.toLocaleString() || 0} />
+                <Input disabled value={campaign?.total_beneficiary?.toLocaleString() || 0} />
               </div>
               <div className="space-y-2">
                 <Label>Donors</Label>
-                <Input disabled value={campaign.total_donors_till_now?.toLocaleString() || 0} />
+                <Input disabled value={campaign?.total_donors_till_now?.toLocaleString() || 0} />
               </div>
               <div className="space-y-2">
                 <Label>Progress</Label>
-                <Input disabled value={`${(campaign.total_progress_percentage || 0).toFixed(2)}%`} />
+                {/* <Input disabled value={`${(campaign?.total_progress_percentage || 0)?.toFixed(2)}%`} /> */}
+                <Input disabled value={`0%`} />
               </div>
             </div>
           )}
@@ -477,36 +702,41 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category_id">Category</Label>
               <Controller
                 control={control}
-                name="category"
+                name="category_id"
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="category">
-                      <SelectValue placeholder="Select category" />
+                  <Select 
+                    value={field.value?.toString()} 
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    disabled={isLoadingCategories}
+                  >
+                    <SelectTrigger id="category_id">
+                      <SelectValue placeholder={isLoadingCategories ? "Loading categories..." : "Select category"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {campaignCategories.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id.toString()}>
+                          {category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 )}
               />
-              {errors.category && <p className="text-sm text-red-500">{errors.category.message}</p>}
+              {errors.category_id && <p className="text-sm text-red-500">{errors.category_id.message}</p>}
             </div>
-            {category === "Festival Celebration" && (
+            
+            {selectedCategory?.name === "Festival Celebration" && (
               <div className="space-y-2">
-                <Label htmlFor="festivalType">Festival Type</Label>
+                <Label htmlFor="festival_type">Festival Type</Label>
                 <Controller
                   control={control}
-                  name="festivalType"
+                  name="festival_type"
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger id="festivalType">
+                      <SelectTrigger id="festival_type">
                         <SelectValue placeholder="Select festival type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -521,6 +751,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                 />
               </div>
             )}
+            
             <div className="space-y-2">
               <Label htmlFor="priority">Priority</Label>
               <Controller
@@ -619,16 +850,16 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="goal">Donation Goal (₹)</Label>
-              <Input id="goal" type="number" {...register("goal")} />
-              {errors.goal && <p className="text-sm text-red-500">{errors.goal.message}</p>}
+              <Label htmlFor="donation_goal">Donation Goal (₹)</Label>
+              <Input id="donation_goal" type="number" {...register("donation_goal")} />
+              {errors.donation_goal && <p className="text-sm text-red-500">{errors.donation_goal.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="endDate">End Date</Label>
+              <Label htmlFor="end_date">End Date</Label>
               <Controller
                 control={control}
-                name="endDate"
+                name="end_date"
                 render={({ field }) => (
                   <Popover>
                     <PopoverTrigger asChild>
@@ -643,24 +874,24 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                   </Popover>
                 )}
               />
-              {errors.endDate && <p className="text-sm text-red-500">{errors.endDate.message}</p>}
+              {errors.end_date && <p className="text-sm text-red-500">{errors.end_date.message}</p>}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="aboutCampaign">About this Campaign</Label>
+            <Label htmlFor="about_campaign">About this Campaign</Label>
             <Controller
-              name="aboutCampaign"
+              name="about_campaign"
               control={control}
               render={({ field }) => (
                 <RichTextEditor
                   value={field.value}
                   onChange={field.onChange}
-                  placeholder="Tell us more about the campaign..."
+                  placeholder="Tell us more about the campaign?..."
                 />
               )}
             />
-            {errors.aboutCampaign && <p className="text-sm text-red-500">{errors.aboutCampaign.message}</p>}
+            {errors.about_campaign && <p className="text-sm text-red-500">{errors.about_campaign?.message}</p>}
           </div>
           
           <div className="space-y-4">
@@ -735,43 +966,71 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
             ))}
           </div>
 
+          {/* Banner Image Upload Section */}
           <div className="space-y-2">
             <Label htmlFor="bannerImage">Banner Image (Mandatory)</Label>
-            <Input id="bannerImage" type="file" onChange={handleBannerImageChange} accept="image/*" />
+            <div className="flex items-center gap-4">
+              <Input 
+                id="bannerImage" 
+                type="file" 
+                onChange={handleBannerImageSelection} 
+                accept="image/*"
+              />
+              <span className="text-sm text-gray-500">Image will be uploaded when you save the campaign</span>
+            </div>
             {bannerImage && (
               <div className="relative w-40 h-24 mt-2">
                 <Image
-                  src={typeof bannerImage === "string" ? bannerImage : URL.createObjectURL(bannerImage)}
+                  src={bannerImage.url}
                   alt="Banner Preview"
-                  layout="fill"
-                  objectFit="cover"
+                  fill
+                  style={{ objectFit: 'cover' }}
                   className="rounded-md"
                 />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-5 w-5 rounded-full"
+                  onClick={removeBannerImage}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+                {!bannerImage.isExisting && (
+                  <div className="absolute bottom-1 left-1 px-1 py-0.5 bg-blue-500 text-white text-xs rounded">
+                    New
+                  </div>
+                )}
               </div>
             )}
-            {errors.bannerImage && <p className="text-sm text-red-500">{errors.bannerImage.message as string}</p>}
+            {errors.image && <p className="text-sm text-red-500">{errors.image.message}</p>}
           </div>
 
+          {/* Multiple Images Upload Section */}
           <div className="space-y-2">
             <Label htmlFor="additionalImages">Additional Images</Label>
-            <Input
-              id="additionalImages"
-              type="file"
-              multiple
-              onChange={handleAdditionalImagesChange}
-              accept="image/*"
-            />
+            <div className="flex items-center gap-4">
+              <Input
+                id="additionalImages"
+                type="file"
+                multiple
+                onChange={handleMultipleImagesSelection}
+                accept="image/*"
+              />
+              <span className="text-sm text-gray-500">Images will be uploaded when you save the campaign</span>
+            </div>
             <div className="flex flex-wrap gap-2 mt-2">
-              {additionalImages?.map((img, index) => (
+              {additionalImages.map((image, index) => (
                 <div key={index} className="relative w-24 h-16">
                   <Image
-                    src={typeof img === "string" ? img : URL.createObjectURL(img)}
+                    src={image.url}
                     alt={`Additional ${index}`}
-                    layout="fill"
-                    objectFit="cover"
+                    fill
+                    style={{ objectFit: 'cover' }}
                     className="rounded-md"
                   />
                   <Button
+                    type="button"
                     variant="destructive"
                     size="icon"
                     className="absolute -top-2 -right-2 h-5 w-5 rounded-full"
@@ -779,38 +1038,153 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                   >
                     <X className="h-3 w-3" />
                   </Button>
+                  {!image.isExisting && (
+                    <div className="absolute bottom-1 left-1 px-1 py-0.5 bg-blue-500 text-white text-xs rounded">
+                      New
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
+            {errors.images_array && <p className="text-sm text-red-500">{errors.images_array.message as string}</p>}
           </div>
 
-          <div className="space-y-2">
-            <Label>Assign Products</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {initialProducts.map((product) => (
-                <div key={product.id} className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id={`product-${product.id}`}
-                    checked={assignedProducts?.some((p) => p.id === product.id) || false}
-                    onChange={(e) => handleProductAssignment(product, e.target.checked)}
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <Label htmlFor={`product-${product.id}`} className="flex items-center gap-2">
-                    <Image
-                      src={product.image || "/placeholder.svg"}
-                      alt={product.name}
-                      width={24}
-                      height={24}
-                      className="rounded"
-                    />
-                    <span>
-                      {product.name} (₹{product.price})
-                    </span>
-                  </Label>
-                </div>
-              ))}
+          {/* Campaign Products Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label>Campaign Products</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => appendProduct({ 
+                  name: "", 
+                  description: "", 
+                  price: 0, 
+                  stock: 0,
+                  min_qty: 1,
+                  max_qty: 100,
+                  increment_count: 1
+                })}
+              >
+                <Plus className="mr-2 h-4 w-4" /> Add Product
+              </Button>
             </div>
+            {productFields.map((field, index) => (
+              <div key={field.id} className="p-4 border rounded-md space-y-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-medium">Product {index + 1}</h4>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-red-500"
+                    onClick={() => removeProduct(index)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor={`assignedProducts.${index}.name`}>Product Name</Label>
+                    <Input 
+                      id={`assignedProducts.${index}.name`} 
+                      {...register(`assignedProducts.${index}.name`)} 
+                      placeholder="Product name"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor={`assignedProducts.${index}.price`}>Price (₹)</Label>
+                    <Input 
+                      id={`assignedProducts.${index}.price`} 
+                      type="number" 
+                      {...register(`assignedProducts.${index}.price`, { valueAsNumber: true })} 
+                      placeholder="0"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor={`assignedProducts.${index}.stock`}>Stock Quantity</Label>
+                    <Input 
+                      id={`assignedProducts.${index}.stock`} 
+                      type="number" 
+                      {...register(`assignedProducts.${index}.stock`, { valueAsNumber: true })} 
+                      placeholder="0"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor={`assignedProducts.${index}.unit_id`}>Unit</Label>
+                    <Controller
+                      control={control}
+                      name={`assignedProducts.${index}.unit_id`}
+                      render={({ field }) => (
+                        <Select 
+                          value={field.value?.toString()} 
+                          onValueChange={(value) => field.onChange(parseInt(value))}
+                          disabled={isLoadingUnits}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select unit" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {productUnits.map((unit) => (
+                              <SelectItem key={unit.id} value={unit.id.toString()}>
+                                {unit.name} {unit.abbreviation && `(${unit.abbreviation})`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor={`assignedProducts.${index}.description`}>Description</Label>
+                  <Textarea 
+                    id={`assignedProducts.${index}.description`} 
+                    {...register(`assignedProducts.${index}.description`)} 
+                    placeholder="Product description"
+                    rows={2}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor={`assignedProducts.${index}.min_qty`}>Min Quantity</Label>
+                    <Input 
+                      id={`assignedProducts.${index}.min_qty`} 
+                      type="number" 
+                      {...register(`assignedProducts.${index}.min_qty`, { valueAsNumber: true })} 
+                      placeholder="1"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor={`assignedProducts.${index}.max_qty`}>Max Quantity</Label>
+                    <Input 
+                      id={`assignedProducts.${index}.max_qty`} 
+                      type="number" 
+                      {...register(`assignedProducts.${index}.max_qty`, { valueAsNumber: true })} 
+                      placeholder="100"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor={`assignedProducts.${index}.increment_count`}>Increment Count</Label>
+                    <Input 
+                      id={`assignedProducts.${index}.increment_count`} 
+                      type="number" 
+                      {...register(`assignedProducts.${index}.increment_count`, { valueAsNumber: true })} 
+                      placeholder="1"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -819,7 +1193,14 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save Campaign"}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {campaign ? "Updating campaign?..." : "Creating campaign?..."}
+              </>
+            ) : (
+              campaign ? "Update Campaign" : "Create Campaign"
+            )}
           </Button>
         </div>
       </form>

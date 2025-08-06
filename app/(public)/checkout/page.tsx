@@ -26,8 +26,6 @@ import {
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { useState } from "react"
-import { ContactSection } from "@/components/shared/contact-section"
-import { Footer } from "@/components/shared/footer"
 import { orderItems } from "@/lib/utils"
 
 
@@ -50,9 +48,10 @@ export default function CheckoutPage() {
     terms: false,
   })
 
+  // Calculate subtotal and a dummy tip for demonstration
   const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const discount = Math.floor(subtotal * 0.1) // 10% discount applied
-  const total = subtotal - discount
+  const tipAmount = 100; // This should come from a state or context in a real application
+  const total = subtotal + tipAmount;
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -66,34 +65,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile-First Navigation */}
-      <nav className="bg-white shadow-lg py-3 px-3 sticky top-0 z-50 sm:py-4 sm:px-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center cursor-pointer">
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 text-white px-3 py-2 text-sm font-bold rounded-lg shadow-lg sm:px-4 sm:py-3">
-              <div>dwaparyug</div>
-            </div>
-          </Link>
-
-          {/* Mobile Security Indicators */}
-          <div className="hidden sm:flex items-center space-x-4">
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <CheckCircle className="w-4 h-4 text-green-600" />
-              <span>Secure Checkout</span>
-            </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Shield className="w-4 h-4 text-green-600" />
-              <span>SSL Protected</span>
-            </div>
-          </div>
-
-          {/* Mobile Security Icons Only */}
-          <div className="flex items-center space-x-2 sm:hidden">
-            <CheckCircle className="w-4 h-4 text-green-600" />
-            <Shield className="w-4 h-4 text-green-600" />
-          </div>
-        </div>
-      </nav>
+        
 
       {/* Mobile Order Summary Toggle */}
       <div className="bg-white border-b border-gray-200 px-3 py-3 lg:hidden">
@@ -148,8 +120,8 @@ export default function CheckoutPage() {
                 <span className="font-medium">₹{subtotal.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-green-600">
-                <span>Discount (HELP10)</span>
-                <span className="font-medium">-₹{discount.toLocaleString()}</span>
+                <span>Tip</span>
+                <span className="font-medium">+₹{tipAmount.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-base font-bold text-gray-900 pt-2 border-t">
                 <span>Total</span>
@@ -523,8 +495,8 @@ export default function CheckoutPage() {
                     <span className="font-semibold">₹{subtotal.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-green-600">
-                    <span>Discount (HELP10)</span>
-                    <span className="font-semibold">-₹{discount.toLocaleString()}</span>
+                    <span>Tip</span>
+                    <span className="font-semibold">+₹{tipAmount.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-xl font-bold text-gray-900 pt-2 border-t">
                     <span>Total</span>
@@ -602,14 +574,6 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-
-      {/* Contact Section - Mobile Responsive */}
-      <div className="px-3 sm:px-4">
-        <ContactSection />
-      </div>
-
-      {/* Footer - Mobile Responsive */}
-      <Footer />
     </div>
   )
 }

@@ -3,55 +3,96 @@
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { ArrowRight, Trash2, Plus, Minus, Gift, ShoppingCart, CreditCard, Shield, CheckCircle, Tag } from "lucide-react"
+import { ArrowRight, Trash2, Plus, Minus, Gift, ShoppingCart, CreditCard, Shield, CheckCircle, Wallet } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { ContactSection } from "@/components/shared/contact-section"
 import { Footer } from "@/components/shared/footer"
 import { cartItems } from "@/lib/utils"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
+
+// Define tip options
+const tipPercentages = [5, 10, 15];
 
 export default function CartPage() {
-  const [items, setItems] = useState(cartItems)
-  const [promoCode, setPromoCode] = useState("")
-  const [promoApplied, setPromoApplied] = useState(false)
+  const [items, setItems] = useState(cartItems);
+  const [selectedTip, setSelectedTip] = useState<number | 'custom' | null>(null);
+  const [customTipValue, setCustomTipValue] = useState("");
+  const [tipType, setTipType] = useState<'percentage' | 'rupees'>('percentage');
 
   const updateQuantity = (id: number, newQuantity: number) => {
     if (newQuantity === 0) {
-      setItems(items.filter((item) => item.id !== id))
+      setItems(items.filter((item) => item.id !== id));
     } else {
-      setItems(items.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item)))
+      setItems(items.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item)));
     }
-  }
+  };
 
   const removeItem = (id: number) => {
-    setItems(items.filter((item) => item.id !== id))
-  }
+    setItems(items.filter((item) => item.id !== id));
+  };
 
   const getSubtotal = () => {
-    return items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  }
+    return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  };
 
-  const getDiscount = () => {
-    return promoApplied ? Math.floor(getSubtotal() * 0.1) : 0
-  }
+  const getTipAmount = useMemo(() => {
+    const subtotal = getSubtotal();
+    let tipValue = 0;
+
+    if (selectedTip === 'custom' && customTipValue) {
+      const value = parseFloat(customTipValue);
+      if (!isNaN(value) && value > 0) {
+        if (tipType === 'percentage') {
+          // Cap percentage at 100%
+          const percentage = Math.min(value, 100);
+          tipValue = subtotal * (percentage / 100);
+        } else {
+          // Cap fixed rupee amount at subtotal
+          tipValue = Math.min(value, subtotal);
+        }
+      }
+    } else if (typeof selectedTip === 'number') {
+      tipValue = subtotal * (selectedTip / 100);
+    }
+    
+    return Math.floor(tipValue);
+  }, [getSubtotal, selectedTip, customTipValue, tipType]);
+
+  const handleCustomTipChange = (value: string) => {
+    const subtotal = getSubtotal();
+    let parsedValue = parseFloat(value);
+    
+    if (isNaN(parsedValue)) {
+      setCustomTipValue("");
+      return;
+    }
+    
+    if (tipType === 'percentage') {
+      if (parsedValue > 100) {
+        parsedValue = 100;
+      }
+    } else {
+      if (parsedValue > subtotal) {
+        parsedValue = subtotal;
+      }
+    }
+    
+    setCustomTipValue(parsedValue.toString());
+    setSelectedTip('custom');
+  };
 
   const getTotal = () => {
-    return getSubtotal() - getDiscount()
-  }
-
-  const applyPromoCode = () => {
-    if (promoCode.toLowerCase() === "help10") {
-      setPromoApplied(true)
-    }
-  }
+    return getSubtotal() + getTipAmount;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
- 
+
       <div className="max-w-7xl mx-auto py-6 sm:py-8 md:py-12 px-3 sm:px-4 md:px-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -100,9 +141,7 @@ export default function CartPage() {
                   whileHover={{ scale: 1.02 }}
                 >
                   <Card className="p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300">
-                    {/* Mobile: Stack vertically, Desktop: Side by side */}
                     <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-6">
-                      {/* Image - Full width on mobile, fixed size on desktop */}
                       <div className="w-full sm:w-24 md:w-28 lg:w-32 flex-shrink-0">
                         <Image
                           src={item.image || "/placeholder.svg"}
@@ -114,7 +153,6 @@ export default function CartPage() {
                       </div>
 
                       <div className="flex-1 w-full">
-                        {/* Header with title and remove button */}
                         <div className="flex justify-between items-start mb-3">
                           <div className="flex-1 pr-2">
                             <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 leading-tight">{item.title}</h3>
@@ -133,9 +171,7 @@ export default function CartPage() {
                           </Button>
                         </div>
 
-                        {/* Quantity and Price - Mobile: Stack, Desktop: Side by side */}
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between space-y-3 sm:space-y-0">
-                          {/* Quantity Controls */}
                           <div className="flex items-center justify-center sm:justify-start space-x-3">
                             <Button
                               variant="outline"
@@ -155,8 +191,6 @@ export default function CartPage() {
                               <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                           </div>
-
-                          {/* Price */}
                           <div className="text-center sm:text-right">
                             <div className="text-xs sm:text-sm text-gray-600">₹{item.price} each</div>
                             <div className="text-xl sm:text-2xl font-bold text-gray-900">
@@ -170,41 +204,54 @@ export default function CartPage() {
                 </motion.div>
               ))}
 
-              {/* Promo Code - Mobile: Full width */}
+              {/* Tipping Section */}
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.3 }}
               >
                 <Card className="p-4 sm:p-6 shadow-lg">
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4">Have a Promo Code?</h3>
-                  <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center">
+                    <Wallet className="w-4 h-4 mr-2" /> Add a Tip
+                  </h3>
+                  <div className="flex space-x-2 sm:space-x-3 mb-4">
+                    {tipPercentages.map((tip) => (
+                      <Button
+                        key={tip}
+                        variant={selectedTip === tip ? "default" : "outline"}
+                        className={`flex-1 ${selectedTip === tip ? 'bg-green-600 text-white hover:bg-green-700' : 'text-gray-900 hover:bg-gray-100'}`}
+                        onClick={() => {
+                          setSelectedTip(tip);
+                          setCustomTipValue("");
+                        }}
+                      >
+                        {tip}%
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="flex items-center space-x-3">
                     <Input
-                      placeholder="Enter promo code"
-                      value={promoCode}
-                      onChange={(e) => setPromoCode(e.target.value)}
+                      type="number"
+                      placeholder={`Enter custom tip in ${tipType === 'rupees' ? '₹' : '%'}`}
+                      value={customTipValue}
+                      onChange={(e) => handleCustomTipChange(e.target.value)}
                       className="flex-1 text-sm sm:text-base"
                     />
-                    <Button
-                      onClick={applyPromoCode}
-                      disabled={promoApplied}
-                      className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-semibold cursor-pointer w-full sm:w-auto px-4 py-2"
-                    >
-                      <Tag className="w-4 h-4 mr-2" />
-                      Apply
-                    </Button>
+                    <Select onValueChange={(value) => setTipType(value as 'percentage' | 'rupees')} defaultValue={tipType}>
+                      <SelectTrigger className="w-24">
+                        <SelectValue placeholder="Tip Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">%</SelectItem>
+                        <SelectItem value="rupees">₹</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  {promoApplied && (
-                    <div className="mt-3 flex items-center text-green-600">
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      <span className="text-xs sm:text-sm font-medium">Promo code applied! 10% discount</span>
-                    </div>
-                  )}
                 </Card>
               </motion.div>
             </div>
 
-            {/* Order Summary - Mobile: First (sticky at top), Desktop: Right sidebar */}
+            {/* Order Summary */}
             <div className="order-2 lg:order-2 lg:col-span-1">
               <motion.div
                 initial={{ opacity: 0, x: 50 }}
@@ -221,12 +268,10 @@ export default function CartPage() {
                       <span className="font-semibold">₹{getSubtotal().toLocaleString()}</span>
                     </div>
 
-                    {promoApplied && (
-                      <div className="flex justify-between text-green-600 text-sm sm:text-base">
-                        <span>Discount (HELP10)</span>
-                        <span className="font-semibold">-₹{getDiscount().toLocaleString()}</span>
-                      </div>
-                    )}
+                    <div className="flex justify-between text-green-600 text-sm sm:text-base">
+                      <span className="text-gray-600">Tip</span>
+                      <span className="font-semibold">+₹{getTipAmount.toLocaleString()}</span>
+                    </div>
 
                     <div className="border-t pt-3 sm:pt-4">
                       <div className="flex justify-between text-lg sm:text-xl font-bold text-gray-900">
@@ -271,7 +316,7 @@ export default function CartPage() {
 
                   <div className="mt-3 sm:mt-4 text-center">
                     <Link href="/causes" className="text-green-600 hover:text-green-700 font-medium cursor-pointer text-sm sm:text-base">
-                      ← Continue Shopping
+                      ← Continue donation
                     </Link>
                   </div>
                 </Card>
@@ -281,11 +326,6 @@ export default function CartPage() {
         )}
       </div>
 
-      {/* Contact Section */}
-      <ContactSection />
-
-      {/* Footer */}
-      <Footer />
     </div>
-  )
+  );
 }

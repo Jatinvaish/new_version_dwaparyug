@@ -1,34 +1,65 @@
 "use client"
 
-import type React from "react"
-
+import { z } from "zod"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { signIn } from "next-auth/react"
+import { toast } from "sonner"
+import React from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Eye, EyeOff, Mail, Lock, Heart, ArrowRight, Facebook, ChromeIcon as Google } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, Heart, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { useState } from "react"
+
+const schema = z.object({
+  email: z.string().email({ message: "Your email is invalid." }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+})
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    rememberMe: false,
+  const router = useRouter();
+  const [isPending, startTransition] = React.useTransition()
+  const [showPassword, setShowPassword] = React.useState(false)
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+    watch,
+  } = useForm({
+    resolver: zodResolver(schema),
+    mode: "onBlur", // Use onBlur for better user experience
+    defaultValues: {
+      email: "",
+      password: "",
+      rememberMe: false,
+    },
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Login attempt:", formData)
-    // Handle login logic here
+  const onSubmit = (data: any) => {
+    startTransition(async () => {
+      const response = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      })
+
+      if (response?.ok) {
+        toast.success("Login Successful")
+        router.back(); reset()
+      } else if (response?.error) {
+        toast.error(response.error)
+      }
+    })
   }
 
-  const updateFormData = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+  const rememberMe = watch("rememberMe")
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50 flex items-center justify-center p-4">
@@ -36,7 +67,7 @@ export default function LoginPage() {
       <motion.div
         className="absolute top-20 left-20 text-green-400 opacity-20"
         animate={{ rotate: [0, 360] }}
-        transition={{ duration: 20, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
       >
         <Heart className="w-32 h-32 fill-current" />
       </motion.div>
@@ -44,7 +75,7 @@ export default function LoginPage() {
       <motion.div
         className="absolute bottom-20 right-20 text-yellow-400 opacity-20"
         animate={{ y: [0, -20, 0] }}
-        transition={{ duration: 4, repeat: Number.POSITIVE_INFINITY }}
+        transition={{ duration: 4, repeat: Infinity }}
       >
         <div className="w-24 h-24 bg-yellow-400 transform rotate-45 rounded-lg"></div>
       </motion.div>
@@ -103,7 +134,7 @@ export default function LoginPage() {
               <p className="text-gray-600">Access your account to continue making a difference</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div>
                 <Label htmlFor="email" className="text-sm font-medium text-gray-700 flex items-center">
                   <Mail className="w-4 h-4 mr-2" />
@@ -113,11 +144,12 @@ export default function LoginPage() {
                   id="email"
                   type="email"
                   placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={(e) => updateFormData("email", e.target.value)}
+                  {...register("email")}
                   className="mt-2"
-                  required
                 />
+                {errors.email && (
+                  <p className="text-red-600 text-sm mt-1">{errors.email.message as string}</p>
+                )}
               </div>
 
               <div>
@@ -130,10 +162,8 @@ export default function LoginPage() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
-                    value={formData.password}
-                    onChange={(e) => updateFormData("password", e.target.value)}
+                    {...register("password")}
                     className="pr-10"
-                    required
                   />
                   <button
                     type="button"
@@ -143,14 +173,19 @@ export default function LoginPage() {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {errors.password && (
+                  <p className="text-red-600 text-sm mt-1">{errors.password.message as string}</p>
+                )}
               </div>
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="remember"
-                    checked={formData.rememberMe}
-                    onCheckedChange={(checked) => updateFormData("rememberMe", checked as boolean)}
+                    checked={rememberMe}
+                    onCheckedChange={(checked) =>
+                      setValue("rememberMe", checked as boolean, { shouldValidate: true })
+                    }
                   />
                   <Label htmlFor="remember" className="text-sm text-gray-700">
                     Remember me
@@ -167,13 +202,14 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 text-lg font-semibold cursor-pointer"
+                disabled={isPending}
               >
                 Sign In
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </form>
 
-            <div className=" text-center">
+            <div className="text-center mt-6">
               <p className="text-gray-600">
                 Don't have an account?{" "}
                 <Link href="/auth/signup" className="text-green-600 hover:text-green-700 font-semibold cursor-pointer">

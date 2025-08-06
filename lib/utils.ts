@@ -933,3 +933,18 @@ export const initialCampaigns: Campaign[] = [
 
 export const campaignCategories = ["Emergency Relief", "Education", "Healthcare", "Festival Celebration", "Women Empowerment"]
 export const festivalTypes = ["Diwali", "Christmas", "Holi", "Eid", "Other"]
+
+
+export const countries = [
+  "India",
+  "United States",
+  "United Kingdom",
+  "Canada",
+  "Australia",
+  "Germany",
+  "France",
+  "Japan",
+  "Singapore",
+  "UAE",
+  "Other",
+]

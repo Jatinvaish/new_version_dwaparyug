@@ -5,7 +5,6 @@
 import React, { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { Campaign } from "@/lib/interface"
-import { initialCampaigns } from "@/lib/utils"
 import CampaignForm from "../../_componante/CampaignForm"
 
 export default function EditCampaignPage({ params }: { params: { id: string } }) {
@@ -16,19 +15,47 @@ export default function EditCampaignPage({ params }: { params: { id: string } })
   const router = useRouter()
   const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setIsLoading(true)
-    const campaignId = parseInt(resolvedParams.id)
-    const foundCampaign = initialCampaigns.find((c) => c.id === campaignId)
+    fetchCampaign()
+  }, [resolvedParams.id])
 
-    if (foundCampaign) {
-      setCampaign(foundCampaign)
-    } else {
-      router.push("/admin/campaigns")
+  const fetchCampaign = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      const campaignId = parseInt(resolvedParams.id)
+
+      if (isNaN(campaignId)) {
+        throw new Error('Invalid campaign ID')
+      }
+
+      const response = await fetch(`/api/campaigns/${campaignId}`)
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Campaign not found')
+        }
+        throw new Error('Failed to fetch campaign')
+      }
+      const campaignData = await response.json()
+      setCampaign(campaignData)
+    } catch (error) {
+      console.error('Error fetching campaign:', error)
+      setError(error instanceof Error ? error.message : 'Failed to load campaign')
+
+      // Redirect to campaigns list if campaign not found
+      if (error instanceof Error && error.message === 'Campaign not found') {
+        setTimeout(() => {
+          router.push("/admin/campaigns")
+        }, 2000)
+      }
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(false)
-  }, [resolvedParams.id, router])
+  }
 
   const handleSave = (updatedCampaign: Campaign) => {
     console.log("Saving updated campaign:", updatedCampaign)
@@ -45,9 +72,30 @@ export default function EditCampaignPage({ params }: { params: { id: string } })
     return <div className="p-6 text-center">Loading campaign details...</div>
   }
 
+  if (error) {
+    return (
+      <div className="p-6 text-center">
+        <div className="text-red-500 mb-4">{error}</div>
+        {error !== 'Campaign not found' && (
+          <button
+            onClick={fetchCampaign}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Try Again
+          </button>
+        )}
+        {error === 'Campaign not found' && (
+          <div className="text-gray-500">Redirecting to campaigns list...</div>
+        )}
+      </div>
+    )
+  }
+
   if (!campaign) {
     return <div className="p-6 text-center text-red-500">Campaign not found. Redirecting...</div>
   }
+
+  console.log("🚀 ~ EditCampaignPage ~ campaign (from API):", campaign)
 
   return (
     <div className="p-6">

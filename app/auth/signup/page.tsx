@@ -1,60 +1,86 @@
 "use client"
 
-import type React from "react"
-
+import React from "react"
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Eye, EyeOff, Mail, Lock, Phone, MapPin, Heart, ArrowRight, Facebook, ChromeIcon as Google } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, Phone, MapPin, Heart, ArrowRight, } from "lucide-react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { useState } from "react"
+import toast from "react-hot-toast";
+import { countries } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { api } from "@/lib/axios.config";
 
-const countries = [
-  "India",
-  "United States",
-  "United Kingdom",
-  "Canada",
-  "Australia",
-  "Germany",
-  "France",
-  "Japan",
-  "Singapore",
-  "UAE",
-  "Other",
-]
+// Define Zod validation schema
+const schema = z.object({
+  first_name: z.string().min(2, { message: "First name is required." }),
+  last_name: z.string().min(2, { message: "Last name is required." }),
+  mobile_no: z.string().min(10, { message: "Mobile number is  and must be at least 10 digits." }),
+  email: z.string().email({ message: "Your email is invalid." }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  confirm_password: z.string().min(6, { message: "Confirm Password must be at least 6 characters." }),
+  country: z.string().min(1, { message: "Country is ." }),
+  agreeTerms: z.literal(true, {
+    errorMap: () => ({ message: "You must agree to the Terms & Privacy." }),
+  }),
+  newsletter: z.boolean().default(false).optional(),
+}).refine((data) => data.password === data.confirm_password, {
+  message: "Passwords don't match.",
+  path: ["confirm_password"],
+});
 
 export default function SignupPage() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    country: "",
-    password: "",
-    confirmPassword: "",
-    agreeTerms: false,
-    newsletter: true,
-  })
+  const [isPending, startTransition] = React.useTransition();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!")
-      return
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+    watch,
+    setValue,
+  } = useForm({
+    resolver: zodResolver(schema),
+    mode: "all", defaultValues: {
+      first_name: "",
+      last_name: "",
+      mobile_no: "",
+      email: "",
+      password: "",
+      confirm_password: "",
+      country: "India",
+      agreeTerms: true,
+      newsletter: true,
     }
-    console.log("Signup attempt:", formData)
-    // Handle signup logic here
-  }
+  });
 
-  const updateFormData = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+  const onSubmit = (data: any) => {
+    startTransition(async () => {
+      try {
+        const response = await api.post("/user/register", data);
+        if (response.status === 200) {
+          toast.success(response.data.message);
+          reset();
+          router.push("/auth/login");
+        } else {
+          toast.error(response.data.message);
+        }
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "An error occurred.");
+      }
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
@@ -136,19 +162,16 @@ export default function SignupPage() {
               <p className="text-gray-600">Join thousands of donors making a difference</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6 mt-0">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-0">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
                     First Name
                   </Label>
                   <Input
-                    id="firstName"
                     placeholder="John"
-                    value={formData.firstName}
-                    onChange={(e) => updateFormData("firstName", e.target.value)}
+                    {...register("first_name")}
                     className="mt-2"
-                    required
                   />
                 </div>
                 <div>
@@ -158,12 +181,11 @@ export default function SignupPage() {
                   <Input
                     id="lastName"
                     placeholder="Doe"
-                    value={formData.lastName}
-                    onChange={(e) => updateFormData("lastName", e.target.value)}
+                    {...register("last_name")}
                     className="mt-2"
-                    required
                   />
                 </div>
+                <p className="text-red-500 text-sm">{errors.first_name && errors.last_name?.message as string}</p>
               </div>
 
               <div>
@@ -175,14 +197,14 @@ export default function SignupPage() {
                   id="email"
                   type="email"
                   placeholder="john@example.com"
-                  value={formData.email}
-                  onChange={(e) => updateFormData("email", e.target.value)}
+                  {...register("email")}
                   className="mt-2"
-                  required
+
                 />
+                {errors.email && <p className="text-red-500 text-sm">{errors.email.message as string}</p>}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label htmlFor="phone" className="text-sm font-medium text-gray-700 flex items-center">
                     <Phone className="w-4 h-4 mr-2" />
@@ -191,29 +213,32 @@ export default function SignupPage() {
                   <Input
                     id="phone"
                     placeholder="+91 9999999999"
-                    value={formData.phone}
-                    onChange={(e) => updateFormData("phone", e.target.value)}
+                    {...register("mobile_no")}
                     className="mt-2"
-                    required
                   />
+                  {errors.mobile_no && <p className="text-red-500 text-sm">{errors.mobile_no.message as string}</p>}
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700 flex items-center">
                     <MapPin className="w-4 h-4 mr-2" />
                     Country
                   </Label>
-                  <Select defaultValue="India" value={formData.country} onValueChange={(value) => updateFormData("country", value)} required>
+                  <Select
+                    value={watch("country")}
+                    onValueChange={(val) => setValue("country", val)}
+                  >
                     <SelectTrigger className="mt-2">
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
                     <SelectContent>
-                      {countries.map((country) => (
-                        <SelectItem key={country} value={country}>
-                          {country}
+                      {countries.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.country && <p className="text-red-500 text-sm">{errors.country.message as string}</p>}
                 </div>
               </div>
 
@@ -227,10 +252,10 @@ export default function SignupPage() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Create a strong password"
-                    value={formData.password}
-                    onChange={(e) => updateFormData("password", e.target.value)}
+                    {...register("password")}
+
                     className="pr-10"
-                    required
+
                   />
                   <button
                     type="button"
@@ -240,6 +265,8 @@ export default function SignupPage() {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {errors.password && <p className="text-red-500 text-sm">{errors.password.message as string}</p>}
+
               </div>
 
               <div>
@@ -252,10 +279,9 @@ export default function SignupPage() {
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm your password"
-                    value={formData.confirmPassword}
-                    onChange={(e) => updateFormData("confirmPassword", e.target.value)}
+                    {...register("confirm_password")}
                     className="pr-10"
-                    required
+
                   />
                   <button
                     type="button"
@@ -265,15 +291,15 @@ export default function SignupPage() {
                     {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                <p className="text-red-500 text-sm">
+                  {errors?.confirm_password?.message as string}</p>
               </div>
 
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="terms"
-                    checked={formData.agreeTerms}
-                    onCheckedChange={(checked) => updateFormData("agreeTerms", checked as boolean)}
-                    required
+                    {...register("agreeTerms")}
                   />
                   <Label htmlFor="terms" className="text-sm text-gray-700">
                     I agree to the{" "}
@@ -285,25 +311,17 @@ export default function SignupPage() {
                       Privacy Policy
                     </Link>
                   </Label>
+                  {errors.agreeTerms && <p className="text-red-500 text-sm">{errors.agreeTerms.message as string}</p>}
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="newsletter"
-                    checked={formData.newsletter}
-                    onCheckedChange={(checked) => updateFormData("newsletter", checked as boolean)}
-                  />
-                  <Label htmlFor="newsletter" className="text-sm text-gray-700">
-                    Subscribe to our newsletter for impact updates
-                  </Label>
-                </div>
+
               </div>
 
               <Button
                 type="submit"
-                disabled={!formData.agreeTerms}
+                disabled={isPending}
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 text-lg font-semibold cursor-pointer disabled:opacity-50"
               >
-                Create Account
+                {isPending ? "Creating..." : "Create Account"}
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </form>

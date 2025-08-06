@@ -1,10 +1,20 @@
 "use client";
 import { scaleOnHover } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import { Sparkles, Facebook, Instagram, Twitter, Linkedin, Heart, ArrowRight, X, Menu } from 'lucide-react'
+import { Sparkles, Facebook, Instagram, Twitter, Linkedin, Heart, ArrowRight, X, Menu, UserCircle } from 'lucide-react'
 import React, { useState } from 'react'
 import { Button } from '../ui/button'
 import Link from "next/link";
+import { useSession, signOut } from 'next-auth/react';
+import { useMediaQuery } from 'react-responsive';
+
+// Import Shadcn UI Dropdown components
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const fadeInUp = {
   initial: { opacity: 0, y: 60 },
@@ -21,7 +31,48 @@ const staggerContainer = {
 }
 
 const HeaderSection = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { data: session } = useSession();
+
+  // New: Use a hook to check for mobile screen size
+  const isMobile = useMediaQuery({ maxWidth: 1023 }); // Adjust breakpoint as needed, lg breakpoint is 1024px
+
+  // Conditional logic for the right side of the desktop nav
+  const renderRightNav = () => {
+    // If not logged in, show the Login button
+    if (!session) {
+      return (
+        <Link href="/auth/login" className="hidden sm:inline text-gray-700 hover:text-green-600 font-medium cursor-pointer text-sm lg:text-base">
+          Login
+        </Link>
+      );
+    }
+    
+    // If logged in and NOT an admin, show the profile dropdown
+    if (session && session.user && session.user?.role?.toLowerCase() !== 'admin') {
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full">
+              {/* Profile Icon, you can replace with an Image if you have user avatars */}
+              <UserCircle className="h-6 w-6 text-gray-700 hover:text-green-600 transition-colors" />
+              <span className="sr-only">Toggle user menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuItem>
+              <Link href="/profile">My Profile</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => signOut()}>
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <section>
@@ -31,11 +82,17 @@ const HeaderSection = () => {
         animate={{ y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
       >
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 to-green-400/10"
-          animate={{ x: ["-100%", "100%"] }}
-          transition={{ duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-        />
+        {/*
+          Refactored: Conditionally render the expensive background animation.
+          It's hidden on mobile to improve performance.
+        */}
+        {!isMobile && (
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 to-green-400/10"
+            animate={{ x: ["-100%", "100%"] }}
+            transition={{ duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+          />
+        )}
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm relative z-10 gap-2 sm:gap-0">
           <motion.div
             className="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-4 lg:space-x-8"
@@ -43,41 +100,60 @@ const HeaderSection = () => {
             initial="initial"
             animate="animate"
           >
+            {/*
+              Refactored: Conditionally apply continuous animations.
+              On desktop, we keep the fun icon animations. On mobile, we use a static icon for performance.
+            */}
             <motion.span className="flex items-center group cursor-pointer" variants={fadeInUp}>
-              <motion.span
-                className="text-yellow-400 mr-1 sm:mr-2 text-base sm:text-lg"
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-              >
-                📞
-              </motion.span>
+              {!isMobile ? (
+                <motion.span
+                  className="text-yellow-400 mr-1 sm:mr-2 text-base sm:text-lg"
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+                >
+                  📞
+                </motion.span>
+              ) : (
+                <span className="text-yellow-400 mr-1 sm:mr-2 text-base sm:text-lg">📞</span>
+              )}
               <span className="group-hover:text-yellow-400 transition-colors text-xs sm:text-sm">
                 24/7 Helpline: +91 99993 03166
               </span>
             </motion.span>
+            
             <motion.span className="hidden sm:flex items-center group cursor-pointer" variants={fadeInUp}>
-              <motion.span
-                className="text-yellow-400 mr-2"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-              >
-                ✉
-              </motion.span>
+              {!isMobile ? (
+                <motion.span
+                  className="text-yellow-400 mr-2"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+                >
+                  ✉
+                </motion.span>
+              ) : (
+                <span className="text-yellow-400 mr-2">✉</span>
+              )}
               <span className="group-hover:text-yellow-400 transition-colors">support@dwaparyug.org</span>
             </motion.span>
+            
             <motion.span className="hidden lg:flex items-center group cursor-pointer" variants={fadeInUp}>
-              <motion.span
-                className="text-yellow-400 mr-2"
-                animate={{ y: [0, -3, 0] }}
-                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-              >
-                📍
-              </motion.span>
+              {!isMobile ? (
+                <motion.span
+                  className="text-yellow-400 mr-2"
+                  animate={{ y: [0, -3, 0] }}
+                  transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+                >
+                  📍
+                </motion.span>
+              ) : (
+                <span className="text-yellow-400 mr-2">📍</span>
+              )}
               <span className="group-hover:text-yellow-400 transition-colors">
                 719 Mehalla Mohalla, Madanpur Khadar, Delhi
               </span>
             </motion.span>
           </motion.div>
+          
           <motion.div
             initial={{ opacity: 0, x: 100 }}
             animate={{ opacity: 1, x: 0 }}
@@ -109,12 +185,21 @@ const HeaderSection = () => {
             whileTap={{ scale: 0.95 }}
           >
             <div className="bg-gradient-to-br from-gray-800 to-gray-900 text-white px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold rounded-lg shadow-lg">
-              <motion.div
-                animate={{ textShadow: ["0 0 0px #fbbf24", "0 0 10px #fbbf24", "0 0 0px #fbbf24"] }}
-                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-              >
-                dwaparyug
-              </motion.div>
+              {/*
+                Refactored: Conditionally apply text-shadow animation.
+                This is a big performance win. Text shadow is often rendered on the CPU.
+                We disable it on mobile and just show the static text.
+              */}
+              {!isMobile ? (
+                <motion.div
+                  animate={{ textShadow: ["0 0 0px #fbbf24", "0 0 10px #fbbf24", "0 0 0px #fbbf24"] }}
+                  transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+                >
+                  dwaparyug
+                </motion.div>
+              ) : (
+                <div>dwaparyug</div>
+              )}
             </div>
           </motion.div>
 
@@ -165,10 +250,8 @@ const HeaderSection = () => {
               ))}
             </motion.div>
 
-            {/* Login - Hidden on small mobile */}
-            <Link href="/auth/login" className="hidden sm:inline text-gray-700 hover:text-green-600 font-medium cursor-pointer text-sm lg:text-base">
-              Login
-            </Link>
+            {/* Conditionally rendered Login button or Profile dropdown */}
+            {renderRightNav()}
 
             {/* Donate Button */}
             <motion.div
@@ -220,13 +303,38 @@ const HeaderSection = () => {
                   {item}
                 </Link>
               ))}
-              <Link
-                href="/auth/login"
-                className="text-gray-700 hover:text-green-600 font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Login
-              </Link>
+
+              {/* Conditionally rendered Login link or Logout link in mobile menu */}
+              {session ? (
+                <>
+                  <Link
+                    href="/profile"
+                    className="text-gray-700 hover:text-green-600 font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    My Profile
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    className="text-gray-700 hover:text-green-600 font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors justify-start"
+                    onClick={() => {
+                      signOut();
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <Link
+                  href="/auth/login"
+                  className="text-gray-700 hover:text-green-600 font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Login
+                </Link>
+              )}
+
               <div className="flex justify-center space-x-4 px-4 pt-2">
                 {[
                   { Icon: Facebook, color: "hover:text-blue-600", href: "#" },
