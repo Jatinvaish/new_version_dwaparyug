@@ -6,26 +6,45 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const pageSize = parseInt(searchParams.get('pageSize') || '10');
     const status = searchParams.get('status');
     const category_id = searchParams.get('category_id');
-    const offset = (page - 1) * limit;
+    const search = searchParams.get('search') || '';
+    const sortBy = searchParams.get('sortBy') || 'c.created_at';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
+    const offset = (page - 1) * pageSize;
 
     let whereClause = '';
     const params: any[] = [];
     let paramIndex = 1;
 
+    // Filter by status
     if (status) {
       whereClause += ` AND c.status = $${paramIndex}`;
       params.push(status);
       paramIndex++;
     }
 
+    // Filter by category_id
     if (category_id) {
       whereClause += ` AND c.category_id = $${paramIndex}`;
       params.push(parseInt(category_id));
       paramIndex++;
     }
+
+    // Search by name or description
+    if (search) {
+      whereClause += ` AND (cc.name ILIKE $${paramIndex} OR c.title ILIKE $${paramIndex} OR cc.description ILIKE $${paramIndex})`;
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
+
+    // Validate sortBy and sortOrder (prevent SQL injection)
+    const allowedSortFields = ['c.created_at', 'cc.name', 'c.status', 'c.title', 'c.total_raised', 'c.donation_goal'];
+    const allowedSortOrders = ['asc', 'desc'];
+
+    const safeSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'c.created_at';
+    const safeSortOrder = allowedSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toUpperCase() : 'DESC';
 
     const campaignQuery = `
       SELECT 
@@ -38,29 +57,42 @@ export async function GET(request: NextRequest) {
       LEFT JOIN users u1 ON c.created_by = u1.id
       LEFT JOIN users u2 ON c.updated_by = u2.id
       WHERE 1=1 ${whereClause}
-      ORDER BY c.created_at DESC
+      ORDER BY ${safeSortBy} ${safeSortOrder}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
 
-    params.push(limit, offset);
+    params.push(pageSize, offset);
 
-    const result = await SelectQuery(campaignQuery, params);
-
-    // Get total count for pagination
+    // Count query for pagination
     const countQuery = `
       SELECT COUNT(*) as total
       FROM campaigns c
+      LEFT JOIN campaign_categories cc ON c.category_id = cc.id
+      LEFT JOIN users u1 ON c.created_by = u1.id
+      LEFT JOIN users u2 ON c.updated_by = u2.id
       WHERE 1=1 ${whereClause}
     `;
-    const countResult = await SelectQuery(countQuery, params.slice(0, -2));
+    
+    const countParams = params.slice(0, -2); // Remove limit and offset for count
+
+    // Execute queries
+    const [result, countResult] = await Promise.all([
+      SelectQuery(campaignQuery, params),
+      SelectQuery(countQuery, countParams)
+    ]);
+
+    const total = parseInt(countResult[0]?.total || '0');
+    const totalPages = Math.ceil(total / pageSize);
 
     return NextResponse.json({
       campaigns: result,
       pagination: {
         page,
-        limit,
-        total: parseInt(countResult[0].total),
-        totalPages: Math.ceil(countResult[0].total / limit)
+        pageSize,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
       }
     });
   } catch (error) {
@@ -72,13 +104,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
+
 // POST create new campaign
 export async function POST(request: NextRequest) {
   const client = await getClient();
-  
+
   try {
     await client.query('BEGIN');
-    
+
     const body = await request.json();
     const {
       title,
@@ -129,17 +162,17 @@ export async function POST(request: NextRequest) {
     const campaign = campaignResult.rows[0];
 
     // Insert campaign products if any
+    let productIndex = 1;
     if (assignedProducts.length > 0) {
       for (const product of assignedProducts) {
+        productIndex++;
         await InsertQuery(`
           INSERT INTO campaign_products (
-            campaign_id, name, description, price, image, stock, 
-            min_qty, max_qty, increment_count, created_by
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            campaign_id, indipendent_product_id, description, price, stock, sequence, created_by
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7 )
         `, [
-          campaign.id, product.name, product.description || '', product.price, 
-          product.image || '', product.stock || 0, product.min_qty || 1, 
-          product.max_qty, product.increment_count || 1, created_by
+          campaign.id, product.indipendent_product_id, product.description || '', product.price,
+          product.stock || 0, productIndex, created_by
         ]);
       }
     }

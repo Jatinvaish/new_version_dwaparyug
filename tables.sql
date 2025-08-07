@@ -84,6 +84,22 @@ CREATE TABLE campaigns (
 CREATE TABLE campaign_products (
     id SERIAL PRIMARY KEY,
     campaign_id BIGINT NOT NULL,
+    indipendent_product_id BIGINT NOT NULL,
+    description TEXT,
+    price NUMERIC(10, 2) NOT NULL,
+    stock INTEGER DEFAULT 0,
+    sequence INTEGER DEFAULT 1,
+    created_by BIGINT,
+    updated_by BIGINT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_campaign_products_campaign FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
+    CONSTRAINT fk_campaign_products_created_by FOREIGN KEY (created_by) REFERENCES users(id),
+    CONSTRAINT fk_campaign_products_updated_by FOREIGN KEY (updated_by) REFERENCES users(id)
+);
+
+CREATE TABLE indipendent_products (
+    id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
     price NUMERIC(10, 2) NOT NULL,
@@ -91,20 +107,14 @@ CREATE TABLE campaign_products (
     image TEXT,
     min_qty INTEGER DEFAULT 1,
     max_qty INTEGER,
-    stock INTEGER DEFAULT 0,
     increment_count INTEGER DEFAULT 1,
     is_flexible_increment_count BOOLEAN DEFAULT TRUE,
-    allows_personalization BOOLEAN DEFAULT TRUE, -- Whether this product allows personalization
+    allows_personalization BOOLEAN DEFAULT TRUE,  
     status TEXT DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive')),
-    sequence INTEGER DEFAULT 1,
     created_by BIGINT,
     updated_by BIGINT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_campaign_products_campaign FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
-    CONSTRAINT fk_campaign_products_created_by FOREIGN KEY (created_by) REFERENCES users(id),
-    CONSTRAINT fk_campaign_products_updated_by FOREIGN KEY (updated_by) REFERENCES users(id)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 6) Campaign Product Units
@@ -116,7 +126,6 @@ CREATE TABLE campaign_product_units (
     updated_by BIGINT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    
     CONSTRAINT fk_campaign_product_units_created_by FOREIGN KEY (created_by) REFERENCES users(id),
     CONSTRAINT fk_campaign_product_units_updated_by FOREIGN KEY (updated_by) REFERENCES users(id)
 );

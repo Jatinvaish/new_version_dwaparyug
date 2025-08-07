@@ -36,8 +36,7 @@ const adminLinks: AdminLink[] = [
     icon: Package,
     subLinks: [
       { name: "All Products", href: "/admin/products", icon: ListChecks },
-      { name: "Add Products", href: "/admin/products/add", icon: PlusCircle },
-      { name: "Categories", href: "/admin/categories", icon: Boxes },
+      { name: "All units", href: "/admin/units", icon: Boxes },
     ],
   },
   {

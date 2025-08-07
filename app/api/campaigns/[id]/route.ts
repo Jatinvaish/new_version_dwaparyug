@@ -35,8 +35,8 @@ export async function GET(
     // Get campaign products
     const productsResult = await SelectQuery(`
       SELECT * FROM campaign_products 
-      WHERE campaign_id = $1 AND status = 'Active'
-      ORDER BY sequence, name
+      WHERE campaign_id = $1  
+      ORDER BY sequence 
     `, [campaignId]);
 
     // Get campaign FAQ
@@ -58,7 +58,7 @@ export async function GET(
       ...campaign,
       assignedProducts: productsResult,
       faq_questions: faqResult,
-      videoLinks: videosResult?.map((v:any) => v.video_url)
+      videoLinks: videosResult?.map((v: any) => v.video_url)
     };
 
     return NextResponse.json(campaignData);
@@ -77,10 +77,10 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const client = await getClient();
-  
+
   try {
     await client.query('BEGIN');
-    
+
     const campaignId = parseInt(params.id);
     const body = await request.json();
     const {
@@ -136,17 +136,17 @@ export async function PUT(
     await DeleteQuery('DELETE FROM campaign_videos WHERE campaign_id = $1', [campaignId]);
 
     // Insert updated products
+    let productIndex = 1;
     if (assignedProducts.length > 0) {
       for (const product of assignedProducts) {
+        productIndex++;
         await InsertQuery(`
           INSERT INTO campaign_products (
-            campaign_id, name, description, price, image, stock, 
-            min_qty, max_qty, increment_count, created_by
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            campaign_id, indipendent_product_id, description, price, stock, sequence, created_by
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7 )
         `, [
-          campaignId, product.name, product.description || '', product.price, 
-          product.image || '', product.stock || 0, product.min_qty || 1, 
-          product.max_qty, product.increment_count || 1, updated_by
+          campaignId, product.indipendent_product_id, product.description || '', product.price,
+          product.stock || 0, productIndex, updated_by
         ]);
       }
     }

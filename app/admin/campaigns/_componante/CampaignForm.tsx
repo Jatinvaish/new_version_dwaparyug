@@ -31,28 +31,28 @@ const uploadImages = async (images: (File | string)[]): Promise<string[]> => {
     // Separate files and base64 strings
     const files = images.filter(img => img instanceof File) as File[];
     const base64Images = images.filter(img => typeof img === 'string') as string[];
-    
+
     const results: string[] = [];
-    
+
     // Upload files via form data
     if (files.length > 0) {
       const formData = new FormData();
       files.forEach(file => formData.append('files', file));
-      
+
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to upload file images');
       }
-      
+
       const data = await response.json();
       const fileUrls = files.length === 1 ? [data.imageUrl] : data.imageUrls;
       results.push(...fileUrls);
     }
-    
+
     // Upload base64 images via JSON
     if (base64Images.length > 0) {
       const response = await fetch('/api/upload', {
@@ -65,16 +65,16 @@ const uploadImages = async (images: (File | string)[]): Promise<string[]> => {
           type: base64Images.length === 1 ? 'single' : 'multiple'
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to upload base64 images');
       }
-      
+
       const data = await response.json();
       const base64Urls = base64Images.length === 1 ? [data.imageUrl] : data.imageUrls;
       results.push(...base64Urls);
     }
-    
+
     return results;
   } catch (error) {
     console.error('Error uploading images:', error);
@@ -98,10 +98,10 @@ const createPreviewUrl = (file: File): string => {
 };
 
 // Simple but effective rich text editor using a textarea with formatting helpers
-const RichTextEditor = ({ value, onChange, placeholder }: { 
-  value: string; 
-  onChange: (value: string) => void; 
-  placeholder?: string; 
+const RichTextEditor = ({ value, onChange, placeholder }: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
 }) => {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -112,10 +112,10 @@ const RichTextEditor = ({ value, onChange, placeholder }: {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = value.substring(start, end);
-    
+
     const newText = value.substring(0, start) + before + selectedText + after + value.substring(end);
     onChange(newText);
-    
+
     // Restore cursor position
     setTimeout(() => {
       textarea.focus();
@@ -130,7 +130,7 @@ const RichTextEditor = ({ value, onChange, placeholder }: {
     const start = textarea.selectionStart;
     const newText = value.substring(0, start) + text + value.substring(start);
     onChange(newText);
-    
+
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(start + text.length, start + text.length);
@@ -166,11 +166,11 @@ const RichTextEditor = ({ value, onChange, placeholder }: {
 
   return (
     <div className="border rounded-md">
-      <div className="flex flex-wrap gap-1 p-2 border-b bg-gray-50">
+      <div className="flex flex-wrap gap-1 p-1 border-b bg-gray-50">
         <button
           type="button"
           onClick={() => insertText('**', '**')}
-          className="px-3 py-1 text-sm border rounded hover:bg-gray-200"
+          className="px-2 py-1 text-xs border rounded hover:bg-gray-200"
           title="Bold (Ctrl+B)"
         >
           <strong>B</strong>
@@ -178,7 +178,7 @@ const RichTextEditor = ({ value, onChange, placeholder }: {
         <button
           type="button"
           onClick={() => insertText('*', '*')}
-          className="px-3 py-1 text-sm border rounded hover:bg-gray-200"
+          className="px-2 py-1 text-xs border rounded hover:bg-gray-200"
           title="Italic (Ctrl+I)"
         >
           <em>I</em>
@@ -186,7 +186,7 @@ const RichTextEditor = ({ value, onChange, placeholder }: {
         <button
           type="button"
           onClick={() => insertText('<u>', '</u>')}
-          className="px-3 py-1 text-sm border rounded hover:bg-gray-200"
+          className="px-2 py-1 text-xs border rounded hover:bg-gray-200"
           title="Underline (Ctrl+U)"
         >
           <u>U</u>
@@ -194,16 +194,16 @@ const RichTextEditor = ({ value, onChange, placeholder }: {
         <button
           type="button"
           onClick={() => insertText('~~', '~~')}
-          className="px-3 py-1 text-sm border rounded hover:bg-gray-200"
+          className="px-2 py-1 text-xs border rounded hover:bg-gray-200"
           title="Strikethrough"
         >
           <s>S</s>
         </button>
-        <div className="w-px h-6 bg-gray-300 mx-1" />
+        <div className="w-px h-4 bg-gray-300 mx-1" />
         <button
           type="button"
           onClick={() => insertText('# ', '')}
-          className="px-3 py-1 text-sm border rounded hover:bg-gray-200"
+          className="px-2 py-1 text-xs border rounded hover:bg-gray-200"
           title="Heading 1"
         >
           H1
@@ -211,7 +211,7 @@ const RichTextEditor = ({ value, onChange, placeholder }: {
         <button
           type="button"
           onClick={() => insertText('## ', '')}
-          className="px-3 py-1 text-sm border rounded hover:bg-gray-200"
+          className="px-2 py-1 text-xs border rounded hover:bg-gray-200"
           title="Heading 2"
         >
           H2
@@ -219,16 +219,16 @@ const RichTextEditor = ({ value, onChange, placeholder }: {
         <button
           type="button"
           onClick={() => insertText('### ', '')}
-          className="px-3 py-1 text-sm border rounded hover:bg-gray-200"
+          className="px-2 py-1 text-xs border rounded hover:bg-gray-200"
           title="Heading 3"
         >
           H3
         </button>
-        <div className="w-px h-6 bg-gray-300 mx-1" />
+        <div className="w-px h-4 bg-gray-300 mx-1" />
         <button
           type="button"
           onClick={() => insertText('- ', '')}
-          className="px-3 py-1 text-sm border rounded hover:bg-gray-200"
+          className="px-2 py-1 text-xs border rounded hover:bg-gray-200"
           title="Bullet List"
         >
           • List
@@ -236,16 +236,16 @@ const RichTextEditor = ({ value, onChange, placeholder }: {
         <button
           type="button"
           onClick={() => insertText('1. ', '')}
-          className="px-3 py-1 text-sm border rounded hover:bg-gray-200"
+          className="px-2 py-1 text-xs border rounded hover:bg-gray-200"
           title="Numbered List"
         >
           1. List
         </button>
-        <div className="w-px h-6 bg-gray-300 mx-1" />
+        <div className="w-px h-4 bg-gray-300 mx-1" />
         <button
           type="button"
           onClick={addLink}
-          className="px-3 py-1 text-sm border rounded hover:bg-gray-200"
+          className="px-2 py-1 text-xs border rounded hover:bg-gray-200"
           title="Add Link"
         >
           🔗
@@ -253,7 +253,7 @@ const RichTextEditor = ({ value, onChange, placeholder }: {
         <button
           type="button"
           onClick={() => insertText('> ', '')}
-          className="px-3 py-1 text-sm border rounded hover:bg-gray-200"
+          className="px-2 py-1 text-xs border rounded hover:bg-gray-200"
           title="Quote"
         >
           " "
@@ -261,7 +261,7 @@ const RichTextEditor = ({ value, onChange, placeholder }: {
         <button
           type="button"
           onClick={() => insertAtCursor('\n---\n')}
-          className="px-3 py-1 text-sm border rounded hover:bg-gray-200"
+          className="px-2 py-1 text-xs border rounded hover:bg-gray-200"
           title="Horizontal Rule"
         >
           ―
@@ -274,10 +274,10 @@ const RichTextEditor = ({ value, onChange, placeholder }: {
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full min-h-32 p-3 resize-none border-0 outline-none focus:ring-0"
-          rows={8}
+          className="w-full min-h-24 p-2 resize-none border-0 outline-none focus:ring-0"
+          rows={6}
         />
-        <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+        <div className="absolute bottom-1 right-1 text-xs text-gray-400">
           Markdown supported
         </div>
       </div>
@@ -294,22 +294,18 @@ const campaignFormSchema = z.object({
   details: z.string().min(20, "Details must be at least 20 characters long."),
   donation_goal: z.coerce.number().min(1, "Donation goal must be at least ₹1."),
   total_raised: z.number().optional(),
-  status: z.enum(["Active", "Inactive", "Completed", "Draft"]).optional(),
+  status: z.enum(["Active", "Inactive", "Completed", "Draft"]),
   image: z.string().min(1, "Banner image is required."),
   images_array: z.array(z.string()).optional(),
   assignedProducts: z
     .array(
       z.object({
         id: z.number().optional(),
-        name: z.string(),
+        indipendent_product_id: z.number().min(1, "Product is required"),
         description: z.string().optional(),
         price: z.number(),
-        image: z.string().optional(),
         stock: z.number().optional(),
-        unit_id: z.number().optional(),
-        min_qty: z.number().optional(),
-        max_qty: z.number().optional(),
-        increment_count: z.number().optional(),
+        sequence: z.number().optional(),
       }),
     )
     .optional(),
@@ -352,6 +348,22 @@ interface ProductUnit {
   abbreviation?: string;
 }
 
+interface IndependentProduct {
+  id: number;
+  name: string;
+  description?: string;
+  price: number;
+  unit_id?: number;
+  image?: string;
+  min_qty?: number;
+  max_qty?: number;
+  stock?: number;
+  increment_count?: number;
+  is_flexible_increment_count?: boolean;
+  allows_personalization?: boolean;
+  status: string;
+}
+
 interface CampaignFormProps {
   campaign?: Campaign | null;
   onSave: (campaign: Campaign) => void;
@@ -368,10 +380,11 @@ interface LocalImage {
 
 export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFormProps) {
   const [categories, setCategories] = useState<CampaignCategory[]>([]);
-  const [productUnits, setProductUnits] = useState<ProductUnit[]>([]);
+  const [independentProducts, setIndependentProducts] = useState<IndependentProduct[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [isLoadingUnits, setIsLoadingUnits] = useState(true);
-  
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+
   // Local image storage
   const [bannerImage, setBannerImage] = useState<LocalImage | null>(null);
   const [additionalImages, setAdditionalImages] = useState<LocalImage[]>([]);
@@ -397,6 +410,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
       images_array: [],
       assignedProducts: [],
       priority: "medium",
+      status: "Draft",
       about_campaign: "",
       location: "",
       organizer: "",
@@ -434,13 +448,13 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
     name: "assignedProducts",
   });
 
-  // Fetch categories and units from API
+  // Fetch categories, units, and independent products from API
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [categoriesResponse, unitsResponse] = await Promise.all([
+        const [categoriesResponse, productsResponse] = await Promise.all([
           fetch('/api/campaign-categories'),
-          fetch('/api/campaign-product-units')
+          fetch('/api/independent-products')
         ]);
 
         if (categoriesResponse.ok) {
@@ -448,18 +462,20 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
           setCategories(categoriesData);
         }
 
-        if (unitsResponse.ok) {
-          const unitsData = await unitsResponse.json();
-          setProductUnits(unitsData);
+
+        if (productsResponse.ok) {
+          const productsData = await productsResponse.json();
+          console.log("🚀 ~ fetchData ~ productsData:", productsData)
+          setIndependentProducts(productsData?.products);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
         setIsLoadingCategories(false);
         setIsLoadingUnits(false);
+        setIsLoadingProducts(false);
       }
     };
-
     fetchData();
   }, []);
 
@@ -470,6 +486,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
         donation_goal: campaign?.donation_goal,
         end_date: new Date(campaign?.end_date),
         priority: campaign?.priority || "medium",
+        status: campaign?.status || "Draft",
         about_campaign: campaign?.about_campaign || "",
         location: campaign?.location || "",
         organizer: campaign?.organizer || "",
@@ -556,7 +573,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
 
       const url = campaign ? `/api/campaigns/${campaign?.id}` : '/api/campaigns';
       const method = campaign ? 'PUT' : 'POST';
-      
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -588,7 +605,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
     try {
       const base64 = await fileToBase64(file);
       const previewUrl = createPreviewUrl(file);
-      
+
       setBannerImage({
         file,
         base64,
@@ -612,7 +629,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
         Array.from(files).map(async (file) => {
           const base64 = await fileToBase64(file);
           const previewUrl = createPreviewUrl(file);
-          
+
           return {
             file,
             base64,
@@ -643,7 +660,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
     if (imageToRemove?.url && !imageToRemove.isExisting) {
       URL.revokeObjectURL(imageToRemove.url);
     }
-    
+
     const updatedImages = additionalImages.filter((_, i) => i !== index);
     setAdditionalImages(updatedImages);
     setValue("images_array", updatedImages.map(img => img.url));
@@ -656,7 +673,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
       if (bannerImage?.url && !bannerImage.isExisting) {
         URL.revokeObjectURL(bannerImage.url);
       }
-      
+
       // Clean up additional image URLs
       additionalImages.forEach(img => {
         if (img.url && !img.isExisting) {
@@ -667,53 +684,51 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
   }, []);
 
   const selectedCategory = categories.find(cat => cat.id === category_id);
-
   return (
     <Card>
-      <form onSubmit={handleSubmit(onSubmit)} className="p-6">
-        <div className="grid gap-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="p-4">
+        <div className="grid gap-3">
           {campaign && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label>Total Raised (₹)</Label>
-                <Input disabled value={campaign?.total_raised?.toLocaleString() || 0} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Total Raised (₹)</Label>
+                <Input disabled value={campaign?.total_raised?.toLocaleString() || 0} className="h-8 text-sm" />
               </div>
-              <div className="space-y-2">
-                <Label>Beneficiaries</Label>
-                <Input disabled value={campaign?.total_beneficiary?.toLocaleString() || 0} />
+              <div className="space-y-1">
+                <Label className="text-xs">Beneficiaries</Label>
+                <Input disabled value={campaign?.total_beneficiary?.toLocaleString() || 0} className="h-8 text-sm" />
               </div>
-              <div className="space-y-2">
-                <Label>Donors</Label>
-                <Input disabled value={campaign?.total_donors_till_now?.toLocaleString() || 0} />
+              <div className="space-y-1">
+                <Label className="text-xs">Donors</Label>
+                <Input disabled value={campaign?.total_donors_till_now?.toLocaleString() || 0} className="h-8 text-sm" />
               </div>
-              <div className="space-y-2">
-                <Label>Progress</Label>
-                {/* <Input disabled value={`${(campaign?.total_progress_percentage || 0)?.toFixed(2)}%`} /> */}
-                <Input disabled value={`0%`} />
+              <div className="space-y-1">
+                <Label className="text-xs">Progress</Label>
+                <Input disabled value={`0%`} className="h-8 text-sm" />
               </div>
             </div>
           )}
-          
-          <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input id="title" {...register("title")} />
-            {errors.title && <p className="text-sm text-red-500">{errors.title.message}</p>}
+
+          <div className="space-y-1">
+            <Label htmlFor="title" className="text-sm">Title</Label>
+            <Input id="title" {...register("title")} className="h-8" />
+            {errors.title && <p className="text-xs text-red-500">{errors.title.message}</p>}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="category_id">Category</Label>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="category_id" className="text-sm">Category</Label>
               <Controller
                 control={control}
                 name="category_id"
                 render={({ field }) => (
-                  <Select 
-                    value={field.value?.toString()} 
+                  <Select
+                    value={field.value > 0 ? field.value.toString() : ""}
                     onValueChange={(value) => field.onChange(parseInt(value))}
                     disabled={isLoadingCategories}
                   >
-                    <SelectTrigger id="category_id">
-                      <SelectValue placeholder={isLoadingCategories ? "Loading categories..." : "Select category"} />
+                    <SelectTrigger id="category_id" className="h-8">
+                      <SelectValue placeholder={isLoadingCategories ? "Loading..." : "Select category"} />
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((category) => (
@@ -725,18 +740,18 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                   </Select>
                 )}
               />
-              {errors.category_id && <p className="text-sm text-red-500">{errors.category_id.message}</p>}
+              {errors.category_id && <p className="text-xs text-red-500">{errors.category_id.message}</p>}
             </div>
-            
+
             {selectedCategory?.name === "Festival Celebration" && (
-              <div className="space-y-2">
-                <Label htmlFor="festival_type">Festival Type</Label>
+              <div className="space-y-1">
+                <Label htmlFor="festival_type" className="text-sm">Festival Type</Label>
                 <Controller
                   control={control}
                   name="festival_type"
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger id="festival_type">
+                      <SelectTrigger id="festival_type" className="h-8">
                         <SelectValue placeholder="Select festival type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -751,15 +766,37 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                 />
               </div>
             )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
+
+            <div className="space-y-1">
+              <Label htmlFor="status" className="text-sm">Status</Label>
+              <Controller
+                control={control}
+                name="status"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="status" className="h-8">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Draft">Draft</SelectItem>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                      <SelectItem value="Completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.status && <p className="text-xs text-red-500">{errors.status.message}</p>}
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="priority" className="text-sm">Priority</Label>
               <Controller
                 control={control}
                 name="priority"
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="priority">
+                    <SelectTrigger id="priority" className="h-8">
                       <SelectValue placeholder="Select priority" />
                     </SelectTrigger>
                     <SelectContent>
@@ -771,34 +808,31 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                   </Select>
                 )}
               />
-              {errors.priority && <p className="text-sm text-red-500">{errors.priority.message}</p>}
+              {errors.priority && <p className="text-xs text-red-500">{errors.priority.message}</p>}
             </div>
           </div>
 
-          {/* NEW FIELDS SECTION */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
-              <Input id="location" {...register("location")} placeholder="Campaign location" />
-              {errors.location && <p className="text-sm text-red-500">{errors.location.message}</p>}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="location" className="text-sm">Location</Label>
+              <Input id="location" {...register("location")} placeholder="Campaign location" className="h-8" />
+              {errors.location && <p className="text-xs text-red-500">{errors.location.message}</p>}
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="organizer">Organizer</Label>
-              <Input id="organizer" {...register("organizer")} placeholder="Campaign organizer name" />
-              {errors.organizer && <p className="text-sm text-red-500">{errors.organizer.message}</p>}
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="urgency">Urgency Level</Label>
+            <div className="space-y-1">
+              <Label htmlFor="organizer" className="text-sm">Organizer</Label>
+              <Input id="organizer" {...register("organizer")} placeholder="Campaign organizer name" className="h-8" />
+              {errors.organizer && <p className="text-xs text-red-500">{errors.organizer.message}</p>}
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="urgency" className="text-sm">Urgency Level</Label>
               <Controller
                 control={control}
                 name="urgency"
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="urgency">
+                    <SelectTrigger id="urgency" className="h-8">
                       <SelectValue placeholder="Select urgency level" />
                     </SelectTrigger>
                     <SelectContent>
@@ -811,60 +845,60 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                   </Select>
                 )}
               />
-              {errors.urgency && <p className="text-sm text-red-500">{errors.urgency.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="verified">Verified Campaign</Label>
-              <div className="flex items-center space-x-2 pt-2">
-                <Controller
-                  control={control}
-                  name="verified"
-                  render={({ field }) => (
-                    <Checkbox
-                      id="verified"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  )}
-                />
-                <Label htmlFor="verified" className="text-sm font-normal">
-                  Mark this campaign as verified
-                </Label>
-              </div>
-              {errors.verified && <p className="text-sm text-red-500">{errors.verified.message}</p>}
+              {errors.urgency && <p className="text-xs text-red-500">{errors.urgency.message}</p>}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="overview">Overview Title</Label>
-            <Input id="overview" {...register("overview")} placeholder="Short summary for cards" />
-            {errors.overview && <p className="text-sm text-red-500">{errors.overview.message}</p>}
+          <div className="space-y-1">
+            <Label htmlFor="verified" className="text-sm">Verified Campaign</Label>
+            <div className="flex items-center space-x-2 pt-1">
+              <Controller
+                control={control}
+                name="verified"
+                render={({ field }) => (
+                  <Checkbox
+                    id="verified"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
+              <Label htmlFor="verified" className="text-xs font-normal">
+                Mark this campaign as verified
+              </Label>
+            </div>
+            {errors.verified && <p className="text-xs text-red-500">{errors.verified.message}</p>}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="details">Detail Title</Label>
-            <Textarea id="details" {...register("details")} placeholder="Detailed description for campaign page" />
-            {errors.details && <p className="text-sm text-red-500">{errors.details.message}</p>}
+          <div className="space-y-1">
+            <Label htmlFor="overview" className="text-sm">Overview Title</Label>
+            <Input id="overview" {...register("overview")} placeholder="Short summary for cards" className="h-8" />
+            {errors.overview && <p className="text-xs text-red-500">{errors.overview.message}</p>}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="donation_goal">Donation Goal (₹)</Label>
-              <Input id="donation_goal" type="number" {...register("donation_goal")} />
-              {errors.donation_goal && <p className="text-sm text-red-500">{errors.donation_goal.message}</p>}
+          <div className="space-y-1">
+            <Label htmlFor="details" className="text-sm">Detail Title</Label>
+            <Textarea id="details" {...register("details")} placeholder="Detailed description for campaign page" rows={2} className="text-sm" />
+            {errors.details && <p className="text-xs text-red-500">{errors.details.message}</p>}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="donation_goal" className="text-sm">Donation Goal (₹)</Label>
+              <Input id="donation_goal" type="number" {...register("donation_goal")} className="h-8" />
+              {errors.donation_goal && <p className="text-xs text-red-500">{errors.donation_goal.message}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="end_date">End Date</Label>
+            <div className="space-y-1">
+              <Label htmlFor="end_date" className="text-sm">End Date</Label>
               <Controller
                 control={control}
                 name="end_date"
                 render={({ field }) => (
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant={"outline"} className="w-full justify-start text-left font-normal">
-                        <CalendarIcon className="mr-2 h-4 w-4" />
+                      <Button variant={"outline"} className="w-full justify-start text-left font-normal h-8 text-sm">
+                        <CalendarIcon className="mr-2 h-3 w-3" />
                         {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                       </Button>
                     </PopoverTrigger>
@@ -874,12 +908,12 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                   </Popover>
                 )}
               />
-              {errors.end_date && <p className="text-sm text-red-500">{errors.end_date.message}</p>}
+              {errors.end_date && <p className="text-xs text-red-500">{errors.end_date.message}</p>}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="about_campaign">About this Campaign</Label>
+          <div className="space-y-1">
+            <Label htmlFor="about_campaign" className="text-sm">About this Campaign</Label>
             <Controller
               name="about_campaign"
               control={control}
@@ -891,19 +925,20 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                 />
               )}
             />
-            {errors.about_campaign && <p className="text-sm text-red-500">{errors.about_campaign?.message}</p>}
+            {errors.about_campaign && <p className="text-xs text-red-500">{errors.about_campaign?.message}</p>}
           </div>
-          
-          <div className="space-y-4">
+
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Video Links</Label>
+              <Label className="text-sm">Video Links</Label>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => appendVideoLink({ url: "" })}
+                className="h-6 px-2 text-xs"
               >
-                <Plus className="mr-2 h-4 w-4" /> Add Video
+                <Plus className="mr-1 h-3 w-3" /> Add Video
               </Button>
             </div>
             {videoLinkFields.map((field, index) => (
@@ -911,54 +946,70 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                 <Input
                   {...register(`videoLinks.${index}.url`)}
                   placeholder="e.g., https://www.youtube.com/watch?v=..."
+                  className="h-8 text-sm pr-8"
                 />
                 {errors.videoLinks?.[index]?.url && (
-                  <p className="text-sm text-red-500 mt-1">{errors.videoLinks[index]?.url?.message}</p>
+                  <p className="text-xs text-red-500 mt-1">{errors.videoLinks[index]?.url?.message}</p>
                 )}
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute top-1 right-1 h-8 w-8 text-red-500"
+                  className="absolute top-0 right-0 h-8 w-8 text-red-500"
                   onClick={() => removeVideoLink(index)}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3 w-3" />
                 </Button>
               </div>
             ))}
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>FAQ Questions</Label>
-              <Button type="button" variant="outline" size="sm" onClick={() => appendFaq({ question: "", answer: "" })}>
-                <Plus className="mr-2 h-4 w-4" /> Add Question
+              <Label className="text-sm">FAQ Questions</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => appendFaq({ question: "", answer: "" })}
+                className="h-6 px-2 text-xs"
+              >
+                <Plus className="mr-1 h-3 w-3" /> Add Question
               </Button>
             </div>
             {faqFields.map((field, index) => (
-              <div key={field.id} className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 border rounded-md relative">
-                <div className="space-y-2">
-                  <Label htmlFor={`faq_questions.${index}.question`}>Question</Label>
-                  <Input id={`faq_questions.${index}.question`} {...register(`faq_questions.${index}.question`)} />
+              <div key={field.id} className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2 border rounded-md relative">
+                <div className="space-y-1">
+                  <Label htmlFor={`faq_questions.${index}.question`} className="text-xs">Question</Label>
+                  <Input
+                    id={`faq_questions.${index}.question`}
+                    {...register(`faq_questions.${index}.question`)}
+                    className="h-8 text-sm"
+                  />
                   {errors.faq_questions?.[index]?.question && (
-                    <p className="text-sm text-red-500">{errors.faq_questions[index]?.question?.message}</p>
+                    <p className="text-xs text-red-500">{errors.faq_questions[index]?.question?.message}</p>
                   )}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`faq_questions.${index}.answer`}>Answer</Label>
+                <div className="space-y-1">
+                  <Label htmlFor={`faq_questions.${index}.answer`} className="text-xs">Answer</Label>
                   <div className="relative">
-                    <Textarea id={`faq_questions.${index}.answer`} {...register(`faq_questions.${index}.answer`)} />
+                    <Textarea
+                      id={`faq_questions.${index}.answer`}
+                      {...register(`faq_questions.${index}.answer`)}
+                      rows={2}
+                      className="text-sm pr-8"
+                    />
                     {errors.faq_questions?.[index]?.answer && (
-                      <p className="text-sm text-red-500">{errors.faq_questions[index]?.answer?.message}</p>
+                      <p className="text-xs text-red-500">{errors.faq_questions[index]?.answer?.message}</p>
                     )}
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute top-1 right-1 h-8 w-8 text-red-500"
+                      className="absolute top-0 right-0 h-6 w-6 text-red-500"
                       onClick={() => removeFaq(index)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>
@@ -967,19 +1018,20 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
           </div>
 
           {/* Banner Image Upload Section */}
-          <div className="space-y-2">
-            <Label htmlFor="bannerImage">Banner Image (Mandatory)</Label>
-            <div className="flex items-center gap-4">
-              <Input 
-                id="bannerImage" 
-                type="file" 
-                onChange={handleBannerImageSelection} 
+          <div className="space-y-1">
+            <Label htmlFor="bannerImage" className="text-sm">Banner Image (Mandatory)</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="bannerImage"
+                type="file"
+                onChange={handleBannerImageSelection}
                 accept="image/*"
+                className="h-8 text-sm"
               />
-              <span className="text-sm text-gray-500">Image will be uploaded when you save the campaign</span>
+              <span className="text-xs text-gray-500">Upload on save</span>
             </div>
             {bannerImage && (
-              <div className="relative w-40 h-24 mt-2">
+              <div className="relative w-32 h-20 mt-1">
                 <Image
                   src={bannerImage.url}
                   alt="Banner Preview"
@@ -991,37 +1043,38 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                   type="button"
                   variant="destructive"
                   size="icon"
-                  className="absolute -top-2 -right-2 h-5 w-5 rounded-full"
+                  className="absolute -top-1 -right-1 h-4 w-4 rounded-full"
                   onClick={removeBannerImage}
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-2 w-2" />
                 </Button>
                 {!bannerImage.isExisting && (
-                  <div className="absolute bottom-1 left-1 px-1 py-0.5 bg-blue-500 text-white text-xs rounded">
+                  <div className="absolute bottom-0 left-0 px-1 py-0.5 bg-blue-500 text-white text-xs rounded">
                     New
                   </div>
                 )}
               </div>
             )}
-            {errors.image && <p className="text-sm text-red-500">{errors.image.message}</p>}
+            {errors.image && <p className="text-xs text-red-500">{errors.image.message}</p>}
           </div>
 
           {/* Multiple Images Upload Section */}
-          <div className="space-y-2">
-            <Label htmlFor="additionalImages">Additional Images</Label>
-            <div className="flex items-center gap-4">
+          <div className="space-y-1">
+            <Label htmlFor="additionalImages" className="text-sm">Additional Images</Label>
+            <div className="flex items-center gap-2">
               <Input
                 id="additionalImages"
                 type="file"
                 multiple
                 onChange={handleMultipleImagesSelection}
                 accept="image/*"
+                className="h-8 text-sm"
               />
-              <span className="text-sm text-gray-500">Images will be uploaded when you save the campaign</span>
+              <span className="text-xs text-gray-500">Upload on save</span>
             </div>
-            <div className="flex flex-wrap gap-2 mt-2">
+            <div className="flex flex-wrap gap-1 mt-1">
               {additionalImages.map((image, index) => (
-                <div key={index} className="relative w-24 h-16">
+                <div key={index} className="relative w-20 h-14">
                   <Image
                     src={image.url}
                     alt={`Additional ${index}`}
@@ -1033,170 +1086,150 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                     type="button"
                     variant="destructive"
                     size="icon"
-                    className="absolute -top-2 -right-2 h-5 w-5 rounded-full"
+                    className="absolute -top-1 -right-1 h-4 w-4 rounded-full"
                     onClick={() => removeAdditionalImage(index)}
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-2 w-2" />
                   </Button>
                   {!image.isExisting && (
-                    <div className="absolute bottom-1 left-1 px-1 py-0.5 bg-blue-500 text-white text-xs rounded">
+                    <div className="absolute bottom-0 left-0 px-1 py-0.5 bg-blue-500 text-white text-xs rounded">
                       New
                     </div>
                   )}
                 </div>
               ))}
             </div>
-            {errors.images_array && <p className="text-sm text-red-500">{errors.images_array.message as string}</p>}
+            {errors.images_array && <p className="text-xs text-red-500">{errors.images_array.message as string}</p>}
           </div>
 
-          {/* Campaign Products Section */}
-          <div className="space-y-4">
+          {/* Campaign Products Section - Table Format */}
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Campaign Products</Label>
+              <Label className="text-sm">Campaign Products</Label>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => appendProduct({ 
-                  name: "", 
-                  description: "", 
-                  price: 0, 
+                onClick={() => appendProduct({
+                  indipendent_product_id: 0,
+                  description: "",
+                  price: 0,
                   stock: 0,
-                  min_qty: 1,
-                  max_qty: 100,
-                  increment_count: 1
+                  sequence: productFields.length + 1
                 })}
+                className="h-6 px-2 text-xs"
               >
-                <Plus className="mr-2 h-4 w-4" /> Add Product
+                <Plus className="mr-1 h-3 w-3" /> Add Product
               </Button>
             </div>
-            {productFields.map((field, index) => (
-              <div key={field.id} className="p-4 border rounded-md space-y-4">
-                <div className="flex justify-between items-center">
-                  <h4 className="font-medium">Product {index + 1}</h4>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-red-500"
-                    onClick={() => removeProduct(index)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor={`assignedProducts.${index}.name`}>Product Name</Label>
-                    <Input 
-                      id={`assignedProducts.${index}.name`} 
-                      {...register(`assignedProducts.${index}.name`)} 
-                      placeholder="Product name"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor={`assignedProducts.${index}.price`}>Price (₹)</Label>
-                    <Input 
-                      id={`assignedProducts.${index}.price`} 
-                      type="number" 
-                      {...register(`assignedProducts.${index}.price`, { valueAsNumber: true })} 
-                      placeholder="0"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor={`assignedProducts.${index}.stock`}>Stock Quantity</Label>
-                    <Input 
-                      id={`assignedProducts.${index}.stock`} 
-                      type="number" 
-                      {...register(`assignedProducts.${index}.stock`, { valueAsNumber: true })} 
-                      placeholder="0"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor={`assignedProducts.${index}.unit_id`}>Unit</Label>
-                    <Controller
-                      control={control}
-                      name={`assignedProducts.${index}.unit_id`}
-                      render={({ field }) => (
-                        <Select 
-                          value={field.value?.toString()} 
-                          onValueChange={(value) => field.onChange(parseInt(value))}
-                          disabled={isLoadingUnits}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select unit" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {productUnits.map((unit) => (
-                              <SelectItem key={unit.id} value={unit.id.toString()}>
-                                {unit.name} {unit.abbreviation && `(${unit.abbreviation})`}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor={`assignedProducts.${index}.description`}>Description</Label>
-                  <Textarea 
-                    id={`assignedProducts.${index}.description`} 
-                    {...register(`assignedProducts.${index}.description`)} 
-                    placeholder="Product description"
-                    rows={2}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor={`assignedProducts.${index}.min_qty`}>Min Quantity</Label>
-                    <Input 
-                      id={`assignedProducts.${index}.min_qty`} 
-                      type="number" 
-                      {...register(`assignedProducts.${index}.min_qty`, { valueAsNumber: true })} 
-                      placeholder="1"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor={`assignedProducts.${index}.max_qty`}>Max Quantity</Label>
-                    <Input 
-                      id={`assignedProducts.${index}.max_qty`} 
-                      type="number" 
-                      {...register(`assignedProducts.${index}.max_qty`, { valueAsNumber: true })} 
-                      placeholder="100"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor={`assignedProducts.${index}.increment_count`}>Increment Count</Label>
-                    <Input 
-                      id={`assignedProducts.${index}.increment_count`} 
-                      type="number" 
-                      {...register(`assignedProducts.${index}.increment_count`, { valueAsNumber: true })} 
-                      placeholder="1"
-                    />
-                  </div>
+            {productFields.length > 0 && (
+              <div className="border rounded-md overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-2 py-1 text-left font-medium">Product</th>
+                        <th className="px-2 py-1 text-left font-medium">Description</th>
+                        <th className="px-2 py-1 text-left font-medium">Price (₹)</th>
+                        <th className="px-2 py-1 text-left font-medium">Stock</th>
+                        <th className="px-2 py-1 text-left font-medium">Sequence</th>
+                        <th className="px-2 py-1 text-center font-medium">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {productFields.map((field, index) => (
+                        <tr key={field.id} className="border-t">
+                          <td className="px-2 py-1">
+                            <Controller
+                              control={control}
+                              name={`assignedProducts.${index}.indipendent_product_id`}
+                              render={({ field }) => (
+                                <Select
+                                  value={field.value > 0 ? field.value.toString() : ""}
+                                  onValueChange={(value) => field.onChange(parseInt(value))}
+                                  disabled={isLoadingProducts}
+                                >
+                                  <SelectTrigger className="h-7 text-xs">
+                                    <SelectValue placeholder={isLoadingProducts ? "Loading..." : "Select product"} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {independentProducts.map((product) => (
+                                      <SelectItem key={product.id} value={product.id.toString()}>
+                                        {product.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                            {errors.assignedProducts?.[index]?.indipendent_product_id && (
+                              <p className="text-xs text-red-500 mt-1">
+                                {errors.assignedProducts[index]?.indipendent_product_id?.message}
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-2 py-1">
+                            <Textarea
+                              {...register(`assignedProducts.${index}.description`)}
+                              placeholder="Product description"
+                              rows={1}
+                              className="h-7 text-xs resize-none"
+                            />
+                          </td>
+                          <td className="px-2 py-1">
+                            <Input
+                              type="number"
+                              {...register(`assignedProducts.${index}.price`, { valueAsNumber: true })}
+                              placeholder="0"
+                              className="h-7 text-xs w-20"
+                            />
+                          </td>
+                          <td className="px-2 py-1">
+                            <Input
+                              type="number"
+                              {...register(`assignedProducts.${index}.stock`, { valueAsNumber: true })}
+                              placeholder="0"
+                              className="h-7 text-xs w-20"
+                            />
+                          </td>
+                          <td className="px-2 py-1">
+                            <Input
+                              type="number"
+                              {...register(`assignedProducts.${index}.sequence`, { valueAsNumber: true })}
+                              placeholder="1"
+                              className="h-7 text-xs w-16"
+                            />
+                          </td>
+                          <td className="px-2 py-1 text-center">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-red-500"
+                              onClick={() => removeProduct(index)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
 
-        <div className="flex justify-end gap-4 mt-6">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting} className="h-8 px-3 text-sm">
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting} className="h-8 px-3 text-sm">
             {isSubmitting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {campaign ? "Updating campaign?..." : "Creating campaign?..."}
+                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                {campaign ? "Updating..." : "Creating..."}
               </>
             ) : (
               campaign ? "Update Campaign" : "Create Campaign"

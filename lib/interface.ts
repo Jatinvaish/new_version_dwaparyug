@@ -328,3 +328,37 @@ export interface CampaignFormData {
   faq_questions: FAQ[];
   videoLinks: { url: string }[];
 }
+
+
+export interface ProductUnit {
+  id: number;
+  name: string;
+  abbreviation?: string;
+}
+
+export interface IndependentProduct {
+  id: number;
+  name: string;
+  description?: string;
+  price: number;
+  unit_id?: number;
+  unit?: ProductUnit;
+  image?: string;
+  min_qty: number;
+  max_qty?: number;
+  stock: number;
+  increment_count: number;
+  is_flexible_increment_count: boolean;
+  allows_personalization: boolean;
+  status: "Active" | "Inactive";
+  created_at: string;
+  updated_at: string;
+  created_by?: number;
+  updated_by?: number;
+}
+ 
+
+export interface CampaignCategory {
+  id: number
+  name: string
+}

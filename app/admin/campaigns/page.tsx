@@ -1,28 +1,25 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
-import Link from "next/link"
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Filter, X } from "lucide-react"
-import { format } from "date-fns"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Card, CardContent } from "@/components/ui/card"
+import { Plus, Edit, Trash2 } from "lucide-react"
+import { PaginationInfo, Column, FilterOption, DataTable } from "@/components/common/data-table"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Campaign, CampaignCategory } from "@/lib/interface"
-
- 
-
-interface PaginationInfo {
-  page: number
-  limit: number
-  total: number
-  totalPages: number
+// Helper function to format date
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  })
 }
 
- 
+// Types
+
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
@@ -30,44 +27,53 @@ export default function CampaignsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
-  // Filter and search states
+  // API-driven filter and search states
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterCategory, setFilterCategory] = useState("")
-  const [filterStatus, setFilterStatus] = useState("")
+  const [filters, setFilters] = useState<Record<string, string>>({})
   
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  // API-driven pagination state - updated to match new API response
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
-    limit: 10,
+    pageSize: 10,
     total: 0,
-    totalPages: 0
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
   })
   
-  // Sort states
+  // API-driven sort states
   const [sortField, setSortField] = useState<string>("")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
+const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
 
-  // Debounced search
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
+ 
 
-  // Mobile filter sheet state
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
+const closeDeleteDialog = () => {
+  setDeleteDialogOpen(false);
+  setCampaignToDelete(null);
+};
+  // Use refs to track the current values to avoid infinite loops
+  const currentParams = useRef({
+    page: 1,
+    pageSize: 10,
+    searchTerm: "",
+    filters: {},
+    sortField: "",
+    sortDirection: "desc" as "asc" | "desc"
+  })
 
-  // Debounce search term
+  // Update ref when params change
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm)
-    }, 500)
-
-    return () => clearTimeout(timer)
-  }, [searchTerm])
-
-  // Reset to first page when filters change
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [debouncedSearchTerm, filterCategory, filterStatus, pageSize])
+    currentParams.current = {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      searchTerm,
+      filters,
+      sortField,
+      sortDirection
+    }
+  })
 
   // Fetch categories on mount
   useEffect(() => {
@@ -75,11 +81,12 @@ export default function CampaignsPage() {
   }, [])
 
   // Fetch campaigns when dependencies change
+    // Fetch campaigns when dependencies change
   useEffect(() => {
     fetchCampaigns()
-  }, [currentPage, pageSize, debouncedSearchTerm, filterCategory, filterStatus, sortField, sortDirection])
-
-  const fetchCategories = async () => {
+  }, [ pagination.page, pagination.pageSize, searchTerm, filters,sortField, sortDirection])
+ 
+  const fetchCategories = useCallback(async () => {
     try {
       const response = await fetch('/api/campaign-categories')
       if (!response.ok) throw new Error('Failed to fetch categories')
@@ -88,24 +95,32 @@ export default function CampaignsPage() {
     } catch (error) {
       console.error('Error fetching categories:', error)
     }
-  }
+  }, [])
 
-  const fetchCampaigns = async () => {
+  const fetchCampaigns = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
 
       const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: pageSize.toString(),
+        page: pagination.page.toString(),
+        pageSize: pagination.pageSize.toString(),
       })
 
-      if (filterStatus) params.append('status', filterStatus)
-      if (filterCategory) params.append('category_id', filterCategory)
-      if (debouncedSearchTerm) params.append('search', debouncedSearchTerm)
+      // Add search
+      if (searchTerm) params.append('search', searchTerm)
+      
+      // Add filters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== 'all') {
+          params.append(key, value)
+        }
+      })
+      
+      // Add sorting
       if (sortField) {
-        params.append('sort', sortField)
-        params.append('order', sortDirection)
+        params.append('sortBy', sortField)
+        params.append('sortOrder', sortDirection)
       }
 
       const response = await fetch(`/api/campaigns?${params}`)
@@ -113,64 +128,23 @@ export default function CampaignsPage() {
       
       const data = await response.json()
       setCampaigns(data.campaigns || [])
-      setPagination(data.pagination)
+      setPagination(data.pagination || {
+        page: 1,
+        pageSize: 10,
+        total: 0,
+        totalPages: 0,
+        hasNext: false,
+        hasPrev: false
+      })
     } catch (error) {
       console.error('Error fetching campaigns:', error)
       setError('Failed to load campaigns')
     } finally {
       setLoading(false)
     }
-  }
+  }, [pagination.page, pagination.pageSize, searchTerm, filters, sortField, sortDirection])
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm("Are you sure you want to delete this campaign?")) {
-      return
-    }
-
-    try {
-      const response = await fetch(`/api/campaigns/${id}`, {
-        method: 'DELETE',
-      })
-
-      if (!response.ok) throw new Error('Failed to delete campaign')
-      
-      // Refresh campaigns list
-      fetchCampaigns()
-    } catch (error) {
-      console.error('Error deleting campaign:', error)
-      alert('Failed to delete campaign')
-    }
-  }
-
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
-    } else {
-      setSortField(field)
-      setSortDirection("asc")
-    }
-  }
-
-  const getSortIcon = (field: string) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="h-3 w-3 ml-1" />
-    }
-    return sortDirection === "asc" ? 
-      <ArrowUp className="h-3 w-3 ml-1" /> : 
-      <ArrowDown className="h-3 w-3 ml-1" />
-  }
-
-  const resetFilters = () => {
-    setSearchTerm("")
-    setFilterCategory("")
-    setFilterStatus("")
-    setSortField("")
-    setSortDirection("desc")
-    setCurrentPage(1)
-    setIsFilterOpen(false)
-  }
-
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusBadgeVariant = useCallback((status: string): "default" | "secondary" | "outline" | "destructive" => {
     switch (status.toLowerCase()) {
       case "active":
         return "default"
@@ -183,19 +157,134 @@ export default function CampaignsPage() {
       default:
         return "outline"
     }
-  }
+  }, [])
 
-  const getActiveFiltersCount = () => {
-    let count = 0
-    if (filterCategory) count++
-    if (filterStatus) count++
-    if (searchTerm) count++
-    return count
-  }
+  // API-driven handlers
+  const handleSearchChange = useCallback((search: string) => {
+    setSearchTerm(search)
+    setPagination(prev => ({ ...prev, page: 1 }))
+  }, [])
 
-  // Mobile Card Component
-  const CampaignCard = ({ campaign }: { campaign: Campaign }) => (
-    <Card className="mb-4">
+  const handleFiltersChange = useCallback((newFilters: Record<string, string>) => {
+    setFilters(newFilters)
+    setPagination(prev => ({ ...prev, page: 1 }))
+  }, [])
+
+  const handleSort = useCallback((column: string, order: 'asc' | 'desc') => {
+    setSortField(column)
+    setSortDirection(order)
+  }, [])
+
+  const handlePageChange = useCallback((page: number) => {
+    setPagination(prev => ({ ...prev, page }))
+  }, [])
+
+  const handlePageSizeChange = useCallback((pageSize: number) => {
+    setPagination(prev => ({ ...prev, pageSize: pageSize, page: 1 }))
+  }, [])
+
+  const handleDelete = useCallback((campaign: Campaign) => {
+  setCampaignToDelete(campaign);
+  setDeleteDialogOpen(true);
+}, []);
+  const handleDeleteConfirmed = useCallback(async () => {
+  if (!campaignToDelete) return;
+
+  try {
+    const response = await fetch(`/api/campaigns/${campaignToDelete.id}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) throw new Error('Failed to delete campaign');
+
+    fetchCampaigns(); // refresh the list
+    closeDeleteDialog(); // close dialog and reset
+  } catch (error) {
+    console.error('Error deleting campaign:', error);
+    alert('Failed to delete campaign');
+  }
+}, [campaignToDelete, fetchCampaigns]);
+
+  const handleEdit = useCallback((campaign: Campaign) => {
+    window.location.href = `/admin/campaigns/update/${campaign.id}`
+  }, [])
+
+  const handleAdd = useCallback(() => {
+    window.location.href = '/admin/campaigns/create'
+  }, [])
+
+  // Define table columns with useMemo to prevent recreation
+  const columns: Column<Campaign>[] = useMemo(() => [
+    {
+      key: 'title',
+      header: 'Title',
+      sortable: true,
+      searchable: true,
+      width: '250px',
+      render: (value, row) => (
+        <div className="max-w-[220px]">
+          <div className="font-semibold truncate">{row.title}</div>
+          <div className="text-sm text-muted-foreground truncate">
+            {row.overview}
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'category_name',
+      header: 'Category',
+      sortable: true,
+      filterable: true,
+      width: '120px',
+      filterOptions: categories.map(cat => ({
+        label: cat.name,
+        value: cat.id.toString()
+      })) as FilterOption[]
+    },
+    {
+      key: 'donation_goal',
+      header: 'Goal',
+      sortable: true,
+      width: '100px',
+      render: (value) => `₹${value?.toLocaleString() || '0'}`
+    },
+    {
+      key: 'total_raised',
+      header: 'Raised',
+      sortable: true,
+      width: '100px',
+      render: (value) => `₹${value?.toLocaleString() || '0'}`
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      sortable: true,
+      filterable: true,
+      width: '80px',
+      filterOptions: [
+        { label: 'Active', value: 'active' },
+        { label: 'Inactive', value: 'inactive' },
+        { label: 'Completed', value: 'completed' },
+        { label: 'Draft', value: 'draft' }
+      ],
+      render: (value) => (
+        <Badge variant={getStatusBadgeVariant(value)}>
+          {value}
+        </Badge>
+      )
+    },
+    {
+      key: 'end_date',
+      header: 'End Date',
+      sortable: true,
+      width: '120px',
+      render: (value) => value ? formatDate(value) : 'N/A'
+    }
+  ], [categories])
+
+  // Mobile card component with useCallback
+  const renderMobileCard = useCallback((campaign: Campaign, index: number) => (
+    <Card key={campaign.id} className="mb-4">
       <CardContent className="p-4">
         <div className="flex justify-between items-start mb-3">
           <div className="flex-1 min-w-0">
@@ -217,7 +306,7 @@ export default function CampaignsPage() {
           <div>
             <span className="text-muted-foreground">End Date:</span>
             <p className="font-medium">
-              {campaign.end_date ? format(new Date(campaign.end_date), "MMM d, yyyy") : 'N/A'}
+              {campaign.end_date ? formatDate(campaign.end_date) : 'N/A'}
             </p>
           </div>
           <div>
@@ -231,17 +320,20 @@ export default function CampaignsPage() {
         </div>
 
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" asChild className="flex-1">
-            <Link href={`/admin/campaigns/update/${campaign.id}`}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </Link>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handleEdit(campaign)}
+            className="flex-1"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
           </Button>
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => handleDelete(campaign.id)}
-            className="flex-1 text-red-600 hover:text-red-700"
+            onClick={() => handleDelete(campaign)}
+            className="flex-1 text-red-600 hover:text-red-700  "
           >
             <Trash2 className="h-4 w-4 mr-2" />
             Delete
@@ -249,454 +341,90 @@ export default function CampaignsPage() {
         </div>
       </CardContent>
     </Card>
-  )
+  ), [handleEdit, handleDelete])
 
-  // Filter Controls Component
-  const FilterControls = ({ isMobile = false }: { isMobile?: boolean }) => (
-    <div className={`space-y-4 ${isMobile ? 'p-6' : ''}`}>
-      <div className="space-y-3">
-        <div>
-          <label className="text-sm font-medium mb-2 block">Search</label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search campaigns..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-        </div>
-        
-        <div>
-          <label className="text-sm font-medium mb-2 block">Category</label>
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id.toString()}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div>
-          <label className="text-sm font-medium mb-2 block">Status</label>
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All Statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <label className="text-sm font-medium mb-2 block">Items per page</label>
-          <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(parseInt(value))}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5 per page</SelectItem>
-              <SelectItem value="10">10 per page</SelectItem>
-              <SelectItem value="25">25 per page</SelectItem>
-              <SelectItem value="50">50 per page</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="flex gap-2 pt-4">
-        <Button onClick={resetFilters} variant="outline" className="flex-1">
-          <X className="h-4 w-4 mr-2" />
-          Reset
-        </Button>
-        {isMobile && (
-          <Button onClick={() => setIsFilterOpen(false)} className="flex-1">
-            Apply
-          </Button>
-        )}
-      </div>
-    </div>
-  )
-
-  if (error) {
-    return (
-      <div className="min-h-screen p-4 sm:p-6">
-        <div className=" mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold">Campaigns</h1>
-          </div>
-          <Card>
-            <CardContent className="p-6 text-center">
-              <p className="text-red-500 mb-4">{error}</p>
-              <Button onClick={fetchCampaigns}>
-                Try Again
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
-  }
-
+ 
   return (
     <div className="min-h-screen ">
-      <div className=" mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h1 className="text-2xl sm:text-3xl font-bold">Campaigns</h1>
-          <Button asChild size="sm" className="sm:size-default">
-            <Link href="/admin/campaigns/create">
-              <Plus className="mr-2 h-4 w-4" /> Create Campaign
-            </Link>
-          </Button>
-        </div>
+      <div className="mx-auto space-y-6">
+        <DataTable<Campaign>
+          // Data
+          data={campaigns}
+          columns={columns}
+          loading={loading}
+          error={error}
+          pagination={pagination}
 
-        {/* Desktop Filters */}
-        <Card className="hidden lg:block">
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div className="relative lg:col-span-2">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search campaigns..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              
-              <Select value={filterCategory} onValueChange={setFilterCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                </SelectContent>
-              </Select>
+          // Header
+          title="Campaigns"
+          description="Manage your fundraising campaigns"
 
-              <div className="flex gap-2">
-                <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(parseInt(value))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="25">25</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Button variant="outline" onClick={resetFilters} size="sm">
-                  Reset
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          // Add functionality
+          onAdd={handleAdd}
+          addButtonLabel="Create Campaign"
+          showAddButton={true}
 
-        {/* Mobile Filter Button */}
-        <div className="flex lg:hidden items-center justify-between">
-          <div className="relative flex-1 mr-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search campaigns..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
+          // Search (API-driven)
+          showSearch={true}
+          searchPlaceholder="Search campaigns..."
+          searchTerm={searchTerm}
+          onSearchChange={handleSearchChange}
+
+          // Filters (API-driven)
+          showFilters={true}
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+
+          // Sorting (API-driven)
+          sortBy={sortField}
+          sortOrder={sortDirection}
+          onSort={handleSort}
+
+          // Pagination (API-driven)
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+
+          // Actions
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          emptyMessage="No campaigns found"
+
+          // Configuration
+          striped={true}
+          stickyHeader={true}
           
-          <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="relative">
-                <Filter className="h-4 w-4 mr-2" />
-                Filters
-                {getActiveFiltersCount() > 0 && (
-                  <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 text-xs">
-                    {getActiveFiltersCount()}
-                  </Badge>
-                )}
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-full sm:w-80">
-              <SheetHeader>
-                <SheetTitle>Filters</SheetTitle>
-              </SheetHeader>
-              <FilterControls isMobile />
-            </SheetContent>
-          </Sheet>
-        </div>
+          // Mobile
+          showMobileCards={true}
+          mobileCardComponent={renderMobileCard}
 
-        {/* Results Info */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <p className="text-sm text-muted-foreground">
-            Showing {campaigns.length} of {pagination.total} campaigns
-          </p>
-          {getActiveFiltersCount() > 0 && (
-            <Button variant="ghost" size="sm" onClick={resetFilters} className="self-start sm:self-auto">
-              <X className="h-4 w-4 mr-2" />
-              Clear filters ({getActiveFiltersCount()})
-            </Button>
-          )}
-        </div>
-
-        {/* Content */}
-        {loading ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <div className="animate-pulse space-y-4">
-                <div className="h-4 bg-gray-200 rounded w-1/4 mx-auto"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
-              </div>
-              <p className="mt-4 text-muted-foreground">Loading campaigns...</p>
-            </CardContent>
-          </Card>
-        ) : campaigns.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <div className="max-w-md mx-auto">
-                <h3 className="text-lg font-semibold mb-2">No campaigns found</h3>
-                <p className="text-muted-foreground mb-4">
-                  {getActiveFiltersCount() > 0 
-                    ? "Try adjusting your filters or search terms."
-                    : "Get started by creating your first campaign."
-                  }
-                </p>
-                {getActiveFiltersCount() > 0 ? (
-                  <Button onClick={resetFilters} variant="outline">
-                    Clear filters
-                  </Button>
-                ) : (
-                  <Button asChild>
-                    <Link href="/admin/campaigns/create">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Create Campaign
-                    </Link>
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            {/* Mobile Card View */}
-            <div className="block lg:hidden space-y-4">
-              {campaigns.map((campaign) => (
-                <CampaignCard key={campaign.id} campaign={campaign} />
-              ))}
-            </div>
-
-            {/* Desktop Table View */}
-            <Card className="hidden lg:block">
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[250px]">
-                          <Button
-                            variant="ghost"
-                            onClick={() => handleSort('title')}
-                            className="h-auto p-0 font-semibold hover:bg-transparent text-left justify-start"
-                          >
-                            Title {getSortIcon('title')}
-                          </Button>
-                        </TableHead>
-                        <TableHead className="w-[120px]">Category</TableHead>
-                        <TableHead className="w-[100px]">
-                          <Button
-                            variant="ghost"
-                            onClick={() => handleSort('goal')}
-                            className="h-auto p-0 font-semibold hover:bg-transparent"
-                          >
-                            Goal {getSortIcon('goal')}
-                          </Button>
-                        </TableHead>
-                        <TableHead className="w-[100px]">
-                          <Button
-                            variant="ghost"
-                            onClick={() => handleSort('raised')}
-                            className="h-auto p-0 font-semibold hover:bg-transparent"
-                          >
-                            Raised {getSortIcon('raised')}
-                          </Button>
-                        </TableHead>
-                        <TableHead className="w-[80px]">
-                          <Button
-                            variant="ghost"
-                            onClick={() => handleSort('status')}
-                            className="h-auto p-0 font-semibold hover:bg-transparent"
-                          >
-                            Status {getSortIcon('status')}
-                          </Button>
-                        </TableHead>
-                        <TableHead className="w-[120px]">
-                          <Button
-                            variant="ghost"
-                            onClick={() => handleSort('end_date')}
-                            className="h-auto p-0 font-semibold hover:bg-transparent"
-                          >
-                            End Date {getSortIcon('end_date')}
-                          </Button>
-                        </TableHead>
-                        <TableHead className="w-[100px] text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {campaigns.map((campaign) => (
-                        <TableRow key={campaign.id}>
-                          <TableCell className="font-medium">
-                            <div className="max-w-[220px]">
-                              <div className="font-semibold truncate">{campaign.title}</div>
-                              <div className="text-sm text-muted-foreground truncate">
-                                {campaign.overview}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{campaign.category_name}</TableCell>
-                          <TableCell>₹{campaign.donation_goal.toLocaleString()}</TableCell>
-                          <TableCell>₹{campaign.total_raised?.toLocaleString() || '0'}</TableCell>
-                          <TableCell>
-                            <Badge variant={getStatusBadgeVariant(campaign.status)}>
-                              {campaign.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {campaign.end_date ? format(new Date(campaign.end_date), "MMM d, yyyy") : 'N/A'}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button variant="ghost" size="icon" asChild>
-                                <Link href={`/admin/campaigns/update/${campaign.id}`}>
-                                  <Edit className="h-4 w-4" />
-                                  <span className="sr-only">Edit</span>
-                                </Link>
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => handleDelete(campaign.id)}
-                              >
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                                <span className="sr-only">Delete</span>
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </>
-        )}
-
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-sm text-muted-foreground order-2 sm:order-1">
-                  Page {pagination.page} of {pagination.totalPages}
-                </div>
-                
-                <div className="flex items-center gap-2 order-1 sm:order-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage <= 1}
-                    className="px-3"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    <span className="hidden sm:inline ml-1">Previous</span>
-                  </Button>
-
-                  {/* Page Numbers - Hidden on mobile */}
-                  <div className="hidden sm:flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                      let pageNumber;
-                      if (pagination.totalPages <= 5) {
-                        pageNumber = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNumber = i + 1;
-                      } else if (currentPage >= pagination.totalPages - 2) {
-                        pageNumber = pagination.totalPages - 4 + i;
-                      } else {
-                        pageNumber = currentPage - 2 + i;
-                      }
-
-                      return (
-                        <Button
-                          key={pageNumber}
-                          variant={pageNumber === currentPage ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setCurrentPage(pageNumber)}
-                          className="w-9 h-9 p-0"
-                        >
-                          {pageNumber}
-                        </Button>
-                      );
-                    })}
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.min(pagination.totalPages, currentPage + 1))}
-                    disabled={currentPage >= pagination.totalPages}
-                    className="px-3"
-                  >
-                    <span className="hidden sm:inline mr-1">Next</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+          // Column visibility
+          showColumnVisibility={true}
+        />
       </div>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the campaign &quot;{campaignToDelete?.title}&quot;.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={closeDeleteDialog}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirmed}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Delete Campaign
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   )
 }
-
-
-
-
-
 // ========================================
 // File: app/admin/campaigns/page.tsx
 

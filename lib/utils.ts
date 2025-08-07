@@ -883,7 +883,6 @@ export const initialCampaigns: Campaign[] = [
   {
     id: 3,
     title: "Diwali Joy Distribution 2024",
-    category: "Festival Celebration",
     festivalType: "Diwali",
     overview: "Spreading happiness during Diwali by distributing festive kits.",
     details:
@@ -906,7 +905,6 @@ export const initialCampaigns: Campaign[] = [
   {
     id: 4,
     title: "Rural Healthcare Access",
-    category: "Healthcare",
     overview: "Establishing mobile clinics for remote villages.",
     details:
       "Our mobile medical units provide essential healthcare services, free check-ups, and medicines to villagers who have limited access to medical facilities. We focus on preventive care and health education.",
@@ -926,7 +924,7 @@ export const initialCampaigns: Campaign[] = [
     location: '',
     organizer: '',
     verified: true,
-    urgency: '',
+    urgency: 'high',
     total_progress_percentage: 10,
   },
 ];

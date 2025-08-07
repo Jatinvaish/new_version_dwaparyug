@@ -63,10 +63,11 @@ export async function GET(request: NextRequest) {
       const itemsQuery = `
         SELECT 
           di.*,
-          cp.name as product_name,
+          inp.name as product_name,
           cp.description as product_description
         FROM donation_items di
         LEFT JOIN campaign_products cp ON di.campaign_product_id = cp.id
+        LEFT JOIN indipendent_products inp ON cp.indipendent_product_id = inp.id
         WHERE di.donation_id = ANY($1)
         ORDER BY di.donation_id, cp.name
       `;
