@@ -33,145 +33,143 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import { ContactSection } from "@/components/shared/contact-section"
-import { Footer } from "@/components/shared/footer"
 import { DonationDialog } from "@/components/shared/donation-dialog"
-import type { Campaign } from "@/lib/interface"
 
-// Mock campaign data based on CampaignForm structure - this will come from API later
-const getCampaignData = (id: string): Campaign => ({
-  id: parseInt(id) || 1,
-  title: "Emergency Relief for Flood-Affected Families in Gujarat",
-  category: "Disaster Relief",
-  festivalType: undefined,
-  overview: "Providing immediate relief to 500+ families affected by devastating floods in rural Gujarat villages",
-  details: "Comprehensive relief campaign including emergency food supplies, temporary shelter materials, medical aid packages, and long-term rehabilitation support for flood victims who have lost their homes and livelihoods",
-  goal: 1500000,
-  raised: 875000,
-  status: "Active",
-  bannerImage: "/api/placeholder/800/600",
-  additionalImages: [
-    "/api/placeholder/800/600",
-    "/api/placeholder/400/300", 
-    "/api/placeholder/400/300",
-    "/api/placeholder/400/300",
-    "/api/placeholder/400/300"
-  ],
-  assignedProducts: [
-    {
-      id: 1,
-      name: "Family Food Kit",
-      price: 2500,
-      image: "/api/placeholder/200/150",
-      stock: 100,
-      unit: "kit"
-    },
-    {
-      id: 2,
-      name: "Emergency Shelter Package",
-      price: 15000,
-      image: "/api/placeholder/200/150", 
-      stock: 25,
-      unit: "package"
-    },
-    {
-      id: 3,
-      name: "Medical Aid Kit",
-      price: 5000,
-      image: "/api/placeholder/200/150",
-      stock: 50,
-      unit: "kit"
-    },
-    {
-      id: 4,
-      name: "Clean Water Supply Unit",
-      price: 1000,
-      image: "/api/placeholder/200/150",
-      stock: 200,
-      unit: "unit"
-    },
-    {
-      id: 5,
-      name: "Children's Education Kit",
-      price: 3000,
-      image: "/api/placeholder/200/150",
-      stock: 75,
-      unit: "kit"
-    },
-    {
-      id: 6,
-      name: "Hygiene & Sanitation Package",
-      price: 1500,
-      image: "/api/placeholder/200/150",
-      stock: 150,
-      unit: "package"
+// Updated interface to match API response
+interface Campaign {
+  id: number
+  title: string
+  category_id: number
+  category_name: string
+  festival_type?: string
+  overview: string
+  details: string
+  about_campaign?: string
+  donation_goal: number
+  total_raised: number
+  total_progress_percentage: number
+  image: string
+  images_array?: string[]
+  status: string
+  priority: string
+  urgency?: string
+  location: string
+  organizer: string
+  verified: boolean
+  total_beneficiary: number
+  total_donors_till_now: number
+  start_date: string
+  end_date: string
+  created_by?: number
+  updated_by?: number
+  created_at: string
+  updated_at: string
+  created_by_name?: string
+  updated_by_name?: string
+  assignedProducts?: CampaignProduct[]
+  faq_questions?: FAQ[]
+  videoLinks?: string[]
+}
+
+interface CampaignProduct {
+  id: number
+  campaign_id: number
+  indipendent_product_id: number
+  description?: string
+  price: number
+  stock: number
+  sequence: number
+  name?: string
+  unit?: string
+  image?: string
+  min_qty?: number
+  max_qty?: number
+  increment_count?: number
+}
+
+interface FAQ {
+  question: string
+  answer: string
+}
+
+interface CartItem {
+  productId: number
+  campaignId: number
+  name: string
+  price: number
+  quantity: number
+  unit?: string
+  image?: string
+  maxQty?: number
+}
+
+// Cart management functions
+const getCartFromStorage = (): CartItem[] => {
+  if (typeof window === 'undefined') return []
+  try {
+    const cart = localStorage.getItem('donationCart')
+    return cart ? JSON.parse(cart) : []
+  } catch (error) {
+    console.error('Error reading cart from localStorage:', error)
+    return []
+  }
+}
+
+const saveCartToStorage = (cart: CartItem[]) => {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem('donationCart', JSON.stringify(cart))
+    // Dispatch custom event for cart updates
+    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }))
+  } catch (error) {
+    console.error('Error saving cart to localStorage:', error)
+  }
+}
+
+const addToCartStorage = (item: CartItem) => {
+  const cart = getCartFromStorage()
+  const existingIndex = cart.findIndex(
+    cartItem => cartItem.productId === item.productId && cartItem.campaignId === item.campaignId
+  )
+  
+  if (existingIndex > -1) {
+    const maxQty = item.maxQty || 999
+    if (cart[existingIndex].quantity < maxQty) {
+      cart[existingIndex].quantity += 1
     }
-  ],
-  endDate: new Date("2025-12-31"),
-  priority: "critical",
-  aboutCampaign: `# Emergency Flood Relief Campaign
+  } else {
+    cart.push({ ...item, quantity: 1 })
+  }
+  
+  saveCartToStorage(cart)
+  return cart
+}
 
-The recent devastating floods in Gujarat have left thousands of families without homes, food, or basic necessities. Our comprehensive relief campaign aims to provide immediate and long-term support to over 500 affected families across multiple villages.
-
-## **What We're Doing:**
-- **Immediate Relief**: Providing emergency food supplies, clean water, and temporary shelter materials
-- **Medical Support**: Setting up mobile medical clinics and distributing essential medical supplies
-- **Rehabilitation Support**: Helping families rebuild their lives, homes, and restore their livelihoods
-- **Educational Continuity**: Ensuring children can continue their education with temporary learning spaces
-- **Psychosocial Support**: Providing counseling and mental health support for trauma recovery
-
-## **How Your Donation Creates Impact:**
-- **₹1,000** provides clean drinking water for a family of 5 for one full month
-- **₹2,500** feeds a family with nutritious meals for two weeks
-- **₹5,000** covers complete medical treatment for flood-related health issues
-- **₹15,000** provides comprehensive temporary shelter materials including tarpaulin, ropes, and basic furniture
-- **₹25,000** helps a family completely rebuild their livelihood through small business support
-
-## **Our Transparent Approach:**
-We believe in complete transparency. Every donation is tracked, and we provide regular updates with photos, videos, and detailed reports showing exactly how your contribution is making a difference. Our team works directly with local communities to ensure maximum impact.
-
----
-
-*Every contribution, no matter the size, makes a real and measurable difference in these families' lives. Together, we can help them rebuild and recover from this disaster.*`,
-  faq_questions: [
-    {
-      question: "How will my donation be used exactly?",
-      answer: "100% of donations go directly to flood relief efforts. We maintain complete transparency with detailed breakdowns: 60% for immediate relief (food, water, shelter), 25% for medical aid and healthcare, 10% for rehabilitation and livelihood restoration, and 5% for administrative costs. You'll receive regular updates showing exactly how your donation is being utilized."
-    },
-    {
-      question: "Are donations tax-deductible?",
-      answer: "Yes, we are a registered 501(c)(3) non-profit organization under Section 80G. You will receive a tax-deductible receipt immediately after your donation, which can be used for tax benefits. All donations are eligible for tax deductions as per applicable laws."
-    },
-    {
-      question: "How do you ensure transparency and accountability?",
-      answer: "We provide weekly updates with photos, videos, and detailed expense reports. All major expenditures are documented and shared with donors. We also have third-party audits and encourage donor visits to relief sites. You can track your donation's impact through our online portal."
-    },
-    {
-      question: "Can I visit the relief sites to see the impact?",
-      answer: "Absolutely! We organize regular donor visits to relief sites and welcome you to see the impact of your donation firsthand. Please contact us at least 7 days in advance to coordinate a visit. We'll provide transportation and a guided tour of all relief activities."
-    },
-    {
-      question: "What happens if the campaign exceeds its goal?",
-      answer: "If we exceed our funding goal, additional funds will be used to help more affected families in the region, extend the duration of support, or be allocated to our emergency relief fund for future disasters. We will always inform donors about how excess funds are being utilized."
-    },
-    {
-      question: "How do you select which families receive aid?",
-      answer: "We work closely with local government officials, community leaders, and social workers to identify the most vulnerable families. Priority is given to families with children, elderly members, disabled individuals, and those who have completely lost their homes and livelihoods."
+const removeFromCartStorage = (productId: number, campaignId: number) => {
+  const cart = getCartFromStorage()
+  const existingIndex = cart.findIndex(
+    cartItem => cartItem.productId === productId && cartItem.campaignId === campaignId
+  )
+  
+  if (existingIndex > -1) {
+    if (cart[existingIndex].quantity > 1) {
+      cart[existingIndex].quantity -= 1
+    } else {
+      cart.splice(existingIndex, 1)
     }
-  ],
-  total_beneficiary: 500,
-  total_donors_till_now: 1234,
-  total_progress_percentage: 58.33,
-  videoLinks: [
-    "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-  ],
-  // Additional fields for public display
-  location: "Ahmedabad, Rajkot & Surrounding Villages, Gujarat, India",
-  organizer: "Gujarat Relief Foundation",
-  verified: true,
-  urgency: "Critical"
-})
+  }
+  
+  saveCartToStorage(cart)
+  return cart
+}
+
+const getCartItemQuantity = (productId: number, campaignId: number): number => {
+  const cart = getCartFromStorage()
+  const item = cart.find(
+    cartItem => cartItem.productId === productId && cartItem.campaignId === campaignId
+  )
+  return item ? item.quantity : 0
+}
 
 export default function CauseDetailsPage() {
   const params = useParams()
@@ -181,21 +179,49 @@ export default function CauseDetailsPage() {
   const [customAmount, setCustomAmount] = useState("")
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
 
-  // Simulate API call - replace with actual API call later
+  // Load cart on component mount
+  useEffect(() => {
+    setCartItems(getCartFromStorage())
+    
+    // Update selected products from cart
+    const cart = getCartFromStorage()
+    const productQuantities: { [key: number]: number } = {}
+    cart.forEach(item => {
+      if (item.campaignId === parseInt(params.id as string)) {
+        productQuantities[item.productId] = item.quantity
+      }
+    })
+    setSelectedProducts(productQuantities)
+  }, [params.id])
+
+  // Fetch campaign data from API
   useEffect(() => {
     const fetchCampaign = async () => {
       try {
         setLoading(true)
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000))
         
-        // TODO: Replace with actual API call
-        // const response = await fetch(`/api/campaigns/${params.id}`)
-        // const campaignData = await response.json()
+        const response = await fetch(`/api/campaigns/${params.id}`)
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
         
-        const campaignData = getCampaignData(params.id as string)
-        setCampaign(campaignData)
+        const campaignData = await response.json()
+        
+        // Process the data to match expected format
+        const processedCampaign: Campaign = {
+          ...campaignData,
+          goal: campaignData.donation_goal,
+          raised: campaignData.total_raised,
+          category: campaignData.category_name,
+          bannerImage: campaignData.image,
+          additionalImages: campaignData.images_array || [],
+          endDate: campaignData.end_date,
+          aboutCampaign: campaignData.about_campaign
+        }
+        
+        setCampaign(processedCampaign)
       } catch (error) {
         console.error('Error fetching campaign:', error)
       } finally {
@@ -205,6 +231,27 @@ export default function CauseDetailsPage() {
 
     if (params.id) {
       fetchCampaign()
+    }
+  }, [params.id])
+
+  // Listen for cart updates
+  useEffect(() => {
+    const handleCartUpdate = (event: CustomEvent) => {
+      setCartItems(event.detail)
+      
+      // Update selected products display
+      const productQuantities: { [key: number]: number } = {}
+      event.detail.forEach((item: CartItem) => {
+        if (item.campaignId === parseInt(params.id as string)) {
+          productQuantities[item.productId] = item.quantity
+        }
+      })
+      setSelectedProducts(productQuantities)
+    }
+
+    window.addEventListener('cartUpdated', handleCartUpdate as EventListener)
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate as EventListener)
     }
   }, [params.id])
 
@@ -233,51 +280,66 @@ export default function CauseDetailsPage() {
     )
   }
 
-  const addToCart = (productId: number) => {
-    setSelectedProducts((prev) => ({
-      ...prev,
-      [productId]: (prev[productId] || 0) + 1,
-    }))
+  const addToCart = (product: CampaignProduct) => {
+    const cartItem: CartItem = {
+      productId: product.id,
+      campaignId: campaign.id,
+      name: product.name || `Product ${product.id}`,
+      price: product.price,
+      quantity: 1,
+      unit: product.unit,
+      image: product.image,
+      maxQty: product.max_qty || product.stock
+    }
+    
+    addToCartStorage(cartItem)
   }
 
   const removeFromCart = (productId: number) => {
-    setSelectedProducts((prev) => ({
-      ...prev,
-      [productId]: Math.max(0, (prev[productId] || 0) - 1),
-    }))
+    removeFromCartStorage(productId, campaign.id)
   }
 
   const getTotalAmount = () => {
     let total = 0
-    Object.entries(selectedProducts).forEach(([productId, quantity]) => {
-      const product = campaign.assignedProducts?.find((p) => p.id === Number.parseInt(productId))
-      if (product) {
-        total += product.price * quantity
+    cartItems.forEach(item => {
+      if (item.campaignId === campaign.id) {
+        total += item.price * item.quantity
       }
     })
     if (customAmount) {
-      total += Number.parseInt(customAmount) || 0
+      total += parseInt(customAmount) || 0
     }
     return total
   }
 
   const getTotalItems = () => {
-    return Object.values(selectedProducts).reduce((sum, quantity) => sum + quantity, 0)
+    return cartItems
+      .filter(item => item.campaignId === campaign.id)
+      .reduce((sum, item) => sum + item.quantity, 0)
   }
 
   const handleDonationConfirm = (donationData: any) => {
     console.log("Donation confirmed:", donationData)
-    // TODO: Integrate with payment gateway
-    // router.push('/payment')
+    
+    // Add donation to cart if it's a product-based donation
+    if (donationData.productId) {
+      const product = campaign.assignedProducts?.find(p => p.id === donationData.productId)
+      if (product) {
+        addToCart(product)
+      }
+    }
+    
+    // For direct donations, you might want to handle differently
+    // This could redirect to payment or add a custom donation item
   }
 
   const nextImage = () => {
-    const images = [campaign.bannerImage, ...(campaign.additionalImages || [])].filter((img): img is string => !!img)
+    const images = [campaign.image || campaign.image, ...(campaign.image || campaign.images_array || [])].filter((img): img is string => !!img)
     setCurrentImageIndex((prev) => (prev + 1) % images.length)
   }
 
   const prevImage = () => {
-    const images = [campaign.bannerImage, ...(campaign.additionalImages || [])].filter((img): img is string => !!img)
+    const images = [campaign.image || campaign.image, ...(campaign.images_array ||  [])].filter((img): img is string => !!img)
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
   }
 
@@ -285,7 +347,7 @@ export default function CauseDetailsPage() {
     setExpandedFaq(expandedFaq === index ? null : index)
   }
 
-  const daysLeft = Math.ceil((new Date(campaign.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+  const daysLeft = Math.ceil((new Date(campaign.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
 
   const renderMarkdownContent = (content: string) => {
     return content.split('\n').map((line, index) => {
@@ -361,7 +423,7 @@ export default function CauseDetailsPage() {
     return (match && match[2].length === 11) ? match[2] : null
   }
 
-  const allImages = [campaign.bannerImage, ...(campaign.additionalImages || [])].filter((img): img is string => !!img)
+  const allImages = [campaign.image || campaign.image, ...(campaign.images_array || campaign.images_array || [])].filter((img): img is string => !!img)
 
   return (
     <div className="min-h-screen bg-white">
@@ -384,7 +446,7 @@ export default function CauseDetailsPage() {
                 Campaigns
               </Link>
               <span>/</span>
-              <span className="text-gray-900 font-medium truncate">{campaign.category}</span>
+              <span className="text-gray-900 font-medium truncate">{campaign.category_name}</span>
               <span>/</span>
               <span className="text-gray-900 font-medium truncate">{campaign.title.slice(0, 30)}...</span>
             </nav>
@@ -452,7 +514,7 @@ export default function CauseDetailsPage() {
                   {/* Badges - Mobile Responsive */}
                   <div className="absolute top-3 left-3 flex flex-wrap gap-1 sm:top-4 sm:left-4 sm:gap-2 lg:top-6 lg:left-6 lg:gap-3">
                     <Badge className="bg-blue-500 text-white font-semibold text-xs sm:text-sm">
-                      {campaign.category}
+                      {campaign.category_name}
                     </Badge>
                     <Badge className={`font-semibold text-xs sm:text-sm flex items-center gap-1 ${getPriorityColor(campaign.priority)}`}>
                       {getPriorityIcon(campaign.priority)}
@@ -512,7 +574,7 @@ export default function CauseDetailsPage() {
                   <div className="grid grid-cols-2 gap-3 py-4 border-y border-gray-200 sm:grid-cols-4 sm:gap-4 sm:py-6">
                     <div className="text-center">
                       <div className="text-lg font-bold text-green-600 sm:text-xl lg:text-2xl">
-                        ₹{campaign.raised?.toLocaleString()}
+                        ₹{campaign.total_raised?.toLocaleString()}
                       </div>
                       <div className="text-xs text-gray-600 sm:text-sm">Raised</div>
                     </div>
@@ -542,7 +604,7 @@ export default function CauseDetailsPage() {
                       About This Campaign
                     </h2>
                     <div className="prose prose-sm max-w-none sm:prose-base lg:prose-lg">
-                     {campaign && campaign?.aboutCampaign ?   (renderMarkdownContent(campaign?.aboutCampaign)) :null}
+                     {campaign && campaign?.about_campaign ? (renderMarkdownContent(campaign?.about_campaign)) : null}
                     </div>
                   </div>
 
@@ -653,16 +715,16 @@ export default function CauseDetailsPage() {
                   <div className="space-y-3 sm:space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-base font-semibold sm:text-lg">Progress</span>
-                      <span className="text-xl font-bold text-green-600 sm:text-2xl">{campaign.total_progress_percentage?.toFixed(1)}%</span>
+                      <span className="text-xl font-bold text-green-600 sm:text-2xl">{campaign.total_progress_percentage}%</span>
                     </div>
                     <Progress value={campaign.total_progress_percentage} className="h-3 sm:h-4" />
                     <div className="flex justify-between text-xs text-gray-600 sm:text-sm">
-                      <span>₹{campaign.raised?.toLocaleString()} raised</span>
-                      <span>₹{campaign.goal.toLocaleString()} goal</span>
+                      <span>₹{campaign.total_raised?.toLocaleString()} raised</span>
+                      <span>₹{campaign.donation_goal.toLocaleString()} goal</span>
                     </div>
                     <div className="text-center pt-2">
                       <p className="text-xs text-gray-500">
-                        ₹{(campaign.goal - (campaign.raised || 0)).toLocaleString()} still needed
+                        ₹{(campaign.donation_goal - (campaign.total_raised || 0)).toLocaleString()} still needed
                       </p>
                     </div>
                   </div>
@@ -712,7 +774,7 @@ export default function CauseDetailsPage() {
                     </div>
                     <div className="flex items-center text-sm">
                       <Calendar className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0" />
-                      <span>Ends {new Date(campaign.endDate).toLocaleDateString()}</span>
+                      <span>Ends {new Date(campaign.end_date).toLocaleDateString()}</span>
                     </div>
                     <div className="flex items-center text-sm">
                       <Users className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0" />
@@ -805,14 +867,14 @@ export default function CauseDetailsPage() {
                     <div className="relative">
                       <Image
                         src={product.image || "/placeholder.svg"}
-                        alt={product.name}
+                        alt={product.name || `Product ${product.id}`}
                         width={300}
                         height={200}
                         className="w-full h-40 object-cover sm:h-48"
                       />
                       <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
                         <Badge className="bg-white/90 text-gray-900 font-semibold text-xs sm:text-sm">
-                          {product.unit}
+                          {product.unit || 'Unit'}
                         </Badge>
                       </div>
                       {product.stock !== undefined && product.stock < 10 && (
@@ -825,10 +887,10 @@ export default function CauseDetailsPage() {
                     </div>
                     <CardContent className="p-4 sm:p-6">
                       <h3 className="text-lg font-bold text-gray-900 mb-2 sm:text-xl sm:mb-3">
-                        {product.name}
+                        {product.name || `Product ${product.id}`}
                       </h3>
                       <div className="text-xl font-bold text-blue-600 mb-2 sm:text-2xl sm:mb-3">
-                        ₹{product.price.toLocaleString()}/{product.unit}
+                        ₹{product.price.toLocaleString()}/{product.unit || 'unit'}
                       </div>
                       
                       {/* Product Impact Description */}
@@ -836,17 +898,17 @@ export default function CauseDetailsPage() {
                         <div className="text-xs font-semibold text-gray-700 flex items-center sm:text-sm">
                           <TrendingUp className="w-3 h-3 mr-2 text-blue-600 sm:w-4 sm:h-4" />
                           Impact: {
-                            product.name.includes('Food') ? 'Feeds a family for 2 weeks' :
-                            product.name.includes('Shelter') ? 'Provides temporary housing for a family' :
-                            product.name.includes('Medical') ? 'Covers medical treatment for 10 people' :
-                            product.name.includes('Water') ? 'Clean water for 1 month' :
-                            product.name.includes('Education') ? 'School supplies for 5 children' :
-                            'Essential hygiene supplies for 1 month'
+                            product.name?.includes('Food') ? 'Feeds a family for 2 weeks' :
+                            product.name?.includes('Shelter') ? 'Provides temporary housing for a family' :
+                            product.name?.includes('Medical') ? 'Covers medical treatment for 10 people' :
+                            product.name?.includes('Water') ? 'Clean water for 1 month' :
+                            product.name?.includes('Education') ? 'School supplies for 5 children' :
+                            'Essential supplies for families in need'
                           }
                         </div>
                       </div>
 
-                      {selectedProducts[product.id] > 0 && (
+                      {getCartItemQuantity(product.id, campaign.id) > 0 && (
                         <div className="flex items-center justify-between bg-gray-100 p-2 rounded-lg mb-3 sm:p-3 sm:mb-4">
                           <Button
                             size="sm"
@@ -856,11 +918,13 @@ export default function CauseDetailsPage() {
                           >
                             <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
                           </Button>
-                          <span className="font-semibold text-sm sm:text-base">{selectedProducts[product.id]}</span>
+                          <span className="font-semibold text-sm sm:text-base">
+                            {getCartItemQuantity(product.id, campaign.id)}
+                          </span>
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => addToCart(product.id)}
+                            onClick={() => addToCart(product)}
                             className="cursor-pointer p-1 sm:p-2"
                           >
                             <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -875,14 +939,14 @@ export default function CauseDetailsPage() {
                               DONATE NOW | ₹{product.price.toLocaleString()}
                             </Button>
                           }
-                          productTitle={product.name}
+                          productTitle={product.name || `Product ${product.id}`}
                           productPrice={product.price}
                           onConfirm={handleDonationConfirm}
                         />
                         <Button
                           variant="outline"
                           className="w-full border-gray-300 hover:border-blue-400 hover:bg-blue-50 cursor-pointer bg-transparent text-xs p-2.5 sm:text-sm sm:p-3 transition-colors"
-                          onClick={() => addToCart(product.id)}
+                          onClick={() => addToCart(product)}
                         >
                           ADD TO GIFT CART ♡
                         </Button>
@@ -890,7 +954,7 @@ export default function CauseDetailsPage() {
                       
                       {product.stock !== undefined && (
                         <div className="mt-2 text-xs text-gray-500 text-center">
-                          {product.stock} {product.unit}s available
+                          {product.stock} {product.unit || 'unit'}s available
                         </div>
                       )}
                     </CardContent>

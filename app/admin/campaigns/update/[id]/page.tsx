@@ -41,7 +41,10 @@ export default function EditCampaignPage({ params }: { params: { id: string } })
         throw new Error('Failed to fetch campaign')
       }
       const campaignData = await response.json()
-      setCampaign(campaignData)
+      setCampaign({...campaignData, id:Number(campaignData.id), total_raised:Number(campaignData.total_raised), donation_goal:Number(campaignData.donation_goal),
+        category_id:Number(campaignData.category_id),
+        total_progress_percentage:Number(campaignData.total_progress_percentage),
+      })
     } catch (error) {
       console.error('Error fetching campaign:', error)
       setError(error instanceof Error ? error.message : 'Failed to load campaign')
@@ -95,7 +98,6 @@ export default function EditCampaignPage({ params }: { params: { id: string } })
     return <div className="p-6 text-center text-red-500">Campaign not found. Redirecting...</div>
   }
 
-  console.log("🚀 ~ EditCampaignPage ~ campaign (from API):", campaign)
 
   return (
     <div className="p-6">

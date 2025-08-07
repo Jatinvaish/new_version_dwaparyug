@@ -362,3 +362,10 @@ export interface CampaignCategory {
   id: number
   name: string
 }
+
+
+export interface CampaignCategory {
+  id: number;
+  name: string;
+  description?: string;
+}

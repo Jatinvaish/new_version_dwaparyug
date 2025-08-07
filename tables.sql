@@ -21,8 +21,7 @@ CREATE TABLE user_roles (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-
--- 3) Campaign Categories
+------------------------------------------------------------------------- done from this point ------------------------------------------------------------------------- 
 CREATE TABLE campaign_categories (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
@@ -32,7 +31,6 @@ CREATE TABLE campaign_categories (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4) Campaigns Table
 CREATE TABLE campaigns (
     id BIGSERIAL PRIMARY KEY,
     title TEXT NOT NULL,
@@ -80,7 +78,6 @@ CREATE TABLE campaigns (
     CONSTRAINT fk_campaign_updated_by FOREIGN KEY (updated_by) REFERENCES users(id)
 );
 
--- 5) Campaign Products
 CREATE TABLE campaign_products (
     id SERIAL PRIMARY KEY,
     campaign_id BIGINT NOT NULL,
@@ -117,7 +114,6 @@ CREATE TABLE indipendent_products (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 6) Campaign Product Units
 CREATE TABLE campaign_product_units (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
@@ -130,7 +126,6 @@ CREATE TABLE campaign_product_units (
     CONSTRAINT fk_campaign_product_units_updated_by FOREIGN KEY (updated_by) REFERENCES users(id)
 );
 
--- 7) Campaign FAQ
 CREATE TABLE campaign_faq (
     id SERIAL PRIMARY KEY,
     campaign_id BIGINT NOT NULL,
@@ -148,7 +143,6 @@ CREATE TABLE campaign_faq (
     CONSTRAINT fk_campaign_faq_updated_by FOREIGN KEY (updated_by) REFERENCES users(id)
 );
 
--- 8) Campaign Video Links
 CREATE TABLE campaign_videos (
     id SERIAL PRIMARY KEY,
     campaign_id BIGINT NOT NULL,
@@ -166,8 +160,9 @@ CREATE TABLE campaign_videos (
     CONSTRAINT fk_campaign_videos_created_by FOREIGN KEY (created_by) REFERENCES users(id),
     CONSTRAINT fk_campaign_videos_updated_by FOREIGN KEY (updated_by) REFERENCES users(id)
 );
-
+------------------------------------------------------------------------- to this point  ------------------------------------------------------------------------- 
 -- 9) Donation Payment Requests
+
 CREATE TABLE donation_payment_requests (
     id BIGSERIAL PRIMARY KEY,
     campaign_id BIGINT NOT NULL,
@@ -245,7 +240,6 @@ CREATE TABLE personalization_options (
     -- This can link to either donation (direct) or donation_item (product-based)
     donation_id BIGINT NULL, -- For direct donations with personalization
     donation_item_id BIGINT NULL, -- For product-based donations with personalization
-    
     -- Personalization fields
     donor_name TEXT,
     donor_country TEXT,

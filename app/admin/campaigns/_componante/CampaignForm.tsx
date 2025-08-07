@@ -22,7 +22,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import Image from "next/image";
-import type { Campaign, Product } from "@/lib/interface";
+import type { Campaign, CampaignCategory, IndependentProduct, Product } from "@/lib/interface";
 import { festivalTypes } from "@/lib/utils";
 
 // Image upload function for API (only called on form submit)
@@ -288,7 +288,7 @@ const RichTextEditor = ({ value, onChange, placeholder }: {
 const campaignFormSchema = z.object({
   id: z.number().optional(),
   title: z.string().min(3, "Title must be at least 3 characters long."),
-  category_id: z.number().min(1, "Category is required."),
+  category_id: z.coerce.number().min(1, "Category is required."),
   festival_type: z.string().optional(),
   overview: z.string().min(10, "Overview must be at least 10 characters long."),
   details: z.string().min(20, "Details must be at least 20 characters long."),
@@ -301,11 +301,11 @@ const campaignFormSchema = z.object({
     .array(
       z.object({
         id: z.number().optional(),
-        indipendent_product_id: z.number().min(1, "Product is required"),
+        indipendent_product_id: z.coerce.number().min(1, "Product is required"),
         description: z.string().optional(),
-        price: z.number(),
-        stock: z.number().optional(),
-        sequence: z.number().optional(),
+        price: z.coerce.number().min(0, "Price must be 0 or greater"),
+        stock: z.coerce.number().optional(),
+        sequence: z.coerce.number().optional(),
       }),
     )
     .optional(),
@@ -336,33 +336,6 @@ const campaignFormSchema = z.object({
 
 type CampaignFormValues = z.infer<typeof campaignFormSchema>;
 
-interface CampaignCategory {
-  id: number;
-  name: string;
-  description?: string;
-}
-
-interface ProductUnit {
-  id: number;
-  name: string;
-  abbreviation?: string;
-}
-
-interface IndependentProduct {
-  id: number;
-  name: string;
-  description?: string;
-  price: number;
-  unit_id?: number;
-  image?: string;
-  min_qty?: number;
-  max_qty?: number;
-  stock?: number;
-  increment_count?: number;
-  is_flexible_increment_count?: boolean;
-  allows_personalization?: boolean;
-  status: string;
-}
 
 interface CampaignFormProps {
   campaign?: Campaign | null;
@@ -462,7 +435,6 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
           setCategories(categoriesData);
         }
 
-
         if (productsResponse.ok) {
           const productsData = await productsResponse.json();
           console.log("🚀 ~ fetchData ~ productsData:", productsData)
@@ -479,37 +451,57 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
     fetchData();
   }, []);
 
+  // Fixed useEffect for populating form data when editing
   useEffect(() => {
     if (campaign) {
-      reset({
+      // Prepare the data with proper type conversions
+      const formData = {
         ...campaign,
-        donation_goal: campaign?.donation_goal,
-        end_date: new Date(campaign?.end_date),
-        priority: campaign?.priority || "medium",
-        status: campaign?.status || "Draft",
-        about_campaign: campaign?.about_campaign || "",
-        location: campaign?.location || "",
-        organizer: campaign?.organizer || "",
-        verified: campaign?.verified || false,
-        urgency: (campaign?.urgency as any) || "medium",
-        faq_questions: campaign?.faq_questions || [],
-        videoLinks: campaign?.videoLinks?.map(url => ({ url })) || [],
-        image: campaign?.image || "",
-        images_array: campaign?.images_array || [],
-        assignedProducts: campaign?.assignedProducts || [],
-      });
+        // Ensure numbers are properly converted
+        category_id: Number(campaign.category_id) || 0,
+        donation_goal: Number(campaign.donation_goal) || 0,
+        // Ensure date is properly converted
+        end_date: campaign.end_date ? new Date(campaign.end_date) : new Date(),
+        // Ensure defaults for required fields
+        priority: (campaign.priority as any) || "medium",
+        status: (campaign.status as any) || "Draft",
+        about_campaign: campaign.about_campaign || "",
+        location: campaign.location || "",
+        organizer: campaign.organizer || "",
+        verified: Boolean(campaign.verified),
+        urgency: (campaign.urgency as any) || "medium",
+        // Ensure arrays are properly set
+        faq_questions: campaign.faq_questions || [],
+        videoLinks: (campaign.videoLinks || []).map((url: string) => ({ url })),
+        image: campaign.image || "",
+        images_array: campaign.images_array || [],
+        // Fix assignedProducts data structure
+        assignedProducts: (campaign.assignedProducts || []).map((product: any) => ({
+          id: product.id,
+          indipendent_product_id: Number(product.indipendent_product_id) || Number(product.independent_product_id) || 0,
+          description: product.description || "",
+          price: Number(product.price) || 0,
+          stock: Number(product.stock) || 0,
+          sequence: Number(product.sequence) || 1,
+        })),
+      };
+
+      console.log("🚀 ~ Setting form data for update:", formData);
+
+      // Reset the form with the prepared data
+      reset(formData);
 
       // Set existing images
-      if (campaign?.image) {
+      if (campaign.image) {
         setBannerImage({
-          url: campaign?.image,
+          url: campaign.image,
           isExisting: true
         });
       }
 
-      if (campaign?.images_array && campaign?.images_array.length > 0) {
+      if (campaign.images_array && campaign.images_array.length > 0) {
         setAdditionalImages(
-          campaign?.images_array.map(url => ({
+          campaign.images_array.map(url => ({
             url,
             isExisting: true
           }))
@@ -520,6 +512,8 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
 
   const onSubmit = async (data: CampaignFormValues) => {
     try {
+      console.log('Submitting form data:', data);
+
       // Prepare images for upload
       let bannerImageUrl = data.image;
       let allImageUrls: string[] = [];
@@ -561,17 +555,30 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
         allImageUrls = existingImageUrls;
       }
 
+      // Prepare final payload
       const payload = {
         ...data,
         image: bannerImageUrl,
         images_array: allImageUrls,
         end_date: data.end_date.toISOString(),
         videoLinks: data.videoLinks?.map(v => v.url) || [],
+        // Ensure proper number conversion for all numeric fields
+        category_id: Number(data.category_id),
+        donation_goal: Number(data.donation_goal),
+        assignedProducts: (data.assignedProducts || []).map(product => ({
+          ...product,
+          indipendent_product_id: Number(product.indipendent_product_id),
+          price: Number(product.price),
+          stock: Number(product.stock) || 0,
+          sequence: Number(product.sequence) || 1,
+        })),
         created_by: 1, // Replace with actual user ID from session/auth
         updated_by: 1, // Replace with actual user ID from session/auth
       };
 
-      const url = campaign ? `/api/campaigns/${campaign?.id}` : '/api/campaigns';
+      console.log('Final payload:', payload);
+
+      const url = campaign ? `/api/campaigns/${campaign.id}` : '/api/campaigns';
       const method = campaign ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -684,6 +691,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
   }, []);
 
   const selectedCategory = categories.find(cat => cat.id === category_id);
+  console.log(`errors`, errors)
   return (
     <Card>
       <form onSubmit={handleSubmit(onSubmit)} className="p-4">
@@ -704,7 +712,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Progress</Label>
-                <Input disabled value={`0%`} className="h-8 text-sm" />
+                <Input disabled value={`${campaign?.total_progress_percentage || 0}%`} className="h-8 text-sm" />
               </div>
             </div>
           )}
@@ -723,8 +731,8 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                 name="category_id"
                 render={({ field }) => (
                   <Select
-                    value={field.value > 0 ? field.value.toString() : ""}
-                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    value={field.value && field.value > 0 ? field.value.toString() : ""}
+                    onValueChange={(value) => field.onChange(parseInt(value, 10))}
                     disabled={isLoadingCategories}
                   >
                     <SelectTrigger id="category_id" className="h-8">
@@ -750,7 +758,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                   control={control}
                   name="festival_type"
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value || ""} onValueChange={field.onChange}>
                       <SelectTrigger id="festival_type" className="h-8">
                         <SelectValue placeholder="Select festival type" />
                       </SelectTrigger>
@@ -831,7 +839,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                 control={control}
                 name="urgency"
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value || ""} onValueChange={field.onChange}>
                     <SelectTrigger id="urgency" className="h-8">
                       <SelectValue placeholder="Select urgency level" />
                     </SelectTrigger>
@@ -1143,10 +1151,10 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                             <Controller
                               control={control}
                               name={`assignedProducts.${index}.indipendent_product_id`}
-                              render={({ field }) => (
+                              render={({ field: productField }) => (
                                 <Select
-                                  value={field.value > 0 ? field.value.toString() : ""}
-                                  onValueChange={(value) => field.onChange(parseInt(value))}
+                                  value={productField.value && productField.value > 0 ? productField.value.toString() : ""}
+                                  onValueChange={(value) => productField.onChange(parseInt(value, 10))}
                                   disabled={isLoadingProducts}
                                 >
                                   <SelectTrigger className="h-7 text-xs">
@@ -1179,7 +1187,21 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                           <td className="px-2 py-1">
                             <Input
                               type="number"
-                              {...register(`assignedProducts.${index}.price`, { valueAsNumber: true })}
+                              step="0.01"
+                              {...register(`assignedProducts.${index}.price`)}
+                              placeholder="0"
+                              className="h-7 text-xs w-20"
+                            />
+                            {errors.assignedProducts?.[index]?.price && (
+                              <p className="text-xs text-red-500 mt-1">
+                                {errors.assignedProducts[index]?.price?.message}
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-2 py-1">
+                            <Input
+                              type="number"
+                              {...register(`assignedProducts.${index}.stock`)}
                               placeholder="0"
                               className="h-7 text-xs w-20"
                             />
@@ -1187,15 +1209,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                           <td className="px-2 py-1">
                             <Input
                               type="number"
-                              {...register(`assignedProducts.${index}.stock`, { valueAsNumber: true })}
-                              placeholder="0"
-                              className="h-7 text-xs w-20"
-                            />
-                          </td>
-                          <td className="px-2 py-1">
-                            <Input
-                              type="number"
-                              {...register(`assignedProducts.${index}.sequence`, { valueAsNumber: true })}
+                              {...register(`assignedProducts.${index}.sequence`)}
                               placeholder="1"
                               className="h-7 text-xs w-16"
                             />
@@ -1225,7 +1239,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting} className="h-8 px-3 text-sm">
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting} className="h-8 px-3 text-sm">
+          <Button type="submit" className="h-8 px-3 text-sm">
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-3 w-3 animate-spin" />
