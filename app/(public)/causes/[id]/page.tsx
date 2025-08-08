@@ -27,15 +27,16 @@ import {
   Clock,
   AlertCircle,
   Star,
+  ShoppingCart,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
-import { DonationDialog } from "@/components/shared/donation-dialog"
+import { useParams, useRouter } from "next/navigation"
+import { useDonationCart } from "@/hooks/useDonationHooks"
 
-// Updated interface to match API response
+// Updated interfaces to match your requirements
 interface Campaign {
   id: number
   title: string
@@ -92,109 +93,15 @@ interface FAQ {
   answer: string
 }
 
-interface CartItem {
-  productId: number
-  campaignId: number
-  name: string
-  price: number
-  quantity: number
-  unit?: string
-  image?: string
-  maxQty?: number
-}
-
-// Cart management functions
-const getCartFromStorage = (): CartItem[] => {
-  if (typeof window === 'undefined') return []
-  try {
-    const cart = localStorage.getItem('donationCart')
-    return cart ? JSON.parse(cart) : []
-  } catch (error) {
-    console.error('Error reading cart from localStorage:', error)
-    return []
-  }
-}
-
-const saveCartToStorage = (cart: CartItem[]) => {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem('donationCart', JSON.stringify(cart))
-    // Dispatch custom event for cart updates
-    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }))
-  } catch (error) {
-    console.error('Error saving cart to localStorage:', error)
-  }
-}
-
-const addToCartStorage = (item: CartItem) => {
-  const cart = getCartFromStorage()
-  const existingIndex = cart.findIndex(
-    cartItem => cartItem.productId === item.productId && cartItem.campaignId === item.campaignId
-  )
-  
-  if (existingIndex > -1) {
-    const maxQty = item.maxQty || 999
-    if (cart[existingIndex].quantity < maxQty) {
-      cart[existingIndex].quantity += 1
-    }
-  } else {
-    cart.push({ ...item, quantity: 1 })
-  }
-  
-  saveCartToStorage(cart)
-  return cart
-}
-
-const removeFromCartStorage = (productId: number, campaignId: number) => {
-  const cart = getCartFromStorage()
-  const existingIndex = cart.findIndex(
-    cartItem => cartItem.productId === productId && cartItem.campaignId === campaignId
-  )
-  
-  if (existingIndex > -1) {
-    if (cart[existingIndex].quantity > 1) {
-      cart[existingIndex].quantity -= 1
-    } else {
-      cart.splice(existingIndex, 1)
-    }
-  }
-  
-  saveCartToStorage(cart)
-  return cart
-}
-
-const getCartItemQuantity = (productId: number, campaignId: number): number => {
-  const cart = getCartFromStorage()
-  const item = cart.find(
-    cartItem => cartItem.productId === productId && cartItem.campaignId === campaignId
-  )
-  return item ? item.quantity : 0
-}
-
 export default function CauseDetailsPage() {
   const params = useParams()
+  const router = useRouter()
+  const { cartItems, addToCart, removeFromCart, getItemQuantity, getCartTotals } = useDonationCart()
+  
   const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [loading, setLoading] = useState(true)
-  const [selectedProducts, setSelectedProducts] = useState<{ [key: number]: number }>({})
-  const [customAmount, setCustomAmount] = useState("")
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
-  const [cartItems, setCartItems] = useState<CartItem[]>([])
-
-  // Load cart on component mount
-  useEffect(() => {
-    setCartItems(getCartFromStorage())
-    
-    // Update selected products from cart
-    const cart = getCartFromStorage()
-    const productQuantities: { [key: number]: number } = {}
-    cart.forEach(item => {
-      if (item.campaignId === parseInt(params.id as string)) {
-        productQuantities[item.productId] = item.quantity
-      }
-    })
-    setSelectedProducts(productQuantities)
-  }, [params.id])
 
   // Fetch campaign data from API
   useEffect(() => {
@@ -208,20 +115,7 @@ export default function CauseDetailsPage() {
         }
         
         const campaignData = await response.json()
-        
-        // Process the data to match expected format
-        const processedCampaign: Campaign = {
-          ...campaignData,
-          goal: campaignData.donation_goal,
-          raised: campaignData.total_raised,
-          category: campaignData.category_name,
-          bannerImage: campaignData.image,
-          additionalImages: campaignData.images_array || [],
-          endDate: campaignData.end_date,
-          aboutCampaign: campaignData.about_campaign
-        }
-        
-        setCampaign(processedCampaign)
+        setCampaign(campaignData)
       } catch (error) {
         console.error('Error fetching campaign:', error)
       } finally {
@@ -231,27 +125,6 @@ export default function CauseDetailsPage() {
 
     if (params.id) {
       fetchCampaign()
-    }
-  }, [params.id])
-
-  // Listen for cart updates
-  useEffect(() => {
-    const handleCartUpdate = (event: CustomEvent) => {
-      setCartItems(event.detail)
-      
-      // Update selected products display
-      const productQuantities: { [key: number]: number } = {}
-      event.detail.forEach((item: CartItem) => {
-        if (item.campaignId === parseInt(params.id as string)) {
-          productQuantities[item.productId] = item.quantity
-        }
-      })
-      setSelectedProducts(productQuantities)
-    }
-
-    window.addEventListener('cartUpdated', handleCartUpdate as EventListener)
-    return () => {
-      window.removeEventListener('cartUpdated', handleCartUpdate as EventListener)
     }
   }, [params.id])
 
@@ -272,7 +145,7 @@ export default function CauseDetailsPage() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Campaign Not Found</h1>
           <p className="text-gray-600 mb-6">The campaign you're looking for doesn't exist or has been removed.</p>
-          <Link href="/campaigns">
+          <Link href="/causes">
             <Button>Browse All Campaigns</Button>
           </Link>
         </div>
@@ -280,66 +153,40 @@ export default function CauseDetailsPage() {
     )
   }
 
-  const addToCart = (product: CampaignProduct) => {
-    const cartItem: CartItem = {
+  const handleAddToCart = (product: CampaignProduct) => {
+    addToCart({
       productId: product.id,
       campaignId: campaign.id,
+      campaignTitle: campaign.title,
       name: product.name || `Product ${product.id}`,
       price: product.price,
-      quantity: 1,
       unit: product.unit,
       image: product.image,
-      maxQty: product.max_qty || product.stock
-    }
-    
-    addToCartStorage(cartItem)
-  }
-
-  const removeFromCart = (productId: number) => {
-    removeFromCartStorage(productId, campaign.id)
-  }
-
-  const getTotalAmount = () => {
-    let total = 0
-    cartItems.forEach(item => {
-      if (item.campaignId === campaign.id) {
-        total += item.price * item.quantity
-      }
+      maxQty: product.max_qty || product.stock,
+      stock: product.stock,
+      description: product.description
     })
-    if (customAmount) {
-      total += parseInt(customAmount) || 0
-    }
-    return total
   }
 
-  const getTotalItems = () => {
-    return cartItems
-      .filter(item => item.campaignId === campaign.id)
-      .reduce((sum, item) => sum + item.quantity, 0)
+  const handleRemoveFromCart = (productId: number) => {
+    removeFromCart(productId, campaign.id)
   }
 
-  const handleDonationConfirm = (donationData: any) => {
-    console.log("Donation confirmed:", donationData)
-    
-    // Add donation to cart if it's a product-based donation
-    if (donationData.productId) {
-      const product = campaign.assignedProducts?.find(p => p.id === donationData.productId)
-      if (product) {
-        addToCart(product)
-      }
-    }
-    
-    // For direct donations, you might want to handle differently
-    // This could redirect to payment or add a custom donation item
+  const redirectToDonate = () => {
+    router.push('/donate')
+  }
+
+  const redirectToCart = () => {
+    router.push('/cart')
   }
 
   const nextImage = () => {
-    const images = [campaign.image || campaign.image, ...(campaign.image || campaign.images_array || [])].filter((img): img is string => !!img)
+    const images = [campaign.image, ...(campaign.images_array || [])].filter((img): img is string => !!img)
     setCurrentImageIndex((prev) => (prev + 1) % images.length)
   }
 
   const prevImage = () => {
-    const images = [campaign.image || campaign.image, ...(campaign.images_array ||  [])].filter((img): img is string => !!img)
+    const images = [campaign.image, ...(campaign.images_array || [])].filter((img): img is string => !!img)
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
   }
 
@@ -351,7 +198,6 @@ export default function CauseDetailsPage() {
 
   const renderMarkdownContent = (content: string) => {
     return content.split('\n').map((line, index) => {
-      // Handle headers
       if (line.startsWith('# ')) {
         return <h1 key={index} className="text-2xl font-bold text-gray-900 mb-4 mt-6 first:mt-0">{line.slice(2)}</h1>
       }
@@ -362,7 +208,6 @@ export default function CauseDetailsPage() {
         return <h3 key={index} className="text-lg font-bold text-gray-900 mb-2 mt-4">{line.slice(4)}</h3>
       }
       
-      // Handle bold text
       if (line.includes('**') && line.trim() !== '') {
         const parts = line.split('**')
         return (
@@ -372,27 +217,22 @@ export default function CauseDetailsPage() {
         )
       }
       
-      // Handle bullet points
       if (line.startsWith('- ')) {
         return <li key={index} className="mb-1 text-gray-600 ml-4 list-disc">{line.slice(2)}</li>
       }
       
-      // Handle horizontal rule
       if (line.trim() === '---') {
         return <hr key={index} className="my-6 border-gray-200" />
       }
       
-      // Handle empty lines
       if (line.trim() === '') {
         return <div key={index} className="mb-2" />
       }
       
-      // Handle italic emphasis
       if (line.startsWith('*') && line.endsWith('*') && line.length > 2) {
         return <p key={index} className="mb-2 text-gray-500 italic text-sm">{line.slice(1, -1)}</p>
       }
       
-      // Regular paragraphs
       return <p key={index} className="mb-3 text-gray-600 leading-relaxed">{line}</p>
     })
   }
@@ -423,7 +263,8 @@ export default function CauseDetailsPage() {
     return (match && match[2].length === 11) ? match[2] : null
   }
 
-  const allImages = [campaign.image || campaign.image, ...(campaign.images_array || campaign.images_array || [])].filter((img): img is string => !!img)
+  const allImages = [campaign.image, ...(campaign.images_array || [])].filter((img): img is string => !!img)
+  const { totalItems, subtotal } = getCartTotals()
 
   return (
     <div className="min-h-screen bg-white">
@@ -474,7 +315,7 @@ export default function CauseDetailsPage() {
                       priority
                     />
 
-                    {/* Navigation Arrows - Touch Friendly */}
+                    {/* Navigation Arrows */}
                     {allImages.length > 1 && (
                       <>
                         <button
@@ -494,7 +335,7 @@ export default function CauseDetailsPage() {
                       </>
                     )}
 
-                    {/* Image Indicators - Mobile Friendly */}
+                    {/* Image Indicators */}
                     {allImages.length > 1 && (
                       <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 sm:bottom-4 sm:space-x-2">
                         {allImages.map((_, index) => (
@@ -511,7 +352,7 @@ export default function CauseDetailsPage() {
                     )}
                   </div>
 
-                  {/* Badges - Mobile Responsive */}
+                  {/* Badges */}
                   <div className="absolute top-3 left-3 flex flex-wrap gap-1 sm:top-4 sm:left-4 sm:gap-2 lg:top-6 lg:left-6 lg:gap-3">
                     <Badge className="bg-blue-500 text-white font-semibold text-xs sm:text-sm">
                       {campaign.category_name}
@@ -526,13 +367,9 @@ export default function CauseDetailsPage() {
                         Verified
                       </Badge>
                     )}
-                    <Badge className="bg-yellow-500 text-black font-semibold text-xs sm:text-sm">
-                      <Star className="w-2 h-2 mr-1 sm:w-3 sm:h-3" />
-                      Featured
-                    </Badge>
                   </div>
 
-                  {/* Thumbnail Gallery - Mobile Scrollable */}
+                  {/* Thumbnail Gallery */}
                   {allImages.length > 1 && (
                     <div className="flex space-x-2 mt-3 overflow-x-auto pb-2 sm:mt-4 scrollbar-hide">
                       {allImages.map((image, index) => (
@@ -556,7 +393,7 @@ export default function CauseDetailsPage() {
                   )}
                 </div>
 
-                {/* Content Section - Mobile Optimized */}
+                {/* Content Section */}
                 <div className="space-y-4 sm:space-y-6">
                   <div>
                     <h1 className="text-2xl font-bold text-gray-900 mb-3 leading-tight sm:text-3xl md:text-4xl lg:text-5xl sm:mb-4">
@@ -570,7 +407,7 @@ export default function CauseDetailsPage() {
                     </p>
                   </div>
 
-                  {/* Stats Grid - Mobile First */}
+                  {/* Stats Grid */}
                   <div className="grid grid-cols-2 gap-3 py-4 border-y border-gray-200 sm:grid-cols-4 sm:gap-4 sm:py-6">
                     <div className="text-center">
                       <div className="text-lg font-bold text-green-600 sm:text-xl lg:text-2xl">
@@ -598,7 +435,7 @@ export default function CauseDetailsPage() {
                     </div>
                   </div>
 
-                  {/* About Campaign - Mobile Readable */}
+                  {/* About Campaign */}
                   <div>
                     <h2 className="text-xl font-bold text-gray-900 mb-3 sm:text-2xl sm:mb-4">
                       About This Campaign
@@ -702,7 +539,7 @@ export default function CauseDetailsPage() {
               </motion.div>
             </div>
 
-            {/* Sidebar - Mobile First (appears at top on mobile) */}
+            {/* Sidebar */}
             <div className="order-2 lg:col-span-1">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -710,7 +547,7 @@ export default function CauseDetailsPage() {
                 transition={{ duration: 0.8, delay: 0.2 }}
                 className="space-y-4 lg:sticky lg:top-24 sm:space-y-6"
               >
-                {/* Progress Card - Mobile Optimized */}
+                {/* Progress Card */}
                 <Card className="p-4 shadow-lg sm:p-6 sm:shadow-xl">
                   <div className="space-y-3 sm:space-y-4">
                     <div className="flex justify-between items-center">
@@ -730,41 +567,35 @@ export default function CauseDetailsPage() {
                   </div>
                 </Card>
 
-                {/* Quick Donate - Mobile First */}
+                {/* Quick Donate */}
                 <Card className="p-4 shadow-lg sm:p-6 sm:shadow-xl">
                   <h3 className="text-lg font-bold text-gray-900 mb-3 sm:text-xl sm:mb-4">Quick Donate</h3>
                   <div className="grid grid-cols-2 gap-2 mb-4 sm:gap-3">
                     {[500, 1000, 2500, 5000].map((amount) => (
-                      <DonationDialog
+                      <Button
                         key={amount}
-                        trigger={
-                          <Button
-                            variant="outline"
-                            className="cursor-pointer hover:bg-blue-50 hover:border-blue-400 hover:text-blue-600 bg-transparent text-sm p-2 transition-colors sm:text-base sm:p-3"
-                          >
-                            ₹{amount}
-                          </Button>
-                        }
-                        productTitle={`Quick Donation - ₹${amount}`}
-                        productPrice={amount}
-                        onConfirm={handleDonationConfirm}
-                      />
+                        variant="outline"
+                        className="cursor-pointer hover:bg-blue-50 hover:border-blue-400 hover:text-blue-600 bg-transparent text-sm p-2 transition-colors sm:text-base sm:p-3"
+                        onClick={() => {
+                          // Set custom amount in localStorage and redirect
+                          localStorage.setItem('customDonationAmount', amount.toString())
+                          redirectToDonate()
+                        }}
+                      >
+                        ₹{amount}
+                      </Button>
                     ))}
                   </div>
-                  <DonationDialog
-                    trigger={
-                      <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold cursor-pointer text-sm p-3 sm:text-base">
-                        <Heart className="w-3 h-3 mr-2 sm:w-4 sm:h-4" />
-                        Donate Now
-                      </Button>
-                    }
-                    productTitle="General Donation"
-                    productPrice={1000}
-                    onConfirm={handleDonationConfirm}
-                  />
+                  <Button 
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold cursor-pointer text-sm p-3 sm:text-base"
+                    onClick={redirectToDonate}
+                  >
+                    <Heart className="w-3 h-3 mr-2 sm:w-4 sm:h-4" />
+                    Donate Now
+                  </Button>
                 </Card>
 
-                {/* Campaign Info - Mobile Friendly */}
+                {/* Campaign Info */}
                 <Card className="p-4 shadow-lg sm:p-6 sm:shadow-xl">
                   <h3 className="text-lg font-bold text-gray-900 mb-3 sm:text-xl sm:mb-4">Campaign Details</h3>
                   <div className="space-y-2 sm:space-y-3">
@@ -795,7 +626,7 @@ export default function CauseDetailsPage() {
                   </div>
                 </Card>
 
-                {/* Share - Mobile Optimized */}
+                {/* Share */}
                 <Card className="p-4 shadow-lg sm:p-6 sm:shadow-xl">
                   <h3 className="text-lg font-bold text-gray-900 mb-3 sm:text-xl sm:mb-4">Share This Campaign</h3>
                   <div className="space-y-2">
@@ -803,23 +634,6 @@ export default function CauseDetailsPage() {
                       <Share2 className="w-3 h-3 mr-2 sm:w-4 sm:h-4" />
                       Share Campaign
                     </Button>
-                    <div className="flex justify-center space-x-2 pt-2">
-                      <button className="p-2 rounded-full bg-blue-100 hover:bg-blue-200 transition-colors">
-                        <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
-                        </svg>
-                      </button>
-                      <button className="p-2 rounded-full bg-blue-100 hover:bg-blue-200 transition-colors">
-                        <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/>
-                        </svg>
-                      </button>
-                      <button className="p-2 rounded-full bg-green-100 hover:bg-green-200 transition-colors">
-                        <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
-                        </svg>
-                      </button>
-                    </div>
                   </div>
                 </Card>
               </motion.div>
@@ -828,7 +642,7 @@ export default function CauseDetailsPage() {
         </div>
       </section>
 
-      {/* Products Section - Mobile First Responsive */}
+      {/* Products Section */}
       {campaign.assignedProducts && campaign.assignedProducts.length > 0 && (
         <section className="py-8 px-3 bg-gray-50 sm:py-12 sm:px-4 lg:py-16">
           <div className="max-w-7xl mx-auto">
@@ -851,7 +665,7 @@ export default function CauseDetailsPage() {
               </p>
             </motion.div>
 
-            {/* Products Grid - Mobile First */}
+            {/* Products Grid */}
             <div className="grid gap-4 mb-8 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 sm:mb-12">
               {campaign.assignedProducts?.map((product, index) => (
                 <motion.div
@@ -908,24 +722,25 @@ export default function CauseDetailsPage() {
                         </div>
                       </div>
 
-                      {getCartItemQuantity(product.id, campaign.id) > 0 && (
+                      {getItemQuantity(product.id, campaign.id) > 0 && (
                         <div className="flex items-center justify-between bg-gray-100 p-2 rounded-lg mb-3 sm:p-3 sm:mb-4">
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => removeFromCart(product.id)}
+                            onClick={() => handleRemoveFromCart(product.id)}
                             className="cursor-pointer p-1 sm:p-2"
                           >
                             <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
                           </Button>
                           <span className="font-semibold text-sm sm:text-base">
-                            {getCartItemQuantity(product.id, campaign.id)}
+                            {getItemQuantity(product.id, campaign.id)}
                           </span>
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => addToCart(product)}
+                            onClick={() => handleAddToCart(product)}
                             className="cursor-pointer p-1 sm:p-2"
+                            disabled={product.stock === 0}
                           >
                             <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                           </Button>
@@ -933,22 +748,12 @@ export default function CauseDetailsPage() {
                       )}
 
                       <div className="space-y-2 sm:space-y-3">
-                        <DonationDialog
-                          trigger={
-                            <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold cursor-pointer text-xs p-2.5 sm:text-sm sm:p-3">
-                              DONATE NOW | ₹{product.price.toLocaleString()}
-                            </Button>
-                          }
-                          productTitle={product.name || `Product ${product.id}`}
-                          productPrice={product.price}
-                          onConfirm={handleDonationConfirm}
-                        />
                         <Button
-                          variant="outline"
-                          className="w-full border-gray-300 hover:border-blue-400 hover:bg-blue-50 cursor-pointer bg-transparent text-xs p-2.5 sm:text-sm sm:p-3 transition-colors"
-                          onClick={() => addToCart(product)}
+                          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold cursor-pointer text-xs p-2.5 sm:text-sm sm:p-3"
+                          onClick={() => handleAddToCart(product)}
+                          disabled={product.stock === 0}
                         >
-                          ADD TO GIFT CART ♡
+                          {getItemQuantity(product.id, campaign.id) > 0 ? 'ADD MORE' : 'ADD TO CART'} | ₹{product.price.toLocaleString()}
                         </Button>
                       </div>
                       
@@ -962,84 +767,38 @@ export default function CauseDetailsPage() {
                 </motion.div>
               ))}
             </div>
-
-            {/* Custom Amount - Mobile Optimized */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-              className="max-w-sm mx-auto sm:max-w-md"
-            >
-              <Card className="p-4 shadow-lg sm:p-6 sm:shadow-xl">
-                <h3 className="text-lg font-bold text-gray-900 mb-3 text-center sm:text-xl sm:mb-4">
-                  Custom Donation Amount
-                </h3>
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="relative">
-                    <span className="absolute left-3 top-3 text-gray-500 text-sm sm:text-base">₹</span>
-                    <input
-                      type="number"
-                      placeholder="Enter amount"
-                      value={customAmount}
-                      onChange={(e) => setCustomAmount(e.target.value)}
-                      className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm sm:text-base"
-                      inputMode="numeric"
-                      min="1"
-                    />
-                  </div>
-                  <DonationDialog
-                    trigger={
-                      <Button
-                        className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold cursor-pointer text-sm p-3 sm:text-base"
-                        disabled={!customAmount || parseInt(customAmount) < 1}
-                      >
-                        <Heart className="w-3 h-3 mr-2 fill-current sm:w-4 sm:h-4" />
-                        Donate Custom Amount
-                      </Button>
-                    }
-                    productTitle="Custom Donation"
-                    productPrice={parseInt(customAmount) || 0}
-                    onConfirm={handleDonationConfirm}
-                  />
-                </div>
-              </Card>
-            </motion.div>
-
-            {/* Mobile Cart Summary - Fixed Position */}
-            {getTotalItems() > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="fixed bottom-4 left-4 right-4 z-50 sm:bottom-6 sm:left-auto sm:right-6 sm:w-auto"
-              >
-                <Card className="p-3 shadow-2xl bg-white border-2 border-blue-400 sm:p-4">
-                  <div className="flex items-center justify-between space-x-3 sm:space-x-4">
-                    <div>
-                      <div className="font-semibold text-gray-900 text-sm sm:text-base">
-                        {getTotalItems()} items in cart
-                      </div>
-                      <div className="text-base font-bold text-green-600 sm:text-lg">
-                        Total: ₹{getTotalAmount().toLocaleString()}
-                      </div>
-                    </div>
-                    <Button
-                      className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold cursor-pointer text-sm p-2 sm:text-base sm:p-3"
-                      asChild
-                    >
-                      <Link href="/cart">
-                        <Gift className="w-3 h-3 mr-1 sm:w-4 sm:h-4 sm:mr-2" />
-                        View Cart
-                      </Link>
-                    </Button>
-                  </div>
-                </Card>
-              </motion.div>
-            )}
           </div>
         </section>
       )}
- 
+
+      {/* Floating Cart Button */}
+      {totalItems > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed bottom-4 left-4 right-4 z-50 sm:bottom-6 sm:left-auto sm:right-6 sm:w-auto"
+        >
+          <Card className="p-3 shadow-2xl bg-white border-2 border-blue-400 sm:p-4">
+            <div className="flex items-center justify-between space-x-3 sm:space-x-4">
+              <div>
+                <div className="font-semibold text-gray-900 text-sm sm:text-base">
+                  {totalItems} items in cart
+                </div>
+                <div className="text-base font-bold text-green-600 sm:text-lg">
+                  Total: ₹{subtotal.toLocaleString()}
+                </div>
+              </div>
+              <Button
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold cursor-pointer text-sm p-2 sm:text-base sm:p-3"
+                onClick={redirectToCart}
+              >
+                <ShoppingCart className="w-3 h-3 mr-1 sm:w-4 sm:h-4 sm:mr-2" />
+                View Cart
+              </Button>
+            </div>
+          </Card>
+        </motion.div>
+      )}
     </div>
   )
 }

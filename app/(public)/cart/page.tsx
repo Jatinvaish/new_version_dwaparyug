@@ -1,240 +1,157 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { ArrowRight, Trash2, Plus, Minus, Gift, ShoppingCart, CreditCard, Shield, CheckCircle, Wallet } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import {
+  ShoppingCart,
+  Plus,
+  Minus,
+  Trash2,
+  Heart,
+  ArrowRight,
+  Gift,
+  Target,
+  Users,
+  TrendingUp,
+  CheckCircle,
+  AlertTriangle,
+  ShoppingBag,
+  X,
+  Package,
+  Zap
+} from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { motion } from "framer-motion"
-import { useState, useMemo, useEffect } from "react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { motion, AnimatePresence } from "framer-motion"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useDonationCart, useDonationForm } from "@/hooks/useDonationHooks"
 
-// Cart item interface to match the localStorage structure
-interface CartItem {
-  productId: number
-  campaignId: number
-  name: string
-  price: number
-  quantity: number
-  unit?: string
-  image?: string
-  maxQty?: number
-  description?: string
-  impact?: string
-  campaignTitle?: string
-}
-
-// Define tip options
-const tipPercentages = [5, 10, 15];
-
-// Cart management functions
-const getCartFromStorage = (): CartItem[] => {
-  if (typeof window === 'undefined') return []
-  try {
-    const cart = localStorage.getItem('donationCart')
-    return cart ? JSON.parse(cart) : []
-  } catch (error) {
-    console.error('Error reading cart from localStorage:', error)
-    return []
-  }
-}
-
-const saveCartToStorage = (cart: CartItem[]) => {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem('donationCart', JSON.stringify(cart))
-    // Dispatch custom event for cart updates
-    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }))
-  } catch (error) {
-    console.error('Error saving cart to localStorage:', error)
-  }
-}
-
-const updateCartItemQuantity = (productId: number, campaignId: number, newQuantity: number) => {
-  const cart = getCartFromStorage()
-  const updatedCart = cart.map(item => {
-    if (item.productId === productId && item.campaignId === campaignId) {
-      const maxQty = item.maxQty || 999
-      return { ...item, quantity: Math.min(Math.max(1, newQuantity), maxQty) }
-    }
-    return item
-  }).filter(item => item.quantity > 0)
+export default function CartPage() {
+  const router = useRouter()
+  const { 
+    cartItems, 
+    updateQuantity, 
+    removeFromCart, 
+    clearCart, 
+    getCartTotals, 
+    getItemsByCampaign 
+  } = useDonationCart()
   
-  saveCartToStorage(updatedCart)
-  return updatedCart
-}
+  const { updateFormData } = useDonationForm()
+  
+  const [customDonationAmount, setCustomDonationAmount] = useState("")
+  const [selectedTip, setSelectedTip] = useState<number | 'custom' | null>(5)
+  const [customTipValue, setCustomTipValue] = useState("")
+  const [isClearing, setIsClearing] = useState(false)
 
-const removeCartItem = (productId: number, campaignId: number) => {
-  const cart = getCartFromStorage()
-  const updatedCart = cart.filter(item => 
-    !(item.productId === productId && item.campaignId === campaignId)
-  )
-  saveCartToStorage(updatedCart)
-  return updatedCart
-}
-
-const clearCart = () => {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('donationCart')
-    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: [] }))
-  }
-}
-
-// Function to get impact description based on product name
-const getProductImpact = (name: string, quantity: number): string => {
-  if (name.toLowerCase().includes('food')) {
-    return `Feeds ${quantity} ${quantity === 1 ? 'family' : 'families'} for 2 weeks`
-  } else if (name.toLowerCase().includes('shelter')) {
-    return `Provides temporary housing for ${quantity} ${quantity === 1 ? 'family' : 'families'}`
-  } else if (name.toLowerCase().includes('medical')) {
-    return `Covers medical treatment for ${quantity * 10} people`
-  } else if (name.toLowerCase().includes('water')) {
-    return `Clean water for ${quantity} ${quantity === 1 ? 'family' : 'families'} for 1 month`
-  } else if (name.toLowerCase().includes('education')) {
-    return `School supplies for ${quantity * 5} children`
-  } else {
-    return `Essential supplies for ${quantity} ${quantity === 1 ? 'family' : 'families'} in need`
-  }
-}
-
-export default function ProcessTodonationPage() {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [selectedTip, setSelectedTip] = useState<number | 'custom' | null>(5);
-  const [customTipValue, setCustomTipValue] = useState("");
-  const [tipType, setTipType] = useState<'percentage' | 'rupees'>('percentage');
-  const [loading, setLoading] = useState(true);
-
-  // Load cart items from localStorage on component mount
+  // Load custom donation amount from localStorage if set from cause detail page
   useEffect(() => {
-    const cartItems = getCartFromStorage()
-    setItems(cartItems)
-    setLoading(false)
-  }, [])
-
-  // Listen for cart updates from other components
-  useEffect(() => {
-    const handleCartUpdate = (event: CustomEvent) => {
-      setItems(event.detail)
-    }
-
-    window.addEventListener('cartUpdated', handleCartUpdate as EventListener)
-    return () => {
-      window.removeEventListener('cartUpdated', handleCartUpdate as EventListener)
+    const savedAmount = localStorage.getItem('customDonationAmount')
+    if (savedAmount) {
+      setCustomDonationAmount(savedAmount)
+      localStorage.removeItem('customDonationAmount') // Clear after use
     }
   }, [])
 
-  const updateQuantity = (productId: number, campaignId: number, newQuantity: number) => {
-    if (newQuantity === 0) {
-      const updatedCart = removeCartItem(productId, campaignId)
-      setItems(updatedCart)
-    } else {
-      const updatedCart = updateCartItemQuantity(productId, campaignId, newQuantity)
-      setItems(updatedCart)
-    }
-  };
+  const { subtotal, totalItems, uniqueCampaigns } = getCartTotals()
+  const customAmount = parseFloat(customDonationAmount) || 0
+  const totalDonationAmount = subtotal + customAmount
 
-  const removeItem = (productId: number, campaignId: number) => {
-    const updatedCart = removeCartItem(productId, campaignId)
-    setItems(updatedCart)
-  };
-
-  const getSubtotal = () => {
-    return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  };
-
-  const getTipAmount = useMemo(() => {
-    const subtotal = getSubtotal();
-    let tipValue = 0;
-
+  // Calculate tip amount
+  const getTipAmount = () => {
+    let tipValue = 0
     if (selectedTip === 'custom' && customTipValue) {
-      const value = parseFloat(customTipValue);
+      const value = parseFloat(customTipValue)
       if (!isNaN(value) && value > 0) {
-        if (tipType === 'percentage') {
-          // Cap percentage at 100%
-          const percentage = Math.min(value, 100);
-          tipValue = subtotal * (percentage / 100);
-        } else {
-          // Cap fixed rupee amount at subtotal
-          tipValue = Math.min(value, subtotal);
-        }
+        tipValue = Math.min(value, totalDonationAmount)
       }
     } else if (typeof selectedTip === 'number') {
-      tipValue = subtotal * (selectedTip / 100);
+      tipValue = totalDonationAmount * (selectedTip / 100)
     }
-    
-    return Math.floor(tipValue);
-  }, [getSubtotal, selectedTip, customTipValue, tipType]);
+    return Math.floor(tipValue)
+  }
 
-  const handleCustomTipChange = (value: string) => {
-    const subtotal = getSubtotal();
-    let parsedValue = parseFloat(value);
-    
-    if (isNaN(parsedValue)) {
-      setCustomTipValue("");
-      return;
-    }
-    
-    if (tipType === 'percentage') {
-      if (parsedValue > 100) {
-        parsedValue = 100;
-      }
+  const tipAmount = getTipAmount()
+  const grandTotal = totalDonationAmount + tipAmount
+
+  const handleQuantityChange = (productId: number, campaignId: number, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      handleRemoveItem(productId, campaignId)
     } else {
-      if (parsedValue > subtotal) {
-        parsedValue = subtotal;
-      }
+      updateQuantity(productId, campaignId, newQuantity)
     }
-    
-    setCustomTipValue(parsedValue.toString());
-    setSelectedTip('custom');
-  };
-
-  const getTotal = () => {
-    return getSubtotal() + getTipAmount;
-  };
-
-  const getTotalBeneficiaries = () => {
-    return items.reduce((sum, item) => {
-      if (item.name.toLowerCase().includes('food')) {
-        return sum + item.quantity * 1 // 1 family per food package
-      } else if (item.name.toLowerCase().includes('medical')) {
-        return sum + item.quantity * 10 // 10 people per medical package
-      } else if (item.name.toLowerCase().includes('education')) {
-        return sum + item.quantity * 5 // 5 children per education package
-      }
-      return sum + item.quantity * 2 // Default 2 people per package
-    }, 0)
   }
 
-  const getTotalDays = () => {
-    return items.reduce((sum, item) => {
-      if (item.name.toLowerCase().includes('food')) {
-        return sum + item.quantity * 14 // 14 days per food package
-      } else if (item.name.toLowerCase().includes('water')) {
-        return sum + item.quantity * 30 // 30 days per water package
-      }
-      return sum + item.quantity * 7 // Default 7 days per package
-    }, 0)
+  const handleRemoveItem = (productId: number, campaignId: number) => {
+    removeFromCart(productId, campaignId)
   }
 
-  // Group items by campaign
-  const groupedItems = useMemo(() => {
-    const groups: { [campaignId: number]: CartItem[] } = {}
-    items.forEach(item => {
-      if (!groups[item.campaignId]) {
-        groups[item.campaignId] = []
-      }
-      groups[item.campaignId].push(item)
+  const handleClearCart = async () => {
+    setIsClearing(true)
+    await new Promise(resolve => setTimeout(resolve, 300)) // Small delay for UX
+    clearCart()
+    setCustomDonationAmount("")
+    setSelectedTip(5)
+    setCustomTipValue("")
+    setIsClearing(false)
+  }
+
+  const handleProceedToDonate = () => {
+    // Save cart data and custom amount to form data
+    updateFormData({
+      customAmount: customAmount > 0 ? customAmount : undefined,
+      tipAmount: tipAmount,
+      tipPercentage: typeof selectedTip === 'number' ? selectedTip : undefined
     })
-    return groups
-  }, [items])
+    
+    // Navigate to multi-step donation form
+    router.push('/donate')
+  }
 
-  if (loading) {
+  const itemsByCampaign = getItemsByCampaign()
+
+  if (totalItems === 0 && customAmount === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your cart...</p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto py-8 px-3 sm:px-4">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Your Cart</h1>
+            <p className="text-gray-600">Items you've selected for donation</p>
+          </div>
+
+          {/* Empty Cart */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-12"
+          >
+            <div className="mb-6">
+              <ShoppingBag className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Your cart is empty</h2>
+              <p className="text-gray-600">Add some products or make a direct donation to get started.</p>
+            </div>
+            
+            <div className="space-y-3 sm:space-y-0 sm:space-x-3 sm:flex sm:justify-center">
+              <Link href="/causes">
+                <Button className="w-full sm:w-auto">
+                  Browse Campaigns
+                </Button>
+              </Link>
+              <Button 
+                variant="outline" 
+                onClick={() => router.push('/donate')}
+                className="w-full sm:w-auto"
+              >
+                <Heart className="w-4 h-4 mr-2" />
+                Make Direct Donation
+              </Button>
+            </div>
+          </motion.div>
         </div>
       </div>
     )
@@ -242,320 +159,462 @@ export default function ProcessTodonationPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto py-6 sm:py-8 md:py-12 px-3 sm:px-4 md:px-6">
+      <div className="max-w-6xl mx-auto py-6 sm:py-8 px-3 sm:px-4">
+        {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="mb-6 sm:mb-8"
+          className="text-center mb-8"
         >
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-4">Your Donation Cart</h1>
-          <p className="text-base sm:text-lg md:text-xl text-gray-600">
-            Review your selected donation packages and proceed to make a difference in lives.
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Your Donation Cart</h1>
+          <p className="text-gray-600">
+            Review your items and proceed to make a difference
           </p>
-          {items.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2 text-sm text-gray-600">
-              <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full">
-                {items.length} {items.length === 1 ? 'item' : 'items'}
-              </span>
-              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
-                {Object.keys(groupedItems).length} {Object.keys(groupedItems).length === 1 ? 'campaign' : 'campaigns'}
-              </span>
-            </div>
-          )}
+          
+          {/* Cart Summary Pills */}
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mt-4">
+            <Badge variant="outline" className="bg-blue-50 text-blue-700">
+              {totalItems} Products
+            </Badge>
+            <Badge variant="outline" className="bg-green-50 text-green-700">
+              {uniqueCampaigns} Campaign{uniqueCampaigns !== 1 ? 's' : ''}
+            </Badge>
+            <Badge variant="outline" className="bg-purple-50 text-purple-700">
+              ₹{grandTotal.toLocaleString()} Total
+            </Badge>
+          </div>
         </motion.div>
 
-        {items.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8 }}
-            className="text-center py-12 sm:py-16"
-          >
-            <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto mb-4 sm:mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-              <ShoppingCart className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400" />
-            </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Your cart is empty</h2>
-            <p className="text-gray-600 mb-6 sm:mb-8 px-4">Start making a difference by selecting donation packages</p>
-            <Button
-              className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 sm:px-8 py-3 rounded-full font-semibold cursor-pointer text-sm sm:text-base"
-              asChild
+        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Direct Donation Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
             >
-              <Link href="/causes">
-                <Gift className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                Browse Campaigns
-              </Link>
-            </Button>
-          </motion.div>
-        ) : (
-          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12">
-            {/* Cart Items - Mobile First, Full Width */}
-            <div className="order-1 lg:order-1 lg:col-span-2 space-y-4 sm:space-y-6">
-              {/* Group items by campaign */}
-              {Object.entries(groupedItems).map(([campaignId, campaignItems]) => (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Heart className="w-5 h-5 mr-2 text-red-500" />
+                      Direct Donation
+                    </div>
+                    {customAmount > 0 && (
+                      <Badge className="bg-red-50 text-red-700">
+                        ₹{customAmount.toLocaleString()}
+                      </Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      Make a direct donation to support campaigns of your choice. This amount will be distributed across active campaigns.
+                    </p>
+                    
+                    <div className="flex space-x-2">
+                      <div className="relative flex-1">
+                        <span className="absolute left-3 top-3 text-gray-500">₹</span>
+                        <Input
+                          type="number"
+                          placeholder="Enter donation amount"
+                          value={customDonationAmount}
+                          onChange={(e) => setCustomDonationAmount(e.target.value)}
+                          className="pl-8"
+                          min="1"
+                        />
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() => setCustomDonationAmount("")}
+                        disabled={!customDonationAmount}
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                    
+                    {/* Quick Amount Buttons */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {[500, 1000, 2500, 5000].map((amount) => (
+                        <Button
+                          key={amount}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCustomDonationAmount(amount.toString())}
+                          className={`text-xs ${customDonationAmount === amount.toString() ? 'border-blue-500 bg-blue-50' : ''}`}
+                        >
+                          ₹{amount.toLocaleString()}
+                        </Button>
+                      ))}
+                    </div>
+                    
+                    {customAmount > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="bg-green-50 border border-green-200 rounded-lg p-3"
+                      >
+                        <div className="flex items-center">
+                          <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                          <span className="text-sm text-green-700 font-medium">
+                            Direct donation of ₹{customAmount.toLocaleString()} added
+                          </span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Product Items by Campaign */}
+            <AnimatePresence>
+              {Object.entries(itemsByCampaign).map(([campaignId, campaign], index) => (
                 <motion.div
                   key={campaignId}
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6 }}
-                  className="space-y-4"
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ delay: 0.1 + index * 0.05 }}
                 >
-                  {/* Campaign Header */}
-                  <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Campaign #{campaignId}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {campaignItems.length} {campaignItems.length === 1 ? 'item' : 'items'} in this campaign
-                    </p>
-                  </div>
-
-                  {/* Campaign Items */}
-                  {campaignItems.map((item, index) => (
-                    <motion.div
-                      key={`${item.productId}-${item.campaignId}`}
-                      initial={{ opacity: 0, x: -50 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.6, delay: index * 0.1 }}
-                      whileHover={{ scale: 1.02 }}
-                    >
-                      <Card className="p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300">
-                        <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-6">
-                          <div className="w-full sm:w-24 md:w-28 lg:w-32 flex-shrink-0">
-                            <Image
-                              src={item.image || "/placeholder.svg"}
-                              alt={item.name}
-                              width={100}
-                              height={100}
-                              className="w-full sm:w-24 md:w-28 lg:w-32 h-24 sm:h-24 md:h-28 lg:h-32 object-cover rounded-lg shadow-md"
-                            />
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <Package className="w-5 h-5 mr-2 text-blue-500" />
+                          <div>
+                            <h3 className="font-semibold">{campaign.campaignTitle}</h3>
+                            <p className="text-sm text-gray-500 font-normal">
+                              {campaign.items.length} item{campaign.items.length !== 1 ? 's' : ''}
+                            </p>
                           </div>
-
-                          <div className="flex-1 w-full">
-                            <div className="flex justify-between items-start mb-3">
-                              <div className="flex-1 pr-2">
-                                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 leading-tight">{item.name}</h3>
-                                {item.unit && (
-                                  <p className="text-sm text-gray-500 mb-1">Unit: {item.unit}</p>
-                                )}
-                                {item.description && (
-                                  <p className="text-sm sm:text-base text-gray-600 mb-2 line-clamp-2">{item.description}</p>
-                                )}
-                                <div className="bg-green-50 px-2 sm:px-3 py-1 rounded-full inline-block">
-                                  <span className="text-xs sm:text-sm font-medium text-green-700">
-                                    Impact: {getProductImpact(item.name, item.quantity)}
-                                  </span>
-                                </div>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeItem(item.productId, item.campaignId)}
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 cursor-pointer p-2 flex-shrink-0"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between space-y-3 sm:space-y-0">
-                              <div className="flex items-center justify-center sm:justify-start space-x-3">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => updateQuantity(item.productId, item.campaignId, item.quantity - 1)}
-                                  className="cursor-pointer h-8 w-8 p-0"
-                                  disabled={item.quantity <= 1}
-                                >
-                                  <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
-                                </Button>
-                                <span className="font-semibold text-base sm:text-lg w-8 text-center">{item.quantity}</span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => updateQuantity(item.productId, item.campaignId, item.quantity + 1)}
-                                  className="cursor-pointer h-8 w-8 p-0"
-                                  disabled={item.maxQty ? item.quantity >= item.maxQty : false}
-                                >
-                                  <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                                </Button>
-                              </div>
-                              <div className="text-center sm:text-right">
-                                <div className="text-xs sm:text-sm text-gray-600">₹{item.price.toLocaleString()} each</div>
-                                <div className="text-xl sm:text-2xl font-bold text-gray-900">
-                                  ₹{(item.price * item.quantity).toLocaleString()}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Stock limit warning */}
-                            {item.maxQty && item.quantity >= item.maxQty && (
-                              <div className="mt-2 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
-                                Maximum quantity reached ({item.maxQty} available)
+                        </div>
+                        <Badge variant="outline">
+                          ₹{campaign.items.reduce((sum, item) => sum + item.price * item.quantity, 0).toLocaleString()}
+                        </Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {campaign.items.map((item) => (
+                        <motion.div
+                          key={`${item.productId}-${item.campaignId}`}
+                          layout
+                          className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg"
+                        >
+                          {/* Product Image */}
+                          <div className="flex-shrink-0">
+                            {item.image ? (
+                              <Image
+                                src={item.image}
+                                alt={item.name}
+                                width={60}
+                                height={60}
+                                className="rounded-lg object-cover"
+                              />
+                            ) : (
+                              <div className="w-15 h-15 bg-gray-200 rounded-lg flex items-center justify-center">
+                                <Package className="w-6 h-6 text-gray-400" />
                               </div>
                             )}
                           </div>
-                        </div>
-                      </Card>
-                    </motion.div>
-                  ))}
+
+                          {/* Product Details */}
+                          <div className="flex-grow min-w-0">
+                            <h4 className="font-medium text-gray-900 truncate">{item.name}</h4>
+                            <p className="text-sm text-gray-500">
+                              ₹{item.price.toLocaleString()}{item.unit && ` per ${item.unit}`}
+                            </p>
+                            {item.description && (
+                              <p className="text-xs text-gray-400 truncate mt-1">
+                                {item.description}
+                              </p>
+                            )}
+                            
+                            {/* Stock Warning */}
+                            {item.stock && item.quantity >= item.stock * 0.8 && (
+                              <div className="flex items-center mt-1">
+                                <AlertTriangle className="w-3 h-3 text-orange-500 mr-1" />
+                                <span className="text-xs text-orange-600">
+                                  Only {item.stock - item.quantity} left
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Quantity Controls */}
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleQuantityChange(item.productId, item.campaignId, item.quantity - 1)}
+                              className="h-8 w-8 p-0"
+                              disabled={item.quantity <= 1}
+                            >
+                              <Minus className="w-3 h-3" />
+                            </Button>
+                            
+                            <Input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => {
+                                const newQuantity = parseInt(e.target.value) || 1
+                                handleQuantityChange(item.productId, item.campaignId, newQuantity)
+                              }}
+                              className="w-16 h-8 text-center text-sm"
+                              min="1"
+                              max={item.maxQty || item.stock || 999}
+                            />
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleQuantityChange(item.productId, item.campaignId, item.quantity + 1)}
+                              className="h-8 w-8 p-0"
+                              //@ts-ignore
+                              disabled={
+                                (item.maxQty && item.quantity >= item.maxQty) ||
+                                (item.stock && item.quantity >= item.stock)
+                              }
+                            >
+                              <Plus className="w-3 h-3" />
+                            </Button>
+                          </div>
+
+                          {/* Item Total */}
+                          <div className="text-right min-w-0">
+                            <p className="font-semibold text-gray-900">
+                              ₹{(item.price * item.quantity).toLocaleString()}
+                            </p>
+                          </div>
+
+                          {/* Remove Button */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveItem(item.productId, item.campaignId)}
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </motion.div>
+                      ))}
+                    </CardContent>
+                  </Card>
                 </motion.div>
               ))}
+            </AnimatePresence>
 
-              {/* Tipping Section */}
+            {/* Clear Cart Button */}
+            {(totalItems > 0 || customAmount > 0) && (
               <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-              >
-                <Card className="p-4 sm:p-6 shadow-lg">
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center">
-                    <Wallet className="w-4 h-4 mr-2" /> Add a Tip
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Your tip helps us continue supporting more families in need and covers platform costs.
-                  </p>
-                  <div className="flex space-x-2 sm:space-x-3 mb-4">
-                    {tipPercentages.map((tip) => (
-                      <Button
-                        key={tip}
-                        variant={selectedTip === tip ? "default" : "outline"}
-                        className={`flex-1 ${selectedTip === tip ? 'bg-green-600 text-white hover:bg-green-700' : 'text-gray-900 hover:bg-gray-100'}`}
-                        onClick={() => {
-                          setSelectedTip(tip);
-                          setCustomTipValue("");
-                        }}
-                      >
-                        {tip}%
-                      </Button>
-                    ))}
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <Input
-                      type="number"
-                      placeholder={`Enter custom tip in ${tipType === 'rupees' ? '₹' : '%'}`}
-                      value={customTipValue}
-                      onChange={(e) => handleCustomTipChange(e.target.value)}
-                      className="flex-1 text-sm sm:text-base"
-                      min="0"
-                      max={tipType === 'percentage' ? 100 : getSubtotal()}
-                    />
-                    <Select onValueChange={(value) => setTipType(value as 'percentage' | 'rupees')} defaultValue={tipType}>
-                      <SelectTrigger className="w-24">
-                        <SelectValue placeholder="Tip Type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="percentage">%</SelectItem>
-                        <SelectItem value="rupees">₹</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </Card>
-              </motion.div>
-
-              {/* Clear Cart Button */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="flex justify-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center"
               >
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    if (window.confirm('Are you sure you want to clear your entire cart?')) {
-                      clearCart()
-                      setItems([])
-                    }
-                  }}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
+                  onClick={handleClearCart}
+                  disabled={isClearing}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Clear Cart
+                  {isClearing ? 'Clearing...' : 'Clear Cart'}
                 </Button>
               </motion.div>
-            </div>
+            )}
+          </div>
 
-            {/* Order Summary */}
-            <div className="order-2 lg:order-2 lg:col-span-1">
-              <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className="lg:sticky lg:top-24"
-              >
-                <Card className="p-4 sm:p-6 shadow-xl">
-                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Donation Summary</h3>
-
-                  <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
-                    <div className="flex justify-between text-sm sm:text-base">
-                      <span className="text-gray-600">Subtotal</span>
-                      <span className="font-semibold">₹{getSubtotal().toLocaleString()}</span>
-                    </div>
-
-                    {getTipAmount > 0 && (
-                      <div className="flex justify-between text-green-600 text-sm sm:text-base">
-                        <span className="text-gray-600">Tip</span>
-                        <span className="font-semibold">+₹{getTipAmount.toLocaleString()}</span>
+          {/* Sidebar - Order Summary */}
+          <div className="lg:col-span-1">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="sticky top-6"
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
+                    Donation Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Donation Breakdown */}
+                  <div className="space-y-3">
+                    {subtotal > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Products Total</span>
+                        <span className="font-medium">₹{subtotal.toLocaleString()}</span>
                       </div>
                     )}
-
-                    <div className="border-t pt-3 sm:pt-4">
-                      <div className="flex justify-between text-lg sm:text-xl font-bold text-gray-900">
-                        <span>Total Donation</span>
-                        <span>₹{getTotal().toLocaleString()}</span>
+                    
+                    {customAmount > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Direct Donation</span>
+                        <span className="font-medium">₹{customAmount.toLocaleString()}</span>
                       </div>
-                    </div>
+                    )}
+                    
+                    {totalDonationAmount > 0 && (
+                      <>
+                        <Separator />
+                        <div className="flex justify-between">
+                          <span className="font-medium">Subtotal</span>
+                          <span className="font-medium">₹{totalDonationAmount.toLocaleString()}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
 
-                  <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
-                    <div className="bg-gradient-to-r from-green-50 to-yellow-50 p-3 sm:p-4 rounded-lg">
-                      <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Your Impact</h4>
-                      <ul className="text-xs sm:text-sm text-gray-700 space-y-1">
-                        <li>• Supports {getTotalBeneficiaries()} people</li>
-                        <li>• Provides aid for {getTotalDays()} days</li>
-                        <li>• Spans {Object.keys(groupedItems).length} {Object.keys(groupedItems).length === 1 ? 'campaign' : 'campaigns'}</li>
-                        <li>• Includes medical aid and essential supplies</li>
-                      </ul>
+                  {/* Tip Section */}
+                  {totalDonationAmount > 0 && (
+                    <div className="space-y-3 pt-4 border-t">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-gray-900">Add a tip?</span>
+                        <Badge variant="secondary" className="text-xs">
+                          Optional
+                        </Badge>
+                      </div>
+                      
+                      <p className="text-sm text-gray-600">
+                        Support our platform to help more people in need
+                      </p>
+                      
+                      {/* Tip Options */}
+                      <div className="grid grid-cols-4 gap-2">
+                        {[5, 10, 15].map((percentage) => (
+                          <Button
+                            key={percentage}
+                            variant={selectedTip === percentage ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              setSelectedTip(percentage)
+                              setCustomTipValue("")
+                            }}
+                            className="text-xs"
+                          >
+                            {percentage}%
+                          </Button>
+                        ))}
+                        <Button
+                          variant={selectedTip === 'custom' ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            setSelectedTip('custom')
+                            setCustomTipValue("")
+                          }}
+                          className="text-xs"
+                        >
+                          Custom
+                        </Button>
+                      </div>
+                      
+                      {/* Custom Tip Input */}
+                      {selectedTip === 'custom' && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          className="relative"
+                        >
+                          <span className="absolute left-3 top-3 text-gray-500 text-sm">₹</span>
+                          <Input
+                            type="number"
+                            placeholder="Enter tip amount"
+                            value={customTipValue}
+                            onChange={(e) => setCustomTipValue(e.target.value)}
+                            className="pl-8"
+                            min="0"
+                            max={totalDonationAmount}
+                          />
+                        </motion.div>
+                      )}
+                      
+                      {/* Clear Tip Button */}
+                      {(selectedTip !== null || customTipValue) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedTip(null)
+                            setCustomTipValue("")
+                          }}
+                          className="w-full text-xs text-gray-500"
+                        >
+                          No tip
+                        </Button>
+                      )}
+                      
+                      {/* Tip Amount Display */}
+                      {tipAmount > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Tip Amount</span>
+                          <span className="font-medium text-green-600">₹{tipAmount.toLocaleString()}</span>
+                        </div>
+                      )}
                     </div>
+                  )}
 
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600">
-                        <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 flex-shrink-0" />
-                        <span>100% Secure Payment</span>
+                  {/* Final Total */}
+                  {grandTotal > 0 && (
+                    <>
+                      <Separator />
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-bold">Total</span>
+                        <span className="text-xl font-bold text-green-600">
+                          ₹{grandTotal.toLocaleString()}
+                        </span>
                       </div>
-                      <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600">
-                        <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 flex-shrink-0" />
-                        <span>Tax Deductible (80G Certificate)</span>
+                    </>
+                  )}
+
+                  {/* Impact Preview */}
+                  {totalDonationAmount > 0 && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+                      <div className="flex items-center">
+                        <Users className="w-4 h-4 text-blue-500 mr-2" />
+                        <span className="text-sm font-medium text-blue-700">
+                          Estimated Impact
+                        </span>
                       </div>
-                      <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600">
-                        <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 flex-shrink-0" />
-                        <span>Instant donation receipt</span>
-                      </div>
+                      <p className="text-sm text-blue-600">
+                        Your donation could help approximately{' '}
+                        <span className="font-semibold">
+                          {Math.floor(totalDonationAmount / 100)} people
+                        </span>{' '}
+                        in need
+                      </p>
                     </div>
-                  </div>
+                  )}
 
+                  {/* Proceed Button */}
                   <Button
-                    className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 sm:py-4 text-sm sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
-                    asChild
+                    onClick={handleProceedToDonate}
+                    disabled={grandTotal <= 0}
+                    className="w-full h-12 text-base font-medium"
+                    size="lg"
                   >
-                    <Link href="/checkout">
-                      <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3" />
-                      Proceed to Checkout
-                      <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2 sm:ml-3" />
-                    </Link>
+                    <ArrowRight className="w-5 h-5 mr-2" />
+                    Proceed to Donate
+                    {grandTotal > 0 && (
+                      <span className="ml-2">₹{grandTotal.toLocaleString()}</span>
+                    )}
                   </Button>
 
-                  <div className="mt-3 sm:mt-4 text-center">
-                    <Link href="/causes" className="text-green-600 hover:text-green-700 font-medium cursor-pointer text-sm sm:text-base">
-                      ← Continue donation
-                    </Link>
+                  {/* Security Badge */}
+                  <div className="flex items-center justify-center text-xs text-gray-500 mt-4">
+                    <Zap className="w-3 h-3 mr-1" />
+                    Secured by Razorpay
                   </div>
-                </Card>
-              </motion.div>
-            </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
-        )}
+        </div>
       </div>
     </div>
-  );
+  )
 }

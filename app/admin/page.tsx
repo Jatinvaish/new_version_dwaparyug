@@ -42,7 +42,7 @@ const stats = [
     icon: Package,
     color: "text-blue-500",
     bgColor: "bg-blue-100",
-    link: "/admin/campaigns",
+    link: "/admin/causes",
   },
   {
     title: "New Users",
@@ -75,7 +75,7 @@ const recentCampaigns = [
     goal: "$20,000",
     progress: 75,
     status: "Active",
-    link: "/admin/campaigns/1",
+    link: "/admin/causes/1",
   },
   {
     id: 2,
@@ -85,7 +85,7 @@ const recentCampaigns = [
     goal: "$10,000",
     progress: 85,
     status: "Active",
-    link: "/admin/campaigns/2",
+    link: "/admin/causes/2",
   },
   {
     id: 3,
@@ -95,7 +95,7 @@ const recentCampaigns = [
     goal: "$25,000",
     progress: 100,
     status: "Completed",
-    link: "/admin/campaigns/3",
+    link: "/admin/causes/3",
   },
 ]
 
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 sm:mb-0">Dashboard</h1>
           <Button asChild>
-            <Link href="/admin/campaigns/new" className="flex items-center gap-2">
+            <Link href="/admin/causes/new" className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
               New Campaign
             </Link>
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Recent Campaigns</CardTitle>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href="/admin/campaigns">View All</Link>
+                  <Link href="/admin/causes">View All</Link>
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">

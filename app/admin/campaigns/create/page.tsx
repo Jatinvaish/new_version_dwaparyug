@@ -1,4 +1,4 @@
-// File: app/admin/campaigns/create/page.tsx
+// File: app/admin/causes/create/page.tsx
 
 "use client"
 
@@ -13,11 +13,11 @@ export default function CreateCampaignPage() {
     console.log("Saving new campaign:", newCampaign)
     // Add your API call here to save the new campaign
     // After a successful save, redirect to the campaigns list
-    router.push("/admin/campaigns")
+    router.push("/admin/causes")
   }
 
   const handleCancel = () => {
-    router.push("/admin/campaigns")
+    router.push("/admin/causes")
   }
 
   return (

@@ -206,11 +206,11 @@ const closeDeleteDialog = () => {
 }, [campaignToDelete, fetchCampaigns]);
 
   const handleEdit = useCallback((campaign: Campaign) => {
-    window.location.href = `/admin/campaigns/update/${campaign.id}`
+    window.location.href = `/admin/causes/update/${campaign.id}`
   }, [])
 
   const handleAdd = useCallback(() => {
-    window.location.href = '/admin/campaigns/create'
+    window.location.href = '/admin/causes/create'
   }, [])
 
   // Define table columns with useMemo to prevent recreation
@@ -426,7 +426,7 @@ const closeDeleteDialog = () => {
   )
 }
 // ========================================
-// File: app/admin/campaigns/page.tsx
+// File: app/admin/causes/page.tsx
 
 // "use client"
 
@@ -661,7 +661,7 @@ const closeDeleteDialog = () => {
 //             Export
 //           </Button>
 //           <Button asChild>
-//             <Link href="/admin/campaigns/create">
+//             <Link href="/admin/causes/create">
 //               <Plus className="mr-2 h-4 w-4" /> Create Campaign
 //             </Link>
 //           </Button>
@@ -1000,12 +1000,12 @@ const closeDeleteDialog = () => {
 //                     <TableCell className="text-right">
 //                       <div className="flex justify-end gap-1">
 //                         <Button variant="ghost" size="icon" asChild>
-//                           <Link href={`/admin/campaigns/${campaign.id}`}>
+//                           <Link href={`/admin/causes/${campaign.id}`}>
 //                             <Eye className="h-4 w-4" />
 //                           </Link>
 //                         </Button>
 //                         <Button variant="ghost" size="icon" asChild>
-//                           <Link href={`/admin/campaigns/update/${campaign.id}`}>
+//                           <Link href={`/admin/causes/update/${campaign.id}`}>
 //                             <Edit className="h-4 w-4" />
 //                           </Link>
 //                         </Button>
@@ -1060,13 +1060,13 @@ const closeDeleteDialog = () => {
 
 //                     <div className="flex justify-end gap-2">
 //                       <Button variant="outline" size="sm" asChild>
-//                         <Link href={`/admin/campaigns/${campaign.id}`}>
+//                         <Link href={`/admin/causes/${campaign.id}`}>
 //                           <Eye className="h-4 w-4 mr-1" />
 //                           View
 //                         </Link>
 //                       </Button>
 //                       <Button variant="outline" size="sm" asChild>
-//                         <Link href={`/admin/campaigns/update/${campaign.id}`}>
+//                         <Link href={`/admin/causes/update/${campaign.id}`}>
 //                           <Edit className="h-4 w-4 mr-1" />
 //                           Edit
 //                         </Link>

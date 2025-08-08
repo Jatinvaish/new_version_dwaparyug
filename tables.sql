@@ -163,6 +163,16 @@ CREATE TABLE campaign_videos (
 ------------------------------------------------------------------------- to this point  ------------------------------------------------------------------------- 
 -- 9) Donation Payment Requests
 
+CREATE TABLE donation_temp_data (
+    id BIGSERIAL PRIMARY KEY,
+    payment_request_id BIGINT NOT NULL,
+    cart_items JSONB NOT NULL,
+    form_data JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_temp_data_payment_request FOREIGN KEY (payment_request_id) REFERENCES donation_payment_requests(id) ON DELETE CASCADE
+);
+
 CREATE TABLE donation_payment_requests (
     id BIGSERIAL PRIMARY KEY,
     campaign_id BIGINT NOT NULL,

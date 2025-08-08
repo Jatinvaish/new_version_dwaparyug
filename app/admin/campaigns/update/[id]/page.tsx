@@ -1,4 +1,4 @@
-// File: app/admin/campaigns/[id]/edit/page.tsx
+// File: app/admin/causes/[id]/edit/page.tsx
 
 "use client"
 
@@ -52,7 +52,7 @@ export default function EditCampaignPage({ params }: { params: { id: string } })
       // Redirect to campaigns list if campaign not found
       if (error instanceof Error && error.message === 'Campaign not found') {
         setTimeout(() => {
-          router.push("/admin/campaigns")
+          router.push("/admin/causes")
         }, 2000)
       }
     } finally {
@@ -64,11 +64,11 @@ export default function EditCampaignPage({ params }: { params: { id: string } })
     console.log("Saving updated campaign:", updatedCampaign)
     // Add your API call here to update the campaign
     // After a successful save, redirect to the campaigns list
-    router.push("/admin/campaigns")
+    router.push("/admin/causes")
   }
 
   const handleCancel = () => {
-    router.push("/admin/campaigns")
+    router.push("/admin/causes")
   }
 
   if (isLoading) {

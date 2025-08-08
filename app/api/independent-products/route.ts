@@ -1,29 +1,8 @@
 import { SelectQuery } from '@/lib/database';
-import { uploadImage, deleteImage } from '@/lib/cloudinary';
+import { uploadImage, deleteImage, processImageUpload } from '@/lib/cloudinary';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Helper function to process image upload
-const processImageUpload = async (imageData: any, fileName?: string): Promise<string> => {
-  if (imageData instanceof File) {
-    const bytes = await imageData.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const safeFileName = fileName || 
-      `product_${Date.now()}_${imageData.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-    return await uploadImage(buffer, safeFileName);
-  } else if (typeof imageData === 'string' && imageData.startsWith('data:image/')) {
-    const base64Data = imageData.split(',')[1];
-    const buffer = Buffer.from(base64Data, 'base64');
-    const extension = imageData.split(';')[0].split('/')[1] || 'jpg';
-    const safeFileName = fileName || 
-      `product_${Date.now()}_${Math.random().toString(36).substring(7)}.${extension}`;
-    return await uploadImage(buffer, safeFileName);
-  } else if (Buffer.isBuffer(imageData)) {
-    const safeFileName = fileName || 
-      `product_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
-    return await uploadImage(imageData, safeFileName);
-  }
-  throw new Error('Unsupported image format');
-};
 
 // GET - List products with search, pagination, sorting
 export async function GET(request: NextRequest) {
