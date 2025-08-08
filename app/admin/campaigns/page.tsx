@@ -206,11 +206,11 @@ const closeDeleteDialog = () => {
 }, [campaignToDelete, fetchCampaigns]);
 
   const handleEdit = useCallback((campaign: Campaign) => {
-    window.location.href = `/admin/causes/update/${campaign.id}`
+    window.location.href = `/admin/campaigns/update/${campaign.id}`
   }, [])
 
   const handleAdd = useCallback(() => {
-    window.location.href = '/admin/causes/create'
+    window.location.href = '/admin/campaigns/create'
   }, [])
 
   // Define table columns with useMemo to prevent recreation

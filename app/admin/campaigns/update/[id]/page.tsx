@@ -100,7 +100,7 @@ export default function EditCampaignPage({ params }: { params: { id: string } })
 
 
   return (
-    <div className="p-6">
+    <div className=" ">
       <h1 className="text-2xl font-bold mb-6">Edit Campaign</h1>
       <CampaignForm campaign={campaign} onSave={handleSave} onCancel={handleCancel} />
     </div>

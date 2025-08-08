@@ -40,10 +40,10 @@ const adminLinks: AdminLink[] = [
     ],
   },
   {
-    name: "Campaigns", href: "/admin/causes", icon: PlusCircle,
+    name: "Campaigns", href: "/admin/campaigns", icon: PlusCircle,
     subLinks: [
-      { name: "All Campaigns", href: "/admin/causes", icon: ListChecks },
-      { name: "Add Campaigns", href: "/admin/causes/create", icon: PlusCircle },
+      { name: "All Campaigns", href: "/admin/campaigns", icon: ListChecks },
+      { name: "Add Campaigns", href: "/admin/campaigns/create", icon: PlusCircle },
     ],
   },
   { name: "Donations", href: "/admin/donations", icon: DollarSign },

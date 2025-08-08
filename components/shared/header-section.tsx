@@ -47,7 +47,7 @@ const HeaderSection = () => {
         </Link>
       );
     }
-    
+
     // If logged in and NOT an admin, show the profile dropdown
     if (session && session.user && session.user?.role?.toLowerCase() !== 'admin') {
       return (
@@ -75,7 +75,7 @@ const HeaderSection = () => {
   };
 
   return (
-    <section>
+    <section className='top-0 sticky z-50'>
       <motion.div
         className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-2 sm:py-3 px-2 sm:px-4 relative overflow-hidden"
         initial={{ y: -100 }}
@@ -120,7 +120,7 @@ const HeaderSection = () => {
                 24/7 Helpline: +91 99993 03166
               </span>
             </motion.span>
-            
+
             <motion.span className="hidden sm:flex items-center group cursor-pointer" variants={fadeInUp}>
               {!isMobile ? (
                 <motion.span
@@ -135,7 +135,7 @@ const HeaderSection = () => {
               )}
               <span className="group-hover:text-yellow-400 transition-colors">support@dwaparyug.org</span>
             </motion.span>
-            
+
             <motion.span className="hidden lg:flex items-center group cursor-pointer" variants={fadeInUp}>
               {!isMobile ? (
                 <motion.span
@@ -153,7 +153,7 @@ const HeaderSection = () => {
               </span>
             </motion.span>
           </motion.div>
-          
+
           <motion.div
             initial={{ opacity: 0, x: 100 }}
             animate={{ opacity: 1, x: 0 }}
@@ -203,7 +203,6 @@ const HeaderSection = () => {
             </div>
           </motion.div>
 
-          {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-8">
             {["Home", "About Us", "How It Works", "Causes", "Contact Us"].map((item, index) => (
               <motion.div
@@ -222,6 +221,7 @@ const HeaderSection = () => {
               </motion.div>
             ))}
           </div>
+
 
           {/* Mobile and Desktop Right Section */}
           <div className="flex items-center space-x-3 sm:space-x-6">

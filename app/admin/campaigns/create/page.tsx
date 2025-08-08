@@ -13,15 +13,15 @@ export default function CreateCampaignPage() {
     console.log("Saving new campaign:", newCampaign)
     // Add your API call here to save the new campaign
     // After a successful save, redirect to the campaigns list
-    router.push("/admin/causes")
+    router.push("/admin/campaigns")
   }
 
   const handleCancel = () => {
-    router.push("/admin/causes")
+    router.push("/admin/campaigns")
   }
 
   return (
-    <div className="p-6">
+    <div className=" ">
       <h1 className="text-2xl font-bold mb-6">Create New Campaign</h1>
       <CampaignForm onSave={handleSave} onCancel={handleCancel} />
     </div>

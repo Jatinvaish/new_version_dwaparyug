@@ -578,7 +578,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
 
       console.log('Final payload:', payload);
 
-      const url = campaign ? `/api/campaigns/${campaign.id}` : '/api/causes';
+      const url = campaign ? `/api/campaigns/${campaign.id}` : '/api/campaigns';
       const method = campaign ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
