@@ -85,8 +85,8 @@ const CategoryFilter: React.FC<{
         <button
           onClick={() => onCategoryChange(null)}
           className={`px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 flex-shrink-0 whitespace-nowrap transform hover:scale-105 ${!selectedCategory
-              ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-xl shadow-blue-500/30 scale-105'
-              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-md hover:shadow-lg'
+            ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-xl shadow-blue-500/30 scale-105'
+            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-md hover:shadow-lg'
             }`}
         >
           <Star className="w-4 h-4 mr-2 inline" />
@@ -97,8 +97,8 @@ const CategoryFilter: React.FC<{
             key={category.id}
             onClick={() => onCategoryChange(category.id)}
             className={`px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 flex-shrink-0 whitespace-nowrap transform hover:scale-105 ${selectedCategory === category.id
-                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-xl shadow-blue-500/30 scale-105'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-md hover:shadow-lg'
+              ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-xl shadow-blue-500/30 scale-105'
+              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-md hover:shadow-lg'
               }`}
           >
             {category.name}
@@ -135,8 +135,8 @@ const SearchBar: React.FC<{
           <button
             onClick={() => onViewModeChange('grid')}
             className={`p-3 rounded-xl transition-all duration-300 ${viewMode === 'grid'
-                ? 'bg-white text-blue-600 shadow-md transform scale-105'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+              ? 'bg-white text-blue-600 shadow-md transform scale-105'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
               }`}
             title="Grid view"
           >
@@ -145,8 +145,8 @@ const SearchBar: React.FC<{
           <button
             onClick={() => onViewModeChange('list')}
             className={`p-3 rounded-xl transition-all duration-300 ${viewMode === 'list'
-                ? 'bg-white text-blue-600 shadow-md transform scale-105'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+              ? 'bg-white text-blue-600 shadow-md transform scale-105'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
               }`}
             title="List view"
           >
@@ -274,8 +274,8 @@ const CampaignCard: React.FC<{
               <button
                 onClick={handleFavorite}
                 className={`ml-4 flex-shrink-0 p-3 rounded-full transition-all duration-300 transform hover:scale-110 ${isFavorited
-                    ? 'text-red-500 bg-red-50 shadow-lg shadow-red-500/20'
-                    : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                  ? 'text-red-500 bg-red-50 shadow-lg shadow-red-500/20'
+                  : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
                   }`}
               >
                 <Heart className={`w-5 h-5 ${isFavorited ? 'fill-current' : ''}`} />
@@ -560,8 +560,8 @@ const IPagination: React.FC<{
             <button
               onClick={() => onPageChange(page as number)}
               className={`px-5 py-3 rounded-2xl text-base font-semibold transition-all duration-300 transform hover:scale-105 ${currentPage === page
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-xl scale-105'
-                  : 'bg-white border-2 border-gray-200 hover:bg-gray-50 hover:border-blue-300 text-gray-700 shadow-lg hover:shadow-xl'
+                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-xl scale-105'
+                : 'bg-white border-2 border-gray-200 hover:bg-gray-50 hover:border-blue-300 text-gray-700 shadow-lg hover:shadow-xl'
                 }`}
             >
               {page}
@@ -649,8 +649,9 @@ const CampaignList: React.FC<any> = ({
     const loadCampaigns = async () => {
       setLoading(true);
       try {
-        const data = await apiService.fetchCampaigns(filters);
-        const campaignsToShow = maxItems ? data.campaigns.slice(0, maxItems) : data.campaigns;
+        const data: any = await apiService.fetchCampaigns(filters);
+        const filterDat = data.campaigns?.filter((x: any) => x?.status === 'Active');
+        const campaignsToShow = maxItems ? filterDat.slice(0, maxItems) : filterDat;
         setCampaigns(campaignsToShow);
         setPagination(data.pagination);
       } catch (error) {
