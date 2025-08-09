@@ -7,6 +7,8 @@ import { Button } from '../ui/button'
 import Link from "next/link";
 import { useSession, signOut } from 'next-auth/react';
 import { useMediaQuery } from 'react-responsive';
+import Image from "next/image";
+import logo from "@/public/images/logo/logo.png";
 
 // Import Shadcn UI Dropdown components
 import {
@@ -186,22 +188,15 @@ const HeaderSection = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 text-white px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold rounded-lg shadow-lg">
-              {/*
-                Refactored: Conditionally apply text-shadow animation.
-                This is a big performance win. Text shadow is often rendered on the CPU.
-                We disable it on mobile and just show the static text.
-              */}
-              {!isMobile ? (
-                <motion.div
-                  animate={{ textShadow: ["0 0 0px #fbbf24", "0 0 10px #fbbf24", "0 0 0px #fbbf24"] }}
-                  transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-                >
-                  dwaparyug
-                </motion.div>
-              ) : (
-                <div>dwaparyug</div>
-              )}
+            {/* todo */}
+            <div className="from-gray-800 to-gray-900 px-3 sm:px-4 py-2 sm:py-3 rounded-lg shadow-lg">
+              <Image
+                src={logo}
+                alt="Dwaparyug Logo"
+                width={160} // adjust to fit your design
+                height={90} // adjust to fit your design
+                priority
+              />
             </div>
           </motion.div>
 
