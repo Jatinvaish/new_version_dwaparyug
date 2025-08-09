@@ -189,12 +189,12 @@ const HeaderSection = () => {
             whileTap={{ scale: 0.95 }}
           >
             {/* todo */}
-            <div className="from-gray-800 to-gray-900 px-3 sm:px-4 py-2 sm:py-3 rounded-lg shadow-lg">
+            <div className="from-gray-800 to-gray-900 rounded-lg shadow-lg">
               <Image
                 src={logo}
                 alt="Dwaparyug Logo"
-                width={160} // adjust to fit your design
-                height={90} // adjust to fit your design
+                width={160}  
+                height={90}  
                 priority
               />
             </div>
