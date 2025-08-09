@@ -4,7 +4,7 @@ import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { signIn } from "next-auth/react"
-import { toast } from "sonner"
+import toast from "react-hot-toast";
 import React from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -49,6 +49,7 @@ export default function LoginPage() {
         password: data.password,
         redirect: false,
       })
+      console.log("🚀 ~ onSubmit ~ response:", response)
 
       if (response?.ok) {
         toast.success("Login Successful")

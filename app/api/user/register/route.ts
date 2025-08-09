@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     console.log("🚀 ~ POST ~ result:", result)
 
     if (result && result) {
-      const newUser = result;
+      const newUser = result?.rows[0];
       return NextResponse.json({
         status: "success",
         message: "User created successfully.",

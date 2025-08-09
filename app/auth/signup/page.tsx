@@ -69,7 +69,8 @@ export default function SignupPage() {
     startTransition(async () => {
       try {
         const response = await api.post("/user/register", data);
-        if (response.status === 200) {
+        console.log("🚀 ~ onSubmit ~ response.status:", response.status)
+        if (response.status === 201) {
           toast.success(response.data.message);
           reset();
           router.push("/auth/login");

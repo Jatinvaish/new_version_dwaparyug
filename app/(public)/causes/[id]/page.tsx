@@ -12,7 +12,6 @@ import {
   Calendar,
   Users,
   CheckCircle,
-  Gift,
   TrendingUp,
   Shield,
   Plus,
@@ -57,7 +56,7 @@ interface Campaign {
   location: string
   organizer: string
   verified: boolean
-  total_beneficiary: number
+  beneficiaries: number
   total_donors_till_now: number
   start_date: string
   end_date: string
@@ -97,7 +96,7 @@ export default function CauseDetailsPage() {
   const params = useParams()
   const router = useRouter()
   const { cartItems, addToCart, removeFromCart, getItemQuantity, getCartTotals } = useDonationCart()
-  
+
   const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -108,12 +107,12 @@ export default function CauseDetailsPage() {
     const fetchCampaign = async () => {
       try {
         setLoading(true)
-        
+
         const response = await fetch(`/api/campaigns/${params.id}`)
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
-        
+
         const campaignData = await response.json()
         setCampaign(campaignData)
       } catch (error) {
@@ -207,7 +206,7 @@ export default function CauseDetailsPage() {
       if (line.startsWith('### ')) {
         return <h3 key={index} className="text-lg font-bold text-gray-900 mb-2 mt-4">{line.slice(4)}</h3>
       }
-      
+
       if (line.includes('**') && line.trim() !== '') {
         const parts = line.split('**')
         return (
@@ -216,23 +215,23 @@ export default function CauseDetailsPage() {
           </p>
         )
       }
-      
+
       if (line.startsWith('- ')) {
         return <li key={index} className="mb-1 text-gray-600 ml-4 list-disc">{line.slice(2)}</li>
       }
-      
+
       if (line.trim() === '---') {
         return <hr key={index} className="my-6 border-gray-200" />
       }
-      
+
       if (line.trim() === '') {
         return <div key={index} className="mb-2" />
       }
-      
+
       if (line.startsWith('*') && line.endsWith('*') && line.length > 2) {
         return <p key={index} className="mb-2 text-gray-500 italic text-sm">{line.slice(1, -1)}</p>
       }
-      
+
       return <p key={index} className="mb-3 text-gray-600 leading-relaxed">{line}</p>
     })
   }
@@ -297,14 +296,14 @@ export default function CauseDetailsPage() {
           <div className="space-y-6 lg:grid lg:grid-cols-3 lg:gap-8 lg:space-y-0 xl:gap-12">
             {/* Main Content - Mobile First, Desktop Second Column */}
             <div className="order-1 lg:col-span-2">
-              <motion.div 
-                initial={{ opacity: 0, y: 30 }} 
-                animate={{ opacity: 1, y: 0 }} 
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
                 className="space-y-4 sm:space-y-6"
               >
                 {/* Image Gallery - Mobile Optimized */}
-                <div className="relative">  
+                <div className="relative">
                   <div className="relative h-48 rounded-lg overflow-hidden shadow-lg sm:h-64 md:h-80 lg:h-96 lg:rounded-2xl lg:shadow-xl">
                     <Image
                       src={allImages[currentImageIndex] || "/placeholder.svg"}
@@ -342,9 +341,8 @@ export default function CauseDetailsPage() {
                           <button
                             key={index}
                             onClick={() => setCurrentImageIndex(index)}
-                            className={`w-2 h-2 rounded-full transition-colors touch-manipulation ${
-                              index === currentImageIndex ? "bg-white" : "bg-white/50"
-                            }`}
+                            className={`w-2 h-2 rounded-full transition-colors touch-manipulation ${index === currentImageIndex ? "bg-white" : "bg-white/50"
+                              }`}
                             aria-label={`Go to image ${index + 1}`}
                           />
                         ))}
@@ -376,9 +374,8 @@ export default function CauseDetailsPage() {
                         <button
                           key={index}
                           onClick={() => setCurrentImageIndex(index)}
-                          className={`flex-shrink-0 w-16 h-12 rounded-md overflow-hidden border-2 transition-colors touch-manipulation sm:w-20 sm:h-16 sm:rounded-lg ${
-                            index === currentImageIndex ? "border-blue-400 ring-2 ring-blue-100" : "border-gray-200 hover:border-gray-300"
-                          }`}
+                          className={`flex-shrink-0 w-16 h-12 rounded-md overflow-hidden border-2 transition-colors touch-manipulation sm:w-20 sm:h-16 sm:rounded-lg ${index === currentImageIndex ? "border-blue-400 ring-2 ring-blue-100" : "border-gray-200 hover:border-gray-300"
+                            }`}
                         >
                           <Image
                             src={image || "/placeholder.svg"}
@@ -423,7 +420,7 @@ export default function CauseDetailsPage() {
                     </div>
                     <div className="text-center">
                       <div className="text-lg font-bold text-purple-600 sm:text-xl lg:text-2xl">
-                        {campaign.total_beneficiary?.toLocaleString()}
+                        {campaign.beneficiaries?.toLocaleString()}
                       </div>
                       <div className="text-xs text-gray-600 sm:text-sm">Beneficiaries</div>
                     </div>
@@ -441,7 +438,7 @@ export default function CauseDetailsPage() {
                       About This Campaign
                     </h2>
                     <div className="prose prose-sm max-w-none sm:prose-base lg:prose-lg">
-                     {campaign && campaign?.about_campaign ? (renderMarkdownContent(campaign?.about_campaign)) : null}
+                      {campaign && campaign?.about_campaign ? (renderMarkdownContent(campaign?.about_campaign)) : null}
                     </div>
                   </div>
 
@@ -503,6 +500,134 @@ export default function CauseDetailsPage() {
                   )}
 
                   {/* FAQ Section */}
+
+                  {campaign.assignedProducts && campaign.assignedProducts.length > 0 && (
+                    <section className="py-8 px-3 bg-gray-50 sm:py-12 sm:px-4 lg:py-16">
+                      <div className="max-w-7xl mx-auto">
+                        <motion.div
+                          initial={{ opacity: 0, y: 30 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.8 }}
+                          viewport={{ once: true }}
+                          className="text-center mb-8 sm:mb-12"
+                        >
+                          <h2 className="text-2xl font-bold text-gray-900 mb-3 sm:text-3xl lg:text-4xl sm:mb-4">
+                            Campaign{" "}
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">
+                              Products
+                            </span>
+                          </h2>
+                          <p className="text-base text-gray-600 max-w-3xl mx-auto sm:text-lg lg:text-xl">
+                            Choose from our campaign-specific products. Each product directly contributes to this relief campaign
+                            and shows exactly how your donation will be used to help families in need.
+                          </p>
+                        </motion.div>
+
+                        {/* Products Grid */}
+                        <div className="grid gap-4 mb-8 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 sm:mb-12">
+                          {campaign.assignedProducts?.map((product, index) => (
+                            <motion.div
+                              key={product.id}
+                              initial={{ opacity: 0, y: 30 }}
+                              whileInView={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.6, delay: index * 0.1 }}
+                              viewport={{ once: true }}
+                              whileHover={{ y: -5, scale: 1.01 }}
+                              className="cursor-pointer"
+                            >
+                              <Card className="h-full overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+                                <div className="relative">
+                                  <Image
+                                    src={product.image || "/placeholder.svg"}
+                                    alt={product.name || `Product ${product.id}`}
+                                    width={300}
+                                    height={200}
+                                    className="w-full h-40 object-cover sm:h-48"
+                                  />
+                                  <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
+                                    <Badge className="bg-white/90 text-gray-900 font-semibold text-xs sm:text-sm">
+                                      {product.unit || 'Unit'}
+                                    </Badge>
+                                  </div>
+                                  {product.stock !== undefined && product.stock < 10 && (
+                                    <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
+                                      <Badge className="bg-red-500 text-white font-semibold text-xs sm:text-sm">
+                                        Only {product.stock} left
+                                      </Badge>
+                                    </div>
+                                  )}
+                                </div>
+                                <CardContent className="p-4 sm:p-6">
+                                  <h3 className="text-lg font-bold text-gray-900 mb-2 sm:text-xl sm:mb-3">
+                                    {product.name || `Product ${product.id}`}
+                                  </h3>
+                                  <div className="text-xl font-bold text-blue-600 mb-2 sm:text-2xl sm:mb-3">
+                                    ₹{product.price.toLocaleString()}/{product.unit || 'unit'}
+                                  </div>
+
+                                  {/* Product Impact Description */}
+                                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg mb-3 sm:mb-4">
+                                    <div className="text-xs font-semibold text-gray-700 flex items-center sm:text-sm">
+                                      <TrendingUp className="w-3 h-3 mr-2 text-blue-600 sm:w-4 sm:h-4" />
+                                      Impact: {
+                                        product.name?.includes('Food') ? 'Feeds a family for 2 weeks' :
+                                          product.name?.includes('Shelter') ? 'Provides temporary housing for a family' :
+                                            product.name?.includes('Medical') ? 'Covers medical treatment for 10 people' :
+                                              product.name?.includes('Water') ? 'Clean water for 1 month' :
+                                                product.name?.includes('Education') ? 'School supplies for 5 children' :
+                                                  'Essential supplies for families in need'
+                                      }
+                                    </div>
+                                  </div>
+
+                                  {getItemQuantity(product.id, campaign.id) > 0 && (
+                                    <div className="flex items-center justify-between bg-gray-100 p-2 rounded-lg mb-3 sm:p-3 sm:mb-4">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleRemoveFromCart(product.id)}
+                                        className="cursor-pointer p-1 sm:p-2"
+                                      >
+                                        <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+                                      </Button>
+                                      <span className="font-semibold text-sm sm:text-base">
+                                        {getItemQuantity(product.id, campaign.id)}
+                                      </span>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleAddToCart(product)}
+                                        className="cursor-pointer p-1 sm:p-2"
+                                        disabled={product.stock === 0}
+                                      >
+                                        <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                                      </Button>
+                                    </div>
+                                  )}
+
+                                  <div className="space-y-2 sm:space-y-3">
+                                    <Button
+                                      className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold cursor-pointer text-xs p-2.5 sm:text-sm sm:p-3"
+                                      onClick={() => handleAddToCart(product)}
+                                      disabled={product.stock === 0}
+                                    >
+                                      {getItemQuantity(product.id, campaign.id) > 0 ? 'ADD MORE' : 'ADD TO CART'} | ₹{product.price.toLocaleString()}
+                                    </Button>
+                                  </div>
+
+                                  {/* {product.stock !== undefined && (
+                                    <div className="mt-2 text-xs text-gray-500 text-center">
+                                      {product.stock} {product.unit || 'unit'}s available
+                                    </div>
+                                  )} */}
+                                </CardContent>
+                              </Card>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    </section>
+                  )}
                   {campaign.faq_questions && campaign.faq_questions.length > 0 && (
                     <div>
                       <h2 className="text-xl font-bold text-gray-900 mb-3 sm:text-2xl sm:mb-4">
@@ -586,7 +711,7 @@ export default function CauseDetailsPage() {
                       </Button>
                     ))}
                   </div>
-                  <Button 
+                  <Button
                     className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold cursor-pointer text-sm p-3 sm:text-base"
                     onClick={redirectToDonate}
                   >
@@ -609,7 +734,7 @@ export default function CauseDetailsPage() {
                     </div>
                     <div className="flex items-center text-sm">
                       <Users className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0" />
-                      <span>{campaign.total_beneficiary?.toLocaleString()} people will benefit</span>
+                      <span>{campaign.beneficiaries?.toLocaleString()} people will benefit</span>
                     </div>
                     <div className="flex items-start text-sm">
                       <Shield className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0 mt-0.5" />
@@ -641,135 +766,6 @@ export default function CauseDetailsPage() {
           </div>
         </div>
       </section>
-
-      {/* Products Section */}
-      {campaign.assignedProducts && campaign.assignedProducts.length > 0 && (
-        <section className="py-8 px-3 bg-gray-50 sm:py-12 sm:px-4 lg:py-16">
-          <div className="max-w-7xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-              className="text-center mb-8 sm:mb-12"
-            >
-              <h2 className="text-2xl font-bold text-gray-900 mb-3 sm:text-3xl lg:text-4xl sm:mb-4">
-                Campaign{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">
-                  Products
-                </span>
-              </h2>
-              <p className="text-base text-gray-600 max-w-3xl mx-auto sm:text-lg lg:text-xl">
-                Choose from our campaign-specific products. Each product directly contributes to this relief campaign
-                and shows exactly how your donation will be used to help families in need.
-              </p>
-            </motion.div>
-
-            {/* Products Grid */}
-            <div className="grid gap-4 mb-8 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 sm:mb-12">
-              {campaign.assignedProducts?.map((product, index) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                  whileHover={{ y: -5, scale: 1.01 }}
-                  className="cursor-pointer"
-                >
-                  <Card className="h-full overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="relative">
-                      <Image
-                        src={product.image || "/placeholder.svg"}
-                        alt={product.name || `Product ${product.id}`}
-                        width={300}
-                        height={200}
-                        className="w-full h-40 object-cover sm:h-48"
-                      />
-                      <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
-                        <Badge className="bg-white/90 text-gray-900 font-semibold text-xs sm:text-sm">
-                          {product.unit || 'Unit'}
-                        </Badge>
-                      </div>
-                      {product.stock !== undefined && product.stock < 10 && (
-                        <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
-                          <Badge className="bg-red-500 text-white font-semibold text-xs sm:text-sm">
-                            Only {product.stock} left
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-                    <CardContent className="p-4 sm:p-6">
-                      <h3 className="text-lg font-bold text-gray-900 mb-2 sm:text-xl sm:mb-3">
-                        {product.name || `Product ${product.id}`}
-                      </h3>
-                      <div className="text-xl font-bold text-blue-600 mb-2 sm:text-2xl sm:mb-3">
-                        ₹{product.price.toLocaleString()}/{product.unit || 'unit'}
-                      </div>
-                      
-                      {/* Product Impact Description */}
-                      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg mb-3 sm:mb-4">
-                        <div className="text-xs font-semibold text-gray-700 flex items-center sm:text-sm">
-                          <TrendingUp className="w-3 h-3 mr-2 text-blue-600 sm:w-4 sm:h-4" />
-                          Impact: {
-                            product.name?.includes('Food') ? 'Feeds a family for 2 weeks' :
-                            product.name?.includes('Shelter') ? 'Provides temporary housing for a family' :
-                            product.name?.includes('Medical') ? 'Covers medical treatment for 10 people' :
-                            product.name?.includes('Water') ? 'Clean water for 1 month' :
-                            product.name?.includes('Education') ? 'School supplies for 5 children' :
-                            'Essential supplies for families in need'
-                          }
-                        </div>
-                      </div>
-
-                      {getItemQuantity(product.id, campaign.id) > 0 && (
-                        <div className="flex items-center justify-between bg-gray-100 p-2 rounded-lg mb-3 sm:p-3 sm:mb-4">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleRemoveFromCart(product.id)}
-                            className="cursor-pointer p-1 sm:p-2"
-                          >
-                            <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
-                          </Button>
-                          <span className="font-semibold text-sm sm:text-base">
-                            {getItemQuantity(product.id, campaign.id)}
-                          </span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleAddToCart(product)}
-                            className="cursor-pointer p-1 sm:p-2"
-                            disabled={product.stock === 0}
-                          >
-                            <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                          </Button>
-                        </div>
-                      )}
-
-                      <div className="space-y-2 sm:space-y-3">
-                        <Button
-                          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold cursor-pointer text-xs p-2.5 sm:text-sm sm:p-3"
-                          onClick={() => handleAddToCart(product)}
-                          disabled={product.stock === 0}
-                        >
-                          {getItemQuantity(product.id, campaign.id) > 0 ? 'ADD MORE' : 'ADD TO CART'} | ₹{product.price.toLocaleString()}
-                        </Button>
-                      </div>
-                      
-                      {product.stock !== undefined && (
-                        <div className="mt-2 text-xs text-gray-500 text-center">
-                          {product.stock} {product.unit || 'unit'}s available
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* Floating Cart Button */}
       {totalItems > 0 && (
