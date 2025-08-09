@@ -710,7 +710,7 @@ export default function CauseDetailsPage() {
                                   <div className="relative">
                                     <Image
                                       src={product.image || "/placeholder.svg"}
-                                      alt={product.name || `Product ${product.id}`}
+                                      alt={product.description || `Product ${product.id}`}
                                       width={300}
                                       height={200}
                                       className="w-full h-40 object-cover sm:h-48"
@@ -730,7 +730,7 @@ export default function CauseDetailsPage() {
                                   </div>
                                   <CardContent className="p-4 sm:p-6">
                                     <h3 className="text-lg font-bold text-gray-900 mb-2 sm:text-xl sm:mb-3">
-                                      {product.name || `Product ${product.id}`}
+                                      {product.description || `Product ${product.id}`}
                                     </h3>
                                     <div className="text-xl font-bold text-blue-600 mb-2 sm:text-2xl sm:mb-3">
                                       ₹{product.price.toLocaleString()}/{product.unit || 'unit'}

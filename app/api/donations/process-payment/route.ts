@@ -178,6 +178,9 @@ export async function POST(request: NextRequest) {
       const donationResult = await SelectQuery(insertDonationQuery, donationParams)
       const donationId = donationResult[0].id
 
+      // Track campaigns involved and their donation amounts for updates
+      const campaignUpdates = new Map<number, { totalAmount: number, hasProducts: boolean }>()
+
       // Insert donation items for product-based donations
       if (paymentRequest.donation_type === 'product_based' && cartItems.length > 0) {
         for (const item of cartItems) {
@@ -200,6 +203,48 @@ export async function POST(request: NextRequest) {
 
           const itemResult = await SelectQuery(insertItemQuery, itemParams)
           const donationItemId = itemResult[0].id
+
+          // Get campaign product details to update stock and get campaign_id
+          const productQuery = `
+            SELECT cp.campaign_id, cp.stock, cp.price 
+            FROM campaign_products cp 
+            WHERE cp.id = $1
+          `
+          const productResult = await SelectQuery(productQuery, [item.productId])
+          
+          if (productResult.length > 0) {
+            const product = productResult[0]
+            const campaignId = product.campaign_id
+            const itemTotalAmount = item.price * item.quantity
+
+            // Update campaign tracking
+            if (campaignUpdates.has(campaignId)) {
+              const existing = campaignUpdates.get(campaignId)!
+              existing.totalAmount += itemTotalAmount
+              existing.hasProducts = true
+            } else {
+              campaignUpdates.set(campaignId, { 
+                totalAmount: itemTotalAmount, 
+                hasProducts: true 
+              })
+            }
+
+            // Update campaign product stock
+            await SelectQuery(
+              `UPDATE campaign_products 
+               SET stock = stock - $1, updated_at = CURRENT_TIMESTAMP 
+               WHERE id = $2 AND stock >= $1`,
+              [item.quantity, item.productId]
+            )
+
+            // Check if stock update was successful
+            const stockCheckQuery = `SELECT stock FROM campaign_products WHERE id = $1`
+            const stockCheck = await SelectQuery(stockCheckQuery, [item.productId])
+            
+            if (stockCheck.length === 0 || stockCheck[0].stock < 0) {
+              throw new Error(`Insufficient stock for product ID: ${item.productId}`)
+            }
+          }
 
           // Insert personalization options if needed
           if (formData.donorName || formData.donorCountry || formData.customMessage || 
@@ -227,6 +272,15 @@ export async function POST(request: NextRequest) {
           }
         }
       } else if (paymentRequest.donation_type === 'direct') {
+        // For direct donations, track the main campaign
+        const campaignId = paymentRequest.campaign_id
+        if (campaignId) {
+          campaignUpdates.set(campaignId, { 
+            totalAmount: donationAmount, 
+            hasProducts: false 
+          })
+        }
+
         // For direct donations, still create personalization options linked to the donation
         if (formData.donorName || formData.donorCountry || formData.customMessage || 
             formData.donationPurpose || formData.specialInstructions || imageUrl) {
@@ -250,6 +304,39 @@ export async function POST(request: NextRequest) {
           ]
 
           await SelectQuery(insertPersonalizationQuery, personalizationParams)
+        }
+      }
+
+      // Update campaigns: increment total_donors_till_now, total_raised, and total_progress_percentage
+      for (const [campaignId, updateData] of campaignUpdates) {
+        // Get current campaign data
+        const campaignQuery = `
+          SELECT total_raised, donation_goal, total_donors_till_now 
+          FROM campaigns 
+          WHERE id = $1
+        `
+        const campaignResult = await SelectQuery(campaignQuery, [campaignId])
+        
+        if (campaignResult.length > 0) {
+          const campaign = campaignResult[0]
+          const newTotalRaised = parseFloat(campaign.total_raised || 0) + updateData.totalAmount
+          const donationGoal = parseFloat(campaign.donation_goal || 0)
+          
+          // Calculate new progress percentage
+          const newProgressPercentage = donationGoal > 0 
+            ? Math.min((newTotalRaised / donationGoal) * 100, 100) 
+            : 0
+
+          // Update campaign statistics
+          await SelectQuery(
+            `UPDATE campaigns 
+             SET total_donors_till_now = total_donors_till_now + 1,
+                 total_raised = $1,
+                 total_progress_percentage = $2,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = $3`,
+            [newTotalRaised, newProgressPercentage, campaignId]
+          )
         }
       }
 
@@ -285,7 +372,8 @@ export async function POST(request: NextRequest) {
         message: 'Donation processed successfully',
         donation: completeDonation[0],
         payment_id: razorpay_payment_id,
-        order_id: razorpay_order_id
+        order_id: razorpay_order_id,
+        campaigns_updated: Array.from(campaignUpdates.keys())
       }, { status: 200 })
 
     } catch (transactionError) {

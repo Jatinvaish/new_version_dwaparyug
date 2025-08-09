@@ -293,6 +293,7 @@ const campaignFormSchema = z.object({
   overview: z.string().min(10, "Overview must be at least 10 characters long."),
   details: z.string().min(20, "Details must be at least 20 characters long."),
   donation_goal: z.coerce.number().min(1, "Donation goal must be at least ₹1."),
+  beneficiaries: z.coerce.number().min(1, "Beneficiaries must be at least 1."),
   total_raised: z.number().optional(),
   status: z.enum(["Active", "Inactive", "Completed", "Draft"]),
   image: z.string().min(1, "Banner image is required."),
@@ -326,7 +327,6 @@ const campaignFormSchema = z.object({
       }),
     )
     .optional(),
-  total_beneficiary: z.number().optional(),
   total_donors_till_now: z.number().optional(),
   total_progress_percentage: z.number().optional(),
   videoLinks: z
@@ -453,13 +453,18 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
 
   // Fixed useEffect for populating form data when editing
   useEffect(() => {
-    if (campaign) {
+    // Only populate form when:
+    // 1. We have campaign data to populate
+    // 2. Categories are loaded (for category_id select)
+    // 3. Independent products are loaded (for product selects)
+    if (campaign && !isLoadingCategories && !isLoadingProducts) {
       // Prepare the data with proper type conversions
       const formData = {
         ...campaign,
         // Ensure numbers are properly converted
         category_id: Number(campaign.category_id) || 0,
         donation_goal: Number(campaign.donation_goal) || 0,
+        beneficiaries: Number(campaign.beneficiaries) || 0, // Map from total_beneficiary
         // Ensure date is properly converted
         end_date: campaign.end_date ? new Date(campaign.end_date) : new Date(),
         // Ensure defaults for required fields
@@ -508,8 +513,10 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
         );
       }
     }
-  }, [campaign, reset]);
+  }, [campaign, reset, isLoadingCategories, isLoadingProducts]); // Added loading states as dependencies
 
+  // Additionally, add this useEffect to debug the form values:
+ 
   const onSubmit = async (data: CampaignFormValues) => {
     try {
       console.log('Submitting form data:', data);
@@ -565,6 +572,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
         // Ensure proper number conversion for all numeric fields
         category_id: Number(data.category_id),
         donation_goal: Number(data.donation_goal),
+        beneficiaries: Number(data.beneficiaries),
         assignedProducts: (data.assignedProducts || []).map(product => ({
           ...product,
           indipendent_product_id: Number(product.indipendent_product_id),
@@ -704,7 +712,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Beneficiaries</Label>
-                <Input disabled value={campaign?.total_beneficiary?.toLocaleString() || 0} className="h-8 text-sm" />
+                <Input disabled value={campaign?.beneficiaries?.toLocaleString() || 0} className="h-8 text-sm" />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Donors</Label>
@@ -890,11 +898,16 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
             {errors.details && <p className="text-xs text-red-500">{errors.details.message}</p>}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             <div className="space-y-1">
               <Label htmlFor="donation_goal" className="text-sm">Donation Goal (₹)</Label>
               <Input id="donation_goal" type="number" {...register("donation_goal")} className="h-8" />
               {errors.donation_goal && <p className="text-xs text-red-500">{errors.donation_goal.message}</p>}
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="beneficiaries" className="text-sm">Total Beneficiaries</Label>
+              <Input id="beneficiaries" type="number" {...register("beneficiaries")} className="h-8" />
+              {errors.beneficiaries && <p className="text-xs text-red-500">{errors.beneficiaries.message}</p>}
             </div>
 
             <div className="space-y-1">

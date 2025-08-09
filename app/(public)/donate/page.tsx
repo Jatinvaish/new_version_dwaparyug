@@ -1036,7 +1036,6 @@ export default function MultiStepDonationForm() {
       if (userData?.id <= 0) {
         toast.error("Authorization failed! please contact us for more details");
       }
-      toast.error("Authorization failed! please contact us for more details");
 
       // Create payment order
       const orderData = await createPaymentOrder({
