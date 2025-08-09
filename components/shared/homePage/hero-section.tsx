@@ -2,7 +2,7 @@
 
 import { scaleOnHover } from '@/lib/utils';
 import { useScroll, useTransform, motion } from 'framer-motion';
-import { Heart, Sparkles,   Gift, ArrowRight, HandHeart, CheckCircle, Clock, Users } from 'lucide-react';
+import { Heart, Sparkles, Gift, ArrowRight, HandHeart, CheckCircle, Clock, Users } from 'lucide-react';
 import React from 'react'
 import { CountUpAnimation } from './counter-up';
 import { Button } from '@/components/ui/button';
@@ -156,7 +156,7 @@ const HeroSection = () => {
             transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY }}
           />
           <Image
-            src="/placeholder.svg?height=600&width=700&text=Children+Smiling+Together"
+            src="/images/banner/banner1.png?height=600&width=700&text=Children+Smiling+Together"
             alt="Happy children receiving education and care"
             width={700}
             height={600}
