@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import NextAuthProvider from "@/providers/providers";
 import ToasterProvider from "@/components/ui/sooner";
+import { Analytics } from "@vercel/analytics/next"
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,6 +25,7 @@ export default function RootLayout({
         <NextAuthProvider>
           <ToasterProvider />
           {children}
+          <Analytics />
         </NextAuthProvider>
       </body>
     </html>
