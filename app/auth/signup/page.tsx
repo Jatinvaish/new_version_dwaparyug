@@ -18,16 +18,17 @@ import toast from "react-hot-toast";
 import { countries } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/axios.config";
+import OTPVerificationPage from "@/components/OTPVerificationPage";
 
 // Define Zod validation schema
 const schema = z.object({
   first_name: z.string().min(2, { message: "First name is required." }),
   last_name: z.string().min(2, { message: "Last name is required." }),
-  mobile_no: z.string().min(10, { message: "Mobile number is  and must be at least 10 digits." }),
+  mobile_no: z.string().min(10, { message: "Mobile number is required and must be at least 10 digits." }),
   email: z.string().email({ message: "Your email is invalid." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
   confirm_password: z.string().min(6, { message: "Confirm Password must be at least 6 characters." }),
-  country: z.string().min(1, { message: "Country is ." }),
+  country: z.string().min(1, { message: "Country is required." }),
   agreeTerms: z.literal(true, {
     errorMap: () => ({ message: "You must agree to the Terms & Privacy." }),
   }),
@@ -41,6 +42,8 @@ export default function SignupPage() {
   const [isPending, startTransition] = React.useTransition();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showOTPVerification, setShowOTPVerification] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
   const router = useRouter();
 
   const {
@@ -52,7 +55,8 @@ export default function SignupPage() {
     setValue,
   } = useForm({
     resolver: zodResolver(schema),
-    mode: "all", defaultValues: {
+    mode: "all",
+    defaultValues: {
       first_name: "",
       last_name: "",
       mobile_no: "",
@@ -68,20 +72,45 @@ export default function SignupPage() {
   const onSubmit = (data: any) => {
     startTransition(async () => {
       try {
-        const response = await api.post("/user/register", data);
-        console.log("🚀 ~ onSubmit ~ response.status:", response.status)
-        if (response.status === 201) {
-          toast.success(response.data.message);
-          reset();
-          router.push("/auth/login");
+        // Step 1: Register user
+        const registerResponse = await api.post("/user/register", data);
+
+        console.log("🚀 ~ onSubmit ~ assaasasas:", registerResponse.status)
+        if (registerResponse.status === 201) {
+          // toast.success("Account created successfully!");
+          console.log("🚀 ~ onSubmit ~ otpResponse:")
+
+          // Step 2: Send OTP for email verification
+          try {
+            const otpResponse = await api.post("/auth/send-otp", {
+              email: data.email
+            });
+            console.log("🚀 ~ onSubmit ~ otpResponse:", otpResponse)
+
+            if (otpResponse.status === 200) {
+              setRegisteredEmail(data.email);
+              setShowOTPVerification(true);
+              toast.success("Verification code sent to your email!");
+            }
+          } catch (otpError: any) {
+            console.error("Error sending OTP:", otpError);
+            toast.error("Account created but failed to send verification email. Please contact support.");
+          }
+
         } else {
-          toast.error(response.data.message);
+          toast.error(registerResponse.data.message || "Registration failed");
         }
       } catch (error: any) {
-        toast.error(error.response?.data?.message || "An error occurred.");
+        console.error("Registration error:", error);
+        toast.error(error.response?.data?.message || "An error occurred during registration.");
       }
     });
   };
+
+  // If OTP verification is shown, render the OTP component
+  if (showOTPVerification) {
+    return <OTPVerificationPage email={registeredEmail} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
@@ -108,7 +137,7 @@ export default function SignupPage() {
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-center lg:text-left  hidden md:block"
+          className="text-center lg:text-left hidden md:block"
         >
           <div className="mb-8">
             <div className="bg-gradient-to-br from-gray-800 to-gray-900 text-white px-6 py-4 text-lg font-bold rounded-lg shadow-lg inline-block">
@@ -158,12 +187,12 @@ export default function SignupPage() {
           transition={{ duration: 0.8, delay: 0.2 }}
         >
           <Card className="p-4 shadow-2xl bg-white/95 backdrop-blur-sm">
-            <div className="text-center ">
+            <div className="text-center">
               <h2 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h2>
               <p className="text-gray-600">Join thousands of donors making a difference</p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-0">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
@@ -174,6 +203,7 @@ export default function SignupPage() {
                     {...register("first_name")}
                     className="mt-2"
                   />
+                  {errors.first_name && <p className="text-red-500 text-xs mt-1">{errors.first_name.message as string}</p>}
                 </div>
                 <div>
                   <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">
@@ -185,8 +215,8 @@ export default function SignupPage() {
                     {...register("last_name")}
                     className="mt-2"
                   />
+                  {errors.last_name && <p className="text-red-500 text-xs mt-1">{errors.last_name.message as string}</p>}
                 </div>
-                <p className="text-red-500 text-sm">{errors.first_name && errors.last_name?.message as string}</p>
               </div>
 
               <div>
@@ -200,7 +230,6 @@ export default function SignupPage() {
                   placeholder="john@example.com"
                   {...register("email")}
                   className="mt-2"
-
                 />
                 {errors.email && <p className="text-red-500 text-sm">{errors.email.message as string}</p>}
               </div>
@@ -217,7 +246,7 @@ export default function SignupPage() {
                     {...register("mobile_no")}
                     className="mt-2"
                   />
-                  {errors.mobile_no && <p className="text-red-500 text-sm">{errors.mobile_no.message as string}</p>}
+                  {errors.mobile_no && <p className="text-red-500 text-xs mt-1">{errors.mobile_no.message as string}</p>}
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700 flex items-center">
@@ -239,7 +268,7 @@ export default function SignupPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.country && <p className="text-red-500 text-sm">{errors.country.message as string}</p>}
+                  {errors.country && <p className="text-red-500 text-xs mt-1">{errors.country.message as string}</p>}
                 </div>
               </div>
 
@@ -312,9 +341,10 @@ export default function SignupPage() {
                       Privacy Policy
                     </Link>
                   </Label>
-                  {errors.agreeTerms && <p className="text-red-500 text-sm">{errors.agreeTerms.message as string}</p>}
                 </div>
-
+                {errors.agreeTerms && (
+                  <p className="text-red-500 text-sm">{errors.agreeTerms.message as string}</p>
+                )}
               </div>
 
               <Button
@@ -326,7 +356,8 @@ export default function SignupPage() {
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </form>
-            <div className=" text-center">
+
+            <div className="mt-6 text-center">
               <p className="text-gray-600">
                 Already have an account?{" "}
                 <Link href="/auth/login" className="text-blue-600 hover:text-blue-700 font-semibold cursor-pointer">
@@ -339,4 +370,4 @@ export default function SignupPage() {
       </div>
     </div>
   )
-}
+} 
