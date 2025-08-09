@@ -516,3 +516,98 @@ GROUP BY d.id, d.user_id, u.full_name, d.campaign_id, c.title,
 
 ALTER TABLE campaigns 
 ADD COLUMN beneficiaries INT NOT NULL DEFAULT 100;
+
+
+
+
+
+CREATE TABLE volunteer_applications (
+    id SERIAL PRIMARY KEY,
+    
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(15) NOT NULL,
+    age INTEGER NOT NULL CHECK (age >= 16 AND age <= 100),
+    
+    address TEXT NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    zip_code VARCHAR(10) NOT NULL,
+    
+    preferred_program VARCHAR(100) NOT NULL,
+    availability TEXT[] NOT NULL,  
+    time_commitment VARCHAR(50) NOT NULL,
+    
+    previous_volunteer_experience BOOLEAN NOT NULL,
+    volunteer_experience_details TEXT,
+    languages VARCHAR(255),
+    
+    motivation TEXT NOT NULL CHECK (LENGTH(motivation) >= 50),
+    goals TEXT NOT NULL CHECK (LENGTH(goals) >= 30),
+    
+    emergency_contact_name VARCHAR(100) NOT NULL,
+    emergency_contact_phone VARCHAR(15) NOT NULL,
+    emergency_contact_relationship VARCHAR(50) NOT NULL,
+    
+    background_check_consent BOOLEAN NOT NULL DEFAULT false,
+    terms_and_conditions_accepted BOOLEAN NOT NULL DEFAULT false,
+    newsletter_subscription BOOLEAN DEFAULT false,
+    
+    application_status VARCHAR(20) DEFAULT 'pending' CHECK (application_status IN ('pending', 'reviewing', 'approved', 'rejected', 'withdrawn')),
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_volunteer_applications_email ON volunteer_applications(email);
+CREATE INDEX idx_volunteer_applications_preferred_program ON volunteer_applications(preferred_program);
+CREATE INDEX idx_volunteer_applications_status ON volunteer_applications(application_status);
+CREATE INDEX idx_volunteer_applications_created_at ON volunteer_applications(created_at);
+CREATE INDEX idx_volunteer_applications_active ON volunteer_applications(is_active);
+
+CREATE UNIQUE INDEX idx_volunteer_applications_email_active ON volunteer_applications(email) 
+WHERE is_active = true;
+
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_volunteer_applications_updated_at 
+    BEFORE UPDATE ON volunteer_applications 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE VIEW active_volunteer_applications AS
+SELECT 
+    id,
+    CONCAT(first_name, ' ', last_name) as full_name,
+    email,
+    phone,
+    age,
+    CONCAT(address, ', ', city, ' ', zip_code) as full_address,
+    preferred_program,
+    array_to_string(availability, ', ') as availability_text,
+    time_commitment,
+    previous_volunteer_experience,
+    volunteer_experience_details,
+    array_to_string(skills, ', ') as skills_text,
+    languages,
+    motivation,
+    goals,
+    CONCAT(emergency_contact_name, ' (', emergency_contact_relationship, ') - ', emergency_contact_phone) as emergency_contact_info,
+    background_check_consent,
+    terms_and_conditions_accepted,
+    newsletter_subscription,
+    application_status,
+    created_at,
+    updated_at
+FROM volunteer_applications 
+WHERE is_active = true;
+
+
+ALTER TABLE volunteer_applications 
+ADD COLUMN skills INT[] NOT NULL DEFAULT '{}';
+    
