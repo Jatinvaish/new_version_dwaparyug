@@ -244,7 +244,7 @@ export default function CauseDetailsPage() {
         "value": campaign.donation_goal
       },
       "amount": {
-        "@type": "MonetaryAmount", 
+        "@type": "MonetaryAmount",
         "currency": "INR",
         "value": campaign.total_raised
       }
@@ -400,7 +400,7 @@ export default function CauseDetailsPage() {
           <meta name="author" content={campaign.organizer} />
           <meta name="robots" content="index, follow, max-image-preview:large" />
           <link rel="canonical" href={metaData.canonicalUrl} />
-          
+
           {/* Open Graph / Facebook */}
           <meta property="og:type" content="website" />
           <meta property="og:url" content={metaData.canonicalUrl} />
@@ -412,7 +412,7 @@ export default function CauseDetailsPage() {
           <meta property="og:image:alt" content={campaign.title} />
           <meta property="og:site_name" content="Your Charity Platform" />
           <meta property="og:locale" content="en_US" />
-          
+
           {/* Twitter */}
           <meta property="twitter:card" content="summary_large_image" />
           <meta property="twitter:url" content={metaData.canonicalUrl} />
@@ -420,7 +420,7 @@ export default function CauseDetailsPage() {
           <meta property="twitter:description" content={metaData.ogDescription} />
           <meta property="twitter:image" content={metaData.ogImage} />
           <meta property="twitter:image:alt" content={campaign.title} />
-          
+
           {/* Additional SEO */}
           <meta name="geo.region" content="IN" />
           <meta name="geo.placename" content={campaign.location} />
@@ -428,7 +428,7 @@ export default function CauseDetailsPage() {
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="default" />
           <meta name="format-detection" content="telephone=no" />
-          
+
           {/* JSON-LD Structured Data */}
           <script
             type="application/ld+json"
@@ -706,7 +706,7 @@ export default function CauseDetailsPage() {
                                 whileHover={{ y: -5, scale: 1.01 }}
                                 className="cursor-pointer"
                               >
-                                <Card className="h-full overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+                                <Card className=" h-full overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
                                   <div className="relative">
                                     <Image
                                       src={product.image || "/placeholder.svg"}
@@ -715,11 +715,7 @@ export default function CauseDetailsPage() {
                                       height={200}
                                       className="w-full h-40 object-cover sm:h-48"
                                     />
-                                    <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
-                                      <Badge className="bg-white/90 text-gray-900 font-semibold text-xs sm:text-sm">
-                                        {product.unit || 'Unit'}
-                                      </Badge>
-                                    </div>
+
                                     {product.stock !== undefined && product.stock < 10 && (
                                       <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
                                         <Badge className="bg-red-500 text-white font-semibold text-xs sm:text-sm">
@@ -728,10 +724,13 @@ export default function CauseDetailsPage() {
                                       </div>
                                     )}
                                   </div>
-                                  <CardContent className="p-4 sm:p-6">
-                                    <h3 className="text-lg font-bold text-gray-900 mb-2 sm:text-xl sm:mb-3">
-                                      {product.description || `Product ${product.id}`}
+                                  <CardContent className="p-2 sm:p-2">
+                                    <h3 className="text-sm font-bold text-gray-900 mb-2  sm:mb-3 border-b-2">
+                                      {product.name || `Product ${product.id}`}
                                     </h3>
+                                    <span className="text-xs font-bold text-gray-900 mb-2  sm:mb-3">
+                                      {product.description || `Product ${product.id}`}
+                                    </span>
                                     <div className="text-xl font-bold text-blue-600 mb-2 sm:text-2xl sm:mb-3">
                                       ₹{product.price.toLocaleString()}/{product.unit || 'unit'}
                                     </div>
@@ -920,7 +919,7 @@ export default function CauseDetailsPage() {
                   {/* Enhanced Share Card */}
                   <Card className="p-4 shadow-lg sm:p-6 sm:shadow-xl">
                     <h3 className="text-lg font-bold text-gray-900 mb-3 sm:text-xl sm:mb-4">Share This Campaign</h3>
-                    
+
                     {/* Success Message */}
                     {shareSuccess && (
                       <motion.div
@@ -935,15 +934,15 @@ export default function CauseDetailsPage() {
                     )}
 
                     <div className="space-y-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="w-full cursor-pointer bg-transparent text-sm p-3 sm:text-base hover:bg-blue-50"
                         onClick={handleShare}
                       >
                         <Share2 className="w-3 h-3 mr-2 sm:w-4 sm:h-4" />
                         Share Campaign
                       </Button>
-                      
+
                       {/* Share Options */}
                       {showShareOptions && (
                         <motion.div

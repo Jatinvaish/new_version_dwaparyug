@@ -34,7 +34,7 @@ export async function GET(
 
     // Get campaign products
     const productsResult = await SelectQuery(`
-      SELECT cp.*, ip.image FROM campaign_products cp
+      SELECT cp.*, ip.image , ip.name FROM campaign_products cp
       INNER JOIN indipendent_products ip ON ip.id = cp.indipendent_product_id
       WHERE campaign_id = $1   
       ORDER BY sequence 
