@@ -378,7 +378,11 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
       overview: "",
       details: "",
       donation_goal: 0,
-      end_date: undefined,
+      end_date: (() => {
+        const date = new Date();
+        date.setFullYear(date.getFullYear() + 3);
+        return date;
+      })(),
       image: "",
       images_array: [],
       assignedProducts: [],
@@ -386,7 +390,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
       status: "Draft",
       about_campaign: "",
       location: "",
-      organizer: "",
+      organizer: "Dwaparyug Foundation",
       verified: false,
       urgency: "medium",
       faq_questions: [],
@@ -466,13 +470,19 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
         donation_goal: Number(campaign.donation_goal) || 0,
         beneficiaries: Number(campaign.beneficiaries) || 0, // Map from total_beneficiary
         // Ensure date is properly converted
-        end_date: campaign.end_date ? new Date(campaign.end_date) : new Date(),
+        end_date: campaign.end_date
+          ? new Date(campaign.end_date)
+          : (() => {
+            const date = new Date();
+            date.setFullYear(date.getFullYear() + 3);
+            return date;
+          })(),
         // Ensure defaults for required fields
         priority: (campaign.priority as any) || "medium",
         status: (campaign.status as any) || "Draft",
         about_campaign: campaign.about_campaign || "",
         location: campaign.location || "",
-        organizer: campaign.organizer || "",
+        organizer: campaign.organizer || "Dwaparyug Foundation",
         verified: Boolean(campaign.verified),
         urgency: (campaign.urgency as any) || "medium",
         // Ensure arrays are properly set
@@ -516,7 +526,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
   }, [campaign, reset, isLoadingCategories, isLoadingProducts]); // Added loading states as dependencies
 
   // Additionally, add this useEffect to debug the form values:
- 
+
   const onSubmit = async (data: CampaignFormValues) => {
     try {
       console.log('Submitting form data:', data);
