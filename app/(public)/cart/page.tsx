@@ -26,7 +26,7 @@ import {
 import Image from "next/image"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useDonationCart, useDonationForm } from "@/hooks/useDonationHooks"
 
@@ -34,6 +34,8 @@ export default function CartPage() {
   const router = useRouter()
   const { 
     cartItems, 
+    customDonationAmount,
+    setCustomDonationAmount,
     updateQuantity, 
     removeFromCart, 
     clearCart, 
@@ -43,23 +45,12 @@ export default function CartPage() {
   
   const { updateFormData } = useDonationForm()
   
-  const [customDonationAmount, setCustomDonationAmount] = useState("")
+  const [customDonationAmountInput, setCustomDonationAmountInput] = useState(customDonationAmount.toString())
   const [selectedTip, setSelectedTip] = useState<number | 'custom' | null>(5)
   const [customTipValue, setCustomTipValue] = useState("")
   const [isClearing, setIsClearing] = useState(false)
 
-  // Load custom donation amount from localStorage if set from cause detail page
-  useEffect(() => {
-    const savedAmount = localStorage.getItem('customDonationAmount')
-    if (savedAmount) {
-      setCustomDonationAmount(savedAmount)
-      localStorage.removeItem('customDonationAmount') // Clear after use
-    }
-  }, [])
-
-  const { subtotal, totalItems, uniqueCampaigns } = getCartTotals()
-  const customAmount = parseFloat(customDonationAmount) || 0
-  const totalDonationAmount = subtotal + customAmount
+  const { subtotal, totalItems, uniqueCampaigns, totalDonationAmount } = getCartTotals()
 
   // Calculate tip amount
   const getTipAmount = () => {
@@ -78,6 +69,13 @@ export default function CartPage() {
   const tipAmount = getTipAmount()
   const grandTotal = totalDonationAmount + tipAmount
 
+  // Handle custom donation amount changes
+  const handleCustomDonationChange = (value: string) => {
+    setCustomDonationAmountInput(value)
+    const numValue = parseFloat(value) || 0
+    setCustomDonationAmount(numValue)
+  }
+
   const handleQuantityChange = (productId: number, campaignId: number, newQuantity: number) => {
     if (newQuantity <= 0) {
       handleRemoveItem(productId, campaignId)
@@ -94,7 +92,7 @@ export default function CartPage() {
     setIsClearing(true)
     await new Promise(resolve => setTimeout(resolve, 300)) // Small delay for UX
     clearCart()
-    setCustomDonationAmount("")
+    setCustomDonationAmountInput("")
     setSelectedTip(5)
     setCustomTipValue("")
     setIsClearing(false)
@@ -103,7 +101,7 @@ export default function CartPage() {
   const handleProceedToDonate = () => {
     // Save cart data and custom amount to form data
     updateFormData({
-      customAmount: customAmount > 0 ? customAmount : undefined,
+      customAmount: customDonationAmount > 0 ? customDonationAmount : undefined,
       tipAmount: tipAmount,
       tipPercentage: typeof selectedTip === 'number' ? selectedTip : undefined
     })
@@ -114,7 +112,7 @@ export default function CartPage() {
 
   const itemsByCampaign = getItemsByCampaign()
 
-  if (totalItems === 0 && customAmount === 0) {
+  if (totalItems === 0 && customDonationAmount === 0) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-4xl mx-auto py-8 px-3 sm:px-4">
@@ -202,9 +200,9 @@ export default function CartPage() {
                       <Heart className="w-5 h-5 mr-2 text-red-500" />
                       Direct Donation
                     </div>
-                    {customAmount > 0 && (
+                    {customDonationAmount > 0 && (
                       <Badge className="bg-red-50 text-red-700">
-                        ₹{customAmount.toLocaleString()}
+                        ₹{customDonationAmount.toLocaleString()}
                       </Badge>
                     )}
                   </CardTitle>
@@ -217,20 +215,20 @@ export default function CartPage() {
                     
                     <div className="flex space-x-2">
                       <div className="relative flex-1">
-                        <span className="absolute left-3 top-3 text-gray-500">₹</span>
+                        <span className="absolute left-3 top-2 text-gray-500">₹</span>
                         <Input
                           type="number"
                           placeholder="Enter donation amount"
-                          value={customDonationAmount}
-                          onChange={(e) => setCustomDonationAmount(e.target.value)}
+                          value={customDonationAmountInput}
+                          onChange={(e) => handleCustomDonationChange(e.target.value)}
                           className="pl-8"
                           min="1"
                         />
                       </div>
                       <Button
                         variant="outline"
-                        onClick={() => setCustomDonationAmount("")}
-                        disabled={!customDonationAmount}
+                        onClick={() => handleCustomDonationChange("")}
+                        disabled={!customDonationAmountInput}
                       >
                         Clear
                       </Button>
@@ -243,15 +241,15 @@ export default function CartPage() {
                           key={amount}
                           variant="outline"
                           size="sm"
-                          onClick={() => setCustomDonationAmount(amount.toString())}
-                          className={`text-xs ${customDonationAmount === amount.toString() ? 'border-blue-500 bg-blue-50' : ''}`}
+                          onClick={() => handleCustomDonationChange(amount.toString())}
+                          className={`text-xs ${customDonationAmountInput === amount.toString() ? 'border-blue-500 bg-blue-50' : ''}`}
                         >
                           ₹{amount.toLocaleString()}
                         </Button>
                       ))}
                     </div>
                     
-                    {customAmount > 0 && (
+                    {customDonationAmount > 0 && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
@@ -260,7 +258,7 @@ export default function CartPage() {
                         <div className="flex items-center">
                           <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                           <span className="text-sm text-green-700 font-medium">
-                            Direct donation of ₹{customAmount.toLocaleString()} added
+                            Direct donation of ₹{customDonationAmount.toLocaleString()} added
                           </span>
                         </div>
                       </motion.div>
@@ -408,7 +406,7 @@ export default function CartPage() {
             </AnimatePresence>
 
             {/* Clear Cart Button */}
-            {(totalItems > 0 || customAmount > 0) && (
+            {(totalItems > 0 || customDonationAmount > 0) && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -452,10 +450,10 @@ export default function CartPage() {
                       </div>
                     )}
                     
-                    {customAmount > 0 && (
+                    {customDonationAmount > 0 && (
                       <div className="flex justify-between">
                         <span className="text-gray-600">Direct Donation</span>
-                        <span className="font-medium">₹{customAmount.toLocaleString()}</span>
+                        <span className="font-medium">₹{customDonationAmount.toLocaleString()}</span>
                       </div>
                     )}
                     

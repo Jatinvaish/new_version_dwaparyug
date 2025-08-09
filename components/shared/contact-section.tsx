@@ -7,13 +7,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { MapPin, Phone, Mail, MessageSquare, ArrowRight, User } from "lucide-react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { SocialLinksBar } from "./social-links"
 
 export function ContactSection() {
   return (
-    <section className="pb-16 px-4 bg-white">
-      {/* Social Media Links */}
-      <SocialLinksBar />
+    <section className="pb-16 px-4 bg-white border-t-2">
 
       <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 mt-16">
         <motion.div

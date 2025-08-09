@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
-const protectedRoutes = ['/checkout', '/my-profiles', '/my-donations'];
+const protectedRoutes = ['/donate', '/my-profiles', '/my-donations'];
 const adminRoutes = ['/admin'];
 const superadminRoutes = ['/superadmin'];
 
@@ -16,7 +16,7 @@ export async function middleware(req: NextRequest) {
   const isAuthenticated = Boolean(token);
   const userRole = token?.role;
 
- 
+
 
   // 2. Admin routes
   if (matchRoute(pathname, adminRoutes)) {
@@ -31,6 +31,9 @@ export async function middleware(req: NextRequest) {
     if (!isAuthenticated) {
       return NextResponse.redirect(new URL('/auth/login', req.url));
     }
+    // else if ((userRole === 'Admin' || userRole === 'Superadmin')) {
+    //   return NextResponse.redirect(new URL('/admin', req.url));
+    // }
     return NextResponse.next();
   }
 

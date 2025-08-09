@@ -479,7 +479,7 @@ export default function HowItWorksPage() {
                 className="border-2 border-white text-white hover:bg-white hover:text-purple-600 px-6 sm:px-8 py-3 rounded-full text-base sm:text-lg font-semibold cursor-pointer bg-transparent w-full sm:w-auto"
                 asChild
               >
-                <Link href="/contact">
+                <Link href="/contact-us">
                   <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   Contact Support
                 </Link>

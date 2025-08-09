@@ -19,8 +19,9 @@ export default function RootLayout({
 }) {
   return (
     <section>
-      <HeaderSection /> {children}
-      <ContactSection />
-      <Footer /></section>
+      <HeaderSection />
+      {children}
+      <Footer />
+    </section>
   )
 }

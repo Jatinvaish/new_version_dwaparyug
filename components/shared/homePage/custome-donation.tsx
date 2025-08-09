@@ -1,12 +1,18 @@
 'use client';
 import { scaleOnHover } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import { Heart, Link, Gift, Shield, CheckCircle, Zap, Clock } from 'lucide-react'
+import { Heart,  Gift, Shield, CheckCircle, Zap, Clock } from 'lucide-react'
 import React, { useState } from 'react'
 import { Button } from '../../ui/button';
+import Link from 'next/link';
+import { useDonationCart } from '@/hooks/useDonationHooks';
 
 const CustomHomeSectionDonation = () => {
   const [selectedAmount, setSelectedAmount] = useState(100)
+    const { 
+      setCustomDonationAmount,
+    } = useDonationCart()
+    
   return (
     <section className="py-12 sm:py-16 lg:py-20 px-4 bg-white relative overflow-hidden">
       <motion.div
@@ -133,6 +139,7 @@ const CustomHomeSectionDonation = () => {
             <Button
               className="w-full sm:w-auto bg-gradient-to-r from-yellow-400 to-red-400 hover:from-yellow-500 hover:to-red-500 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-full text-lg sm:text-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer"
               {...scaleOnHover}
+              onClick={()=> setCustomDonationAmount(selectedAmount)}
               asChild
             >
               <Link href="/donate">

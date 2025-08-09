@@ -2,9 +2,10 @@
 import { Button } from '@/components/ui/button'
 import { scaleOnHover } from '@/lib/utils'
 import { motion, useInView } from 'framer-motion'
-import { TrendingUp, Link, Users, ArrowRight } from 'lucide-react'
-import React, { useEffect, useRef, useState } from 'react'
+import { TrendingUp,   Users, ArrowRight } from 'lucide-react'
+import React from 'react'
 import { CountUpAnimation } from './counter-up';
+import Link from 'next/link';
 
 
 const ImpactSection = () => {

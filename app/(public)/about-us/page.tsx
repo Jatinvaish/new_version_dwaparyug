@@ -122,7 +122,7 @@ export default function AboutPage() {
                 className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-8 py-3 rounded-full font-semibold cursor-pointer bg-transparent"
                 asChild
               >
-                <Link href="/contact">
+                <Link href="/contact-us">
                   <Users className="w-5 h-5 mr-2" />
                   Join Our Mission
                 </Link>
@@ -405,7 +405,7 @@ export default function AboutPage() {
                 className="border-2 border-white text-white hover:bg-white hover:text-green-600 px-8 py-3 rounded-full text-lg font-semibold cursor-pointer bg-transparent"
                 asChild
               >
-                <Link href="/contact">
+                <Link href="/contact-us">
                   <Users className="w-5 h-5 mr-2" />
                   Volunteer With Us
                 </Link>

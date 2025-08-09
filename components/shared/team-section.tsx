@@ -256,13 +256,13 @@ export function TeamSection() {
                       </div>
                     </div>
 
-                    <Link href={opportunity.link}>
+                    {/* <Link href={opportunity.link}>
                       <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white border-0 group transition-all duration-300">
                         <HandHeart className="w-4 h-4 mr-2" />
                         Volunteer Now
                         <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                       </Button>
-                    </Link>
+                    </Link> */}
                   </CardContent>
                 </Card>
               </motion.div>
@@ -295,7 +295,7 @@ export function TeamSection() {
                     View All Opportunities
                   </Button>
                 </Link>
-                <Link href="/volunteer/contact">
+                <Link href="/volunteer/contact-us">
                   <Button 
                     variant="outline" 
                     size="lg" 

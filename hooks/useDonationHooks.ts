@@ -23,6 +23,7 @@ export interface DonationFormData {
   donorCountry: string
   mobileNumber: string
   customMessage?: string
+  userId: number
   donationPurpose?: string
   specialInstructions?: string
   donatedOnBehalfOf?: string
@@ -43,6 +44,7 @@ export interface DonationFormData {
 
 const CART_STORAGE_KEY = 'donationCart'
 const FORM_DATA_STORAGE_KEY = 'donationFormData'
+const CUSTOM_DONATION_STORAGE_KEY = 'customDonationAmount' // New key for custom donation
 
 // Cart management functions
 const getCartFromStorage = (): CartItem[] => {
@@ -87,12 +89,39 @@ const saveFormDataToStorage = (formData: Partial<DonationFormData>) => {
   }
 }
 
+// Custom donation amount storage functions
+const getCustomDonationFromStorage = (): number => {
+  if (typeof window === 'undefined') return 0
+  try {
+    const amount = localStorage.getItem(CUSTOM_DONATION_STORAGE_KEY)
+    return amount ? parseFloat(amount) : 0
+  } catch (error) {
+    console.error('Error reading custom donation from localStorage:', error)
+    return 0
+  }
+}
+
+const saveCustomDonationToStorage = (amount: number) => {
+  if (typeof window === 'undefined') return
+  try {
+    if (amount > 0) {
+      localStorage.setItem(CUSTOM_DONATION_STORAGE_KEY, amount.toString())
+    } else {
+      localStorage.removeItem(CUSTOM_DONATION_STORAGE_KEY)
+    }
+  } catch (error) {
+    console.error('Error saving custom donation to localStorage:', error)
+  }
+}
+
 export const useDonationCart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [customDonationAmount, setCustomDonationAmountState] = useState<number>(0)
 
-  // Load cart from localStorage on mount
+  // Load cart and custom donation from localStorage on mount
   useEffect(() => {
     setCartItems(getCartFromStorage())
+    setCustomDonationAmountState(getCustomDonationFromStorage())
 
     // Listen for cart updates from other components
     const handleCartUpdate = (event: CustomEvent) => {
@@ -103,6 +132,12 @@ export const useDonationCart = () => {
     return () => {
       window.removeEventListener('cartUpdated', handleCartUpdate as EventListener)
     }
+  }, [])
+
+  // Update custom donation amount
+  const setCustomDonationAmount = useCallback((amount: number) => {
+    setCustomDonationAmountState(amount)
+    saveCustomDonationToStorage(amount)
   }, [])
 
   // Add item to cart
@@ -171,7 +206,9 @@ export const useDonationCart = () => {
   const clearCart = useCallback(() => {
     saveCartToStorage([])
     setCartItems([])
-  }, [])
+    // Also clear custom donation when clearing cart
+    setCustomDonationAmount(0)
+  }, [setCustomDonationAmount])
 
   // Clear cart for specific campaign
   const clearCampaignCart = useCallback((campaignId: number) => {
@@ -190,7 +227,7 @@ export const useDonationCart = () => {
     return item ? item.quantity : 0
   }, [cartItems])
 
-  // Get cart totals
+  // Get cart totals (now includes custom donation)
   const getCartTotals = useCallback(() => {
     const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
     const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
@@ -200,9 +237,11 @@ export const useDonationCart = () => {
       subtotal,
       totalItems,
       uniqueCampaigns,
-      itemCount: cartItems.length
+      itemCount: cartItems.length,
+      customDonationAmount,
+      totalDonationAmount: subtotal + customDonationAmount
     }
-  }, [cartItems])
+  }, [cartItems, customDonationAmount])
 
   // Get items by campaign
   const getItemsByCampaign = useCallback(() => {
@@ -220,6 +259,8 @@ export const useDonationCart = () => {
 
   return {
     cartItems,
+    customDonationAmount,
+    setCustomDonationAmount,
     addToCart,
     removeFromCart,
     updateQuantity,
@@ -251,6 +292,7 @@ export const useDonationForm = () => {
     setFormData({})
     if (typeof window !== 'undefined') {
       localStorage.removeItem(FORM_DATA_STORAGE_KEY)
+      localStorage.removeItem(CUSTOM_DONATION_STORAGE_KEY) // Also clear custom donation
     }
   }, [])
 
@@ -281,11 +323,12 @@ export const usePayment = () => {
     donationAmount: number
     tipAmount: number
   }) => {
+    console.log("🚀 ~ usePayment ~ donationData:", donationData)
     setIsProcessing(true)
     setPaymentError(null)
 
     try {
-      const response = await fetch('/api/donations/create-payment-order', {
+      const response = await fetch('/api/donations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

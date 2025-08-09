@@ -512,3 +512,7 @@ LEFT JOIN donation_impact_tracking dit ON d.id = dit.donation_id
 LEFT JOIN impact_stories is_tbl ON dit.impact_story_id = is_tbl.id
 GROUP BY d.id, d.user_id, u.full_name, d.campaign_id, c.title, 
          d.donation_amount, d.donation_type, d.donation_date;
+
+
+ALTER TABLE campaigns 
+ADD COLUMN beneficiaries INT NOT NULL DEFAULT 100;

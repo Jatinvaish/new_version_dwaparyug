@@ -9,7 +9,7 @@ export interface Campaign {
   details: string;
   about_campaign?: string;
   donation_goal: number;
-  total_raised?: number;
+  total_raised?: any;
   total_progress_percentage?: number;
   image: string;
   images_array?: string[];
@@ -20,9 +20,11 @@ export interface Campaign {
   organizer?: string;
   verified?: boolean;
   total_beneficiary?: number;
+  beneficiaries?: number;
   total_donors_till_now?: number;
   start_date?: string;
   end_date: string;
+  description?: string;
   created_by?: number;
   updated_by?: number;
   created_at?: string;
@@ -368,4 +370,45 @@ export interface CampaignCategory {
   id: number;
   name: string;
   description?: string;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  description: string;
+  is_active: boolean;
+}
+
+ 
+
+export interface PaginationState {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface CampaignFilters {
+  selectedCategory?: number | null;
+  searchTerm?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CampaignListProps {
+  title?: string;
+  subtitle?: string;
+  showHeader?: boolean;
+  showCategoryFilter?: boolean;
+  showSearch?: boolean;
+  showPagination?: boolean;
+  showViewToggle?: boolean;
+  defaultViewMode?: 'grid' | 'list';
+  pageSize?: number;
+  categoryFilter?: number | null;
+  maxItems?: number;
+  showCreateButton?: boolean;
+  className?: string;
 }

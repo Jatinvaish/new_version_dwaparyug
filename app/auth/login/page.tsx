@@ -52,7 +52,7 @@ export default function LoginPage() {
 
       if (response?.ok) {
         toast.success("Login Successful")
-        router.back(); reset()
+        router.push('/'); reset()
       } else if (response?.error) {
         toast.error(response.error)
       }
