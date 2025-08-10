@@ -257,7 +257,7 @@ export const donationTypes = [
 export const teamMembers = [
   {
     id: 1,
-    name: "Dr. Rajesh Kumar",
+    name: "Abhishek Nirman",
     role: "Founder & CEO",
     image: "/placeholder.svg?height=300&width=300&text=Dr.+Rajesh+Kumar",
     bio: "With over 15 years of experience in social work, Dr. Kumar has dedicated his life to serving underprivileged communities across India.",
