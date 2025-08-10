@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
-import { Heart, HandHeart, Link, ArrowRight } from 'lucide-react'
+import { Heart, HandHeart,   ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 import React from 'react'
 
 const Beomecolanture = () => {
