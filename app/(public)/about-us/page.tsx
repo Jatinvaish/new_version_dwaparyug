@@ -151,7 +151,7 @@ export default function AboutPage() {
                   </div>
                   <div>
                     <div className="font-bold text-gray-900">Certified NGO</div>
-                    <div className="text-sm text-gray-600">80G & FCRA Approved</div>
+                    <div className="text-sm text-gray-600">80G & 10BE Approved</div>
                   </div>
                 </div>
               </div>

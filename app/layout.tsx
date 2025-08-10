@@ -9,9 +9,9 @@ import { Analytics } from "@vercel/analytics/next"
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Dwaparyug NGO - Welfare Society",
+  title: "Dwaparyug NGO - Foundation",
   description: "NGO Welfare Society dedicated to social causes and community development",
-  generator: "v0.dev",
+  generator: "AJPR WORLD",
 };
 
 export default function RootLayout({

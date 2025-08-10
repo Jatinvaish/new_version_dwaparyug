@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
       details,
       about_campaign,
       donation_goal,
+      beneficiaries,
       image,
       images_array = [],
       status = 'Draft',
@@ -150,13 +151,13 @@ export async function POST(request: NextRequest) {
       INSERT INTO campaigns (
         title, category_id, festival_type, overview, details, about_campaign,
         donation_goal, image, images_array, status, priority, urgency,
-        location, organizer, verified, total_beneficiary, end_date, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        location, organizer, verified, total_beneficiary, end_date,beneficiaries, created_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
       RETURNING *
     `, [
       title, category_id, festival_type, overview, details, about_campaign,
       donation_goal, image, images_array, status, priority, urgency,
-      location, organizer, verified, total_beneficiary, end_date, created_by
+      location, organizer, verified, total_beneficiary, end_date, beneficiaries, created_by
     ]);
 
     const campaign = campaignResult.rows[0];

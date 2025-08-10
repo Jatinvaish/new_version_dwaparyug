@@ -52,7 +52,7 @@ export default function EditCampaignPage({ params }: { params: { id: string } })
       // Redirect to campaigns list if campaign not found
       if (error instanceof Error && error.message === 'Campaign not found') {
         setTimeout(() => {
-          router.push("/admin/causes")
+          router.push("/admin/campaigns")
         }, 2000)
       }
     } finally {
@@ -64,11 +64,11 @@ export default function EditCampaignPage({ params }: { params: { id: string } })
     console.log("Saving updated campaign:", updatedCampaign)
     // Add your API call here to update the campaign
     // After a successful save, redirect to the campaigns list
-    router.push("/admin/causes")
+    router.push("/admin/campaigns")
   }
 
   const handleCancel = () => {
-    router.push("/admin/causes")
+    router.push("/admin/campaigns")
   }
 
   if (isLoading) {

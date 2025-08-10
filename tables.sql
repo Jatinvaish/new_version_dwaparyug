@@ -614,15 +614,14 @@ ADD COLUMN skills INT[] NOT NULL DEFAULT '{}';
 
 
 
-    CREATE TABLE otp_verifications (
+CREATE TABLE otp_verifications (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
     email TEXT NOT NULL,
     otp TEXT NOT NULL,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(email)
-);
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP 
+ );
 
  CREATE INDEX idx_otp_verifications_email ON otp_verifications(email);
 CREATE INDEX idx_otp_verifications_expires_at ON otp_verifications(expires_at);
