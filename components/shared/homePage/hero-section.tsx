@@ -54,7 +54,7 @@ const HeroSection = () => {
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             <div className="inline-flex items-center bg-gradient-to-r from-yellow-100 to-green-100 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium text-gray-700 mb-4 sm:mb-6">
               <Sparkles className="w-3 sm:w-4 h-3 sm:h-4 mr-1 sm:mr-2 text-yellow-600" />
-              Transforming Lives Since 2015 • 50,000+ Lives Impacted
+              Transforming Lives Since 2025 • 50,000+ Lives Impacted
             </div>
           </motion.div>
 

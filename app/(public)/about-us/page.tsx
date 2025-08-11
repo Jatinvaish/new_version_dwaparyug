@@ -11,6 +11,7 @@ import { TeamSection } from "@/components/shared/team-section"
 import { ContactSection } from "@/components/shared/contact-section"
 import { Footer } from "@/components/shared/footer"
 import { impactAreas, values } from "@/lib/utils"
+import aboutbanner1 from "@/public/images/about-us/aboutbanner1.webp";
 
 const CountUpAnimation = ({ end, duration = 2 }: { end: number; duration?: number }) => {
   const [count, setCount] = useState(0)
@@ -56,7 +57,7 @@ const CountUpAnimation = ({ end, duration = 2 }: { end: number; duration?: numbe
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-white">
-     
+
       {/* Hero Section */}
       <section className="py-20 px-4 bg-gradient-to-br from-green-50 to-blue-50 relative overflow-hidden">
         <motion.div
@@ -138,7 +139,7 @@ export default function AboutPage() {
           >
             <div className="relative">
               <Image
-                src="/placeholder.svg?height=600&width=500&text=Our+Team+at+Work"
+                src={aboutbanner1}
                 alt="Dwaparyug Foundation team working with communities"
                 width={500}
                 height={600}
@@ -360,13 +361,13 @@ export default function AboutPage() {
                   <CardContent className="p-6">
                     <h3 className="text-2xl font-bold text-gray-900 mb-3">{area.title}</h3>
                     <p className="text-gray-600 mb-4">{area.description}</p>
-                    <Button
+                    {/* <Button
                       variant="outline"
                       className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white cursor-pointer bg-transparent"
                     >
                       Learn More
                       <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
+                    </Button> */}
                   </CardContent>
                 </Card>
               </motion.div>
