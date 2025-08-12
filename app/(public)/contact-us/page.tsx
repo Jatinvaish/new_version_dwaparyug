@@ -55,7 +55,7 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-     
+
 
       {/* Hero Section */}
       <section className="py-12 sm:py-16 md:py-20 px-3 sm:px-4 bg-gradient-to-br from-blue-50 to-green-50 relative overflow-hidden">
@@ -110,7 +110,7 @@ export default function ContactPage() {
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Email Us</h3>
                 <p className="text-sm sm:text-base text-gray-600 mb-2">Quick Response Guaranteed</p>
-                <p className="text-sm sm:text-base text-green-600 font-semibold">support@dwaparyug.org</p>
+                <p className="text-sm sm:text-base text-green-600 font-semibold">dwaparyugfoundation@gmail.com</p>
               </motion.div>
 
               <motion.div
@@ -123,8 +123,9 @@ export default function ContactPage() {
                   <MapPin className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Visit Us</h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-2">Multiple Locations</p>
-                <p className="text-sm sm:text-base text-purple-600 font-semibold">Delhi • Mumbai • Bangalore</p>
+                <p className="text-sm sm:text-base text-gray-600 mb-2">Location</p>
+                <p className="text-sm sm:text-base text-purple-600 font-semibold">Delhi </p>
+                {/* • Mumbai • Bangalore  */}
               </motion.div>
             </div>
           </motion.div>
@@ -311,7 +312,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-  
+
     </div>
   )
 }

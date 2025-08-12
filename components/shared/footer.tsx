@@ -60,7 +60,7 @@ export function Footer() {
               </div>
             </div>
             <p className="text-slate-300 text-base leading-relaxed">Empowering communities through dharma and compassion</p>
-            <div className="text-yellow-400 text-sm font-medium">support@dwaparyug.org</div>
+            <div className="text-yellow-400 text-sm font-medium">dwaparyugfoundation@gmail.com</div>
             <div className="text-sm text-slate-400">
               <div className="font-medium text-slate-300 text-base">Hours:</div>
               <div>Mon-Fri: 9:30am - 6:30pm</div>
@@ -92,7 +92,7 @@ export function Footer() {
                 <Mail className="w-5 h-5 text-yellow-400 mt-1 flex-shrink-0" />
                 <div>
                   <div className="text-slate-300 font-medium text-base">Email</div>
-                  <div className="text-slate-400">support@dwaparyug.org</div>
+                  <div className="text-slate-400">dwaparyugfoundation@gmail.com</div>
                 </div>
               </div>
             </div>

@@ -111,9 +111,8 @@ export default function HowItWorksPage() {
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
                 viewport={{ once: true }}
-                className={`flex flex-col lg:grid lg:grid-cols-2 gap-8 sm:gap-12 items-center ${
-                  index % 2 === 1 ? "lg:grid-flow-col-dense" : ""
-                }`}
+                className={`flex flex-col lg:grid lg:grid-cols-2 gap-8 sm:gap-12 items-center ${index % 2 === 1 ? "lg:grid-flow-col-dense" : ""
+                  }`}
               >
                 {/* Content Section */}
                 <div className={`order-1 ${index % 2 === 1 ? "lg:col-start-2 lg:order-2" : "lg:order-1"}`}>
@@ -234,9 +233,8 @@ export default function HowItWorksPage() {
                 className="cursor-pointer"
               >
                 <Card
-                  className={`p-6 sm:p-8 h-full shadow-xl hover:shadow-2xl transition-all duration-300 relative ${
-                    type.popular ? "border-2 border-purple-500 bg-gradient-to-br from-purple-50 to-blue-50" : "bg-white"
-                  }`}
+                  className={`p-6 sm:p-8 h-full shadow-xl hover:shadow-2xl transition-all duration-300 relative ${type.popular ? "border-2 border-purple-500 bg-gradient-to-br from-purple-50 to-blue-50" : "bg-white"
+                    }`}
                 >
                   {type.popular && (
                     <div className="absolute -top-3 sm:-top-4 left-1/2 transform -translate-x-1/2">
@@ -247,11 +245,10 @@ export default function HowItWorksPage() {
                   )}
                   <div className="text-center mb-4 sm:mb-6">
                     <div
-                      className={`w-12 h-12 sm:w-16 sm:h-16 mx-auto rounded-full flex items-center justify-center mb-3 sm:mb-4 ${
-                        type.popular
-                          ? "bg-gradient-to-r from-purple-500 to-blue-500"
-                          : "bg-gradient-to-r from-green-100 to-blue-100"
-                      }`}
+                      className={`w-12 h-12 sm:w-16 sm:h-16 mx-auto rounded-full flex items-center justify-center mb-3 sm:mb-4 ${type.popular
+                        ? "bg-gradient-to-r from-purple-500 to-blue-500"
+                        : "bg-gradient-to-r from-green-100 to-blue-100"
+                        }`}
                     >
                       <type.icon className={`w-6 h-6 sm:w-8 sm:h-8 ${type.popular ? "text-white" : "text-purple-600"}`} />
                     </div>
@@ -269,11 +266,10 @@ export default function HowItWorksPage() {
                   </ul>
 
                   <Button
-                    className={`w-full py-2 sm:py-3 rounded-full font-semibold cursor-pointer text-sm sm:text-base ${
-                      type.popular
-                        ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
-                        : "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
-                    }`}
+                    className={`w-full py-2 sm:py-3 rounded-full font-semibold cursor-pointer text-sm sm:text-base ${type.popular
+                      ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                      : "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
+                      }`}
                     asChild
                   >
                     <Link href="/causes">
@@ -331,7 +327,7 @@ export default function HowItWorksPage() {
                   {
                     icon: Award,
                     title: "Certified Organization",
-                    description: "80G and FCRA certified with regular audits and compliance",
+                    description: "80G and 10BE certified with regular audits and compliance",
                   },
                 ].map((item, index) => (
                   <motion.div
@@ -489,7 +485,7 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-       
+
     </div>
   )
 }

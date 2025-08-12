@@ -50,7 +50,7 @@ export function ContactSection() {
               <Mail className="w-5 h-5 text-yellow-500 mr-3 mt-1" />
               <div>
                 <div className="font-semibold">Email</div>
-                <div className="text-gray-600">support@dwaparyug.org</div>
+                <div className="text-gray-600">dwaparyugfoundation@gmail.com</div>
               </div>
             </div>
 

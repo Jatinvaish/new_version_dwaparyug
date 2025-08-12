@@ -72,7 +72,7 @@ export default function AboutPage() {
           <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }}>
             <div className="inline-flex items-center bg-gradient-to-r from-green-100 to-blue-100 px-6 py-3 rounded-full text-sm font-medium text-gray-700 mb-6">
               <Users className="w-4 h-4 mr-2 text-green-600" />
-              Our Story • Transforming Lives Since 2015
+              Our Story • Transforming Lives Since 2025
             </div>
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
               About{" "}
@@ -83,7 +83,7 @@ export default function AboutPage() {
             <p className="text-xl text-gray-600 leading-relaxed mb-8">
               We are India's leading humanitarian nonprofit organization, dedicated to creating lasting positive change
               in the lives of underprivileged communities. Through innovative programs and transparent operations, we've
-              transformed over 50,000 lives across 1,200+ villages.
+              transformed over 50,000 lives across 200+ villages.
             </p>
 
             <div className="grid grid-cols-3 gap-6 mb-8">
@@ -101,9 +101,9 @@ export default function AboutPage() {
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-purple-600">
-                  <CountUpAnimation end={9} />
+                  <CountUpAnimation end={5} />
                 </div>
-                <div className="text-sm text-gray-600">Years of Service</div>
+                <div className="text-sm text-gray-600">Months of Service</div>
               </div>
             </div>
 

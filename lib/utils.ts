@@ -382,7 +382,7 @@ export const causes = [
 export const impactStats = [
   { number: 50000, label: "Lives Transformed", icon: Users, color: "text-blue-600" },
   { number: 1200, label: "Villages Reached", icon: Globe, color: "text-green-600" },
-  { number: 25000, label: "Children Educated", icon: Target, color: "text-purple-600" },
+  { number: 10000, label: "Children Educated", icon: Target, color: "text-purple-600" },
   { number: 500, label: "Healthcare Camps", icon: Award, color: "text-red-600" },
 ]
 
@@ -497,7 +497,7 @@ export const impactAreas = [
   {
     title: "Education",
     description: "Ensuring quality education access for children from disadvantaged backgrounds",
-    impact: "25,000+ children educated",
+    impact: "10,000+ children educated",
     image: "/placeholder.svg?height=300&width=400&text=Education",
   },
   {
@@ -535,22 +535,22 @@ export const officeLocations = [
     hours: "Mon-Fri: 9:30 AM - 6:30 PM",
     mapUrl: "#",
   },
-  {
-    city: "Mumbai",
-    address: "Plot No. 45, Sector 12, Vashi, Navi Mumbai - 400703",
-    phone: "+91 98765 43210",
-    email: "mumbai@dwaparyug.org",
-    hours: "Mon-Fri: 10:00 AM - 7:00 PM",
-    mapUrl: "#",
-  },
-  {
-    city: "Bangalore",
-    address: "123 MG Road, Brigade Road, Bangalore - 560001",
-    phone: "+91 87654 32109",
-    email: "bangalore@dwaparyug.org",
-    hours: "Mon-Fri: 9:00 AM - 6:00 PM",
-    mapUrl: "#",
-  },
+  // {
+  //   city: "Mumbai",
+  //   address: "Plot No. 45, Sector 12, Vashi, Navi Mumbai - 400703",
+  //   phone: "+91 98765 43210",
+  //   email: "mumbai@dwaparyug.org",
+  //   hours: "Mon-Fri: 10:00 AM - 7:00 PM",
+  //   mapUrl: "#",
+  // },
+  // {
+  //   city: "Bangalore",
+  //   address: "123 MG Road, Brigade Road, Bangalore - 560001",
+  //   phone: "+91 87654 32109",
+  //   email: "bangalore@dwaparyug.org",
+  //   hours: "Mon-Fri: 9:00 AM - 6:00 PM",
+  //   mapUrl: "#",
+  // },
 ]
 
 export const stats = [

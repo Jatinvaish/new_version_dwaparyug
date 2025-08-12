@@ -117,7 +117,7 @@ export default function LoginPage() {
               <div className="text-sm text-gray-600">Villages Reached</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-blue-600">25K+</div>
+              <div className="text-3xl font-bold text-blue-600">10K+</div>
               <div className="text-sm text-gray-600">Children Educated</div>
             </div>
           </div>

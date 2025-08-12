@@ -1,7 +1,7 @@
 "use client";
 import { scaleOnHover } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import { Sparkles, Facebook, Instagram, Twitter, Linkedin, Heart, ArrowRight, X, Menu, UserCircle } from 'lucide-react'
+import { Sparkles, Facebook, Instagram, Twitter, Linkedin, Heart, ArrowRight, X, Menu, UserCircle, Router } from 'lucide-react'
 import React, { useState } from 'react'
 import { Button } from '../ui/button'
 import Link from "next/link";
@@ -9,6 +9,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useMediaQuery } from 'react-responsive';
 import Image from "next/image";
 import logo from "@/public/images/logo/logo.png";
+import { useRouter } from "next/navigation";
 
 // Import Shadcn UI Dropdown components
 import {
@@ -75,7 +76,7 @@ const HeaderSection = () => {
 
     return null;
   };
-
+  const router = useRouter();
   return (
     <section className='top-0 sticky z-50'>
       <motion.div
@@ -135,7 +136,7 @@ const HeaderSection = () => {
               ) : (
                 <span className="text-yellow-400 mr-2">✉</span>
               )}
-              <span className="group-hover:text-yellow-400 transition-colors">support@dwaparyug.org</span>
+              <span className="group-hover:text-yellow-400 transition-colors">dwaparyugfoundation@gmail.com</span>
             </motion.span>
 
             <motion.span className="hidden lg:flex items-center group cursor-pointer" variants={fadeInUp}>
@@ -167,9 +168,9 @@ const HeaderSection = () => {
               {...scaleOnHover}
             >
               <Link href={'/causes/19'} className='flex' >
-              <Sparkles className="w-3 lg:w-4 h-3 lg:h-4 mr-1 lg:mr-2" />
-              🚨 URGENT: Relief for Flood-Affected Families For Uttrrakashi
-            </Link>
+                <Sparkles className="w-3 lg:w-4 h-3 lg:h-4 mr-1 lg:mr-2" />
+                🚨 URGENT: Relief for Flood-Affected Families For Uttrrakashi
+              </Link>
             </Button>
           </motion.div>
         </div>
@@ -191,10 +192,11 @@ const HeaderSection = () => {
             {/* todo */}
             <div className="from-gray-800 to-gray-900 rounded-lg shadow-lg">
               <Image
+                onClick={() => router.push("/")}
                 src={logo}
                 alt="Dwaparyug Logo"
-                width={160}  
-                height={90}  
+                width={160}
+                height={90}
                 priority
               />
             </div>
@@ -317,7 +319,7 @@ const HeaderSection = () => {
                     onClick={() => {
                       signOut();
                       setMobileMenuOpen(false);
-                      
+
                     }}
                   >
                     Logout

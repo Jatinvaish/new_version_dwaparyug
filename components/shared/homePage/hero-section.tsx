@@ -136,7 +136,7 @@ const HeroSection = () => {
             </div>
             <div className="text-center">
               <div className="text-2xl sm:text-3xl font-bold text-gray-900">
-                <CountUpAnimation end={25000} />+
+                <CountUpAnimation end={10000} />+
               </div>
               <div className="text-xs sm:text-sm text-gray-600">Children Educated</div>
             </div>
