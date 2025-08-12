@@ -1,253 +1,501 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Search, XCircle, ListChecks, Clock } from "lucide-react"
-import { format } from "date-fns"
-import Image from "next/image"
+import { Card, CardContent } from "@/components/ui/card"
+import { Eye, Download, Filter } from "lucide-react"
+import { PaginationInfo, Column, FilterOption, DataTable } from "@/components/common/data-table"
 
-interface Donation {
-  id: number
-  donorName: string
-  campaignTitle: string
-  amount: number
-  date: Date
-  status: "Pending" | "Completed" | "Refunded"
-  paymentMethod: string
-  message?: string
-  images?: string[] // URLs of uploaded images
-  mobileNumber: string
-  country: string
+// Helper function to format date
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
-const initialDonations: Donation[] = [
-  {
-    id: 1,
-    donorName: "Priya Sharma",
-    campaignTitle: "Winter Relief Drive 2024",
-    amount: 1500,
-    date: new Date("2024-01-10"),
-    status: "Completed",
-    paymentMethod: "Credit Card",
-    message: "Hope this helps keep someone warm!",
-    images: ["/placeholder.svg?height=50&width=50&text=Donation+Pic1"],
-    mobileNumber: "+919876543210",
-    country: "India",
-  },
-  {
-    id: 2,
-    donorName: "Rajesh Kumar",
-    campaignTitle: "Educate a Child Program",
-    amount: 2500,
-    date: new Date("2024-01-12"),
-    status: "Pending",
-    paymentMethod: "UPI",
-    mobileNumber: "+919988776655",
-    country: "India",
-  },
-  {
-    id: 3,
-    donorName: "Sarah Johnson",
-    campaignTitle: "Diwali Joy Distribution 2024",
-    amount: 5000,
-    date: new Date("2023-11-01"),
-    status: "Completed",
-    paymentMethod: "PayPal",
-    message: "Happy Diwali to all!",
-    mobileNumber: "+12125551234",
-    country: "United States",
-  },
-  {
-    id: 4,
-    donorName: "David Lee",
-    campaignTitle: "Rural Healthcare Access",
-    amount: 1000,
-    date: new Date("2024-01-05"),
-    status: "Refunded",
-    paymentMethod: "Bank Transfer",
-    mobileNumber: "+447911123456",
-    country: "United Kingdom",
-  },
-]
+// Helper function to format currency
+const formatCurrency = (amount: number) => {
+  return `₹${amount?.toLocaleString() || '0'}`
+}
+
+// Types for donation data structure based on your API
+interface Donation {
+  id: number
+  user_id: number
+  donor_name: string
+  donor_email: string
+  campaign_id: number
+  campaign_title: string
+  campaign_image: string
+  campaign_category: string
+  donation_amount: number
+  tip_amount: number
+  total_amount: number
+  donation_type: 'direct' | 'product_based'
+  is_public: boolean
+  donation_date: string
+  donated_on_behalf_of?: string
+  donor_message?: string
+  impact_generated: boolean
+  beneficiaries_reached: number
+  razorpay_payment_id: string
+  product_items_count: number
+  total_product_quantity: number
+  impact_stories_count: number
+  created_at: string
+  updated_at: string
+}
+
+interface DonationStatistics {
+  totalDonations: number
+  totalDonationAmount: number
+  totalTipAmount: number
+  totalAmount: number
+  directDonations: number
+  productBasedDonations: number
+  publicDonations: number
+  donationsWithImpact: number
+  totalBeneficiariesReached: number
+}
 
 export default function DonationsPage() {
-  const [donations, setDonations] = useState<Donation[]>(initialDonations)
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-  const [currentDonation, setCurrentDonation] = useState<Donation | null>(null)
+  const [donations, setDonations] = useState<Donation[]>([])
+  const [statistics, setStatistics] = useState<DonationStatistics | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // API-driven filter and search states
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterStatus, setFilterStatus] = useState("All")
+  const [filters, setFilters] = useState<Record<string, string>>({})
 
-  const handleViewDetails = (donation: Donation) => {
-    setCurrentDonation(donation)
-    setIsViewDialogOpen(true)
-  }
-
-  const handleUpdateStatus = (id: number, newStatus: "Pending" | "Completed" | "Refunded") => {
-    setDonations(donations.map((d) => (d.id === id ? { ...d, status: newStatus } : d)))
-  }
-
-  const filteredDonations = donations.filter((donation) => {
-    const matchesSearch =
-      donation.donorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      donation.campaignTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      donation.mobileNumber.includes(searchTerm)
-    const matchesStatus = filterStatus === "All" || donation.status === filterStatus
-    return matchesSearch && matchesStatus
+  // API-driven pagination state
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
   })
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "Completed":
+  // API-driven sort states
+  const [sortField, setSortField] = useState<string>("donation_date")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
+
+  // Use refs to track the current values to avoid infinite loops
+  const currentParams = useRef({
+    page: 1,
+    pageSize: 10,
+    searchTerm: "",
+    filters: {},
+    sortField: "donation_date",
+    sortDirection: "desc" as "asc" | "desc"
+  })
+
+  // Update ref when params change
+  useEffect(() => {
+    currentParams.current = {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      searchTerm,
+      filters,
+      sortField,
+      sortDirection
+    }
+  })
+
+  // Fetch donations when dependencies change
+  useEffect(() => {
+    fetchDonations()
+  }, [pagination.page, pagination.pageSize, searchTerm, filters, sortField, sortDirection])
+
+  const fetchDonations = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const params = new URLSearchParams({
+        page: pagination.page.toString(),
+        pageSize: pagination.pageSize.toString(),
+      })
+
+      // Add search
+      if (searchTerm) params.append('search', searchTerm)
+
+      // Add filters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== 'all') {
+          params.append(key, value)
+        }
+      })
+
+      // Add sorting
+      if (sortField) {
+        params.append('sortBy', sortField)
+        params.append('sortOrder', sortDirection)
+      }
+
+      const response = await fetch(`/api/donations?${params}`)
+      if (!response.ok) throw new Error('Failed to fetch donations')
+
+      const data = await response.json()
+      setDonations(data.donations || [])
+      setPagination(data.pagination || {
+        page: 1,
+        pageSize: 10,
+        total: 0,
+        totalPages: 0,
+        hasNext: false,
+        hasPrev: false
+      })
+      setStatistics(data.statistics || null)
+    } catch (error) {
+      console.error('Error fetching donations:', error)
+      setError('Failed to load donations')
+    } finally {
+      setLoading(false)
+    }
+  }, [pagination.page, pagination.pageSize, searchTerm, filters, sortField, sortDirection])
+
+  const getDonationTypeBadgeVariant = useCallback((type: string): "default" | "secondary" | "outline" | "destructive" => {
+    switch (type.toLowerCase()) {
+      case "direct":
         return "default"
-      case "Pending":
+      case "product_based":
         return "secondary"
-      case "Refunded":
-        return "destructive"
       default:
         return "outline"
     }
-  }
+  }, [])
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Donation Requests</h1>
-      </div>
+  // API-driven handlers
+  const handleSearchChange = useCallback((search: string) => {
+    setSearchTerm(search)
+    setPagination(prev => ({ ...prev, page: 1 }))
+  }, [])
 
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by donor, campaign, or mobile..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Filter by Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Statuses</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-                <SelectItem value="Completed">Completed</SelectItem>
-                <SelectItem value="Refunded">Refunded</SelectItem>
-              </SelectContent>
-            </Select>
+  const handleFiltersChange = useCallback((newFilters: Record<string, string>) => {
+    setFilters(newFilters)
+    setPagination(prev => ({ ...prev, page: 1 }))
+  }, [])
+
+  const handleSort = useCallback((column: string, order: 'asc' | 'desc') => {
+    setSortField(column)
+    setSortDirection(order)
+  }, [])
+
+  const handlePageChange = useCallback((page: number) => {
+    setPagination(prev => ({ ...prev, page }))
+  }, [])
+
+  const handlePageSizeChange = useCallback((pageSize: number) => {
+    setPagination(prev => ({ ...prev, pageSize: pageSize, page: 1 }))
+  }, [])
+
+  const handleViewDetails = useCallback((donation: Donation) => {
+    window.location.href = `/admin/donations/${donation.id}`
+  }, [])
+ 
+
+  // Define table columns with useMemo to prevent recreation
+  const columns: Column<Donation>[] = useMemo(() => [
+    {
+      key: 'donor_name',
+      header: 'Donor',
+      sortable: true,
+      searchable: true,
+      width: '200px',
+      render: (value, row) => (
+        <div className="max-w-[180px]">
+          <div className="font-semibold truncate">{row.donor_name || 'Anonymous'}</div>
+          <div className="text-sm text-muted-foreground truncate">
+            {row.donor_email}
           </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Donor Name</TableHead>
-                <TableHead>Campaign</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredDonations.map((donation) => (
-                <TableRow key={donation.id}>
-                  <TableCell className="font-medium">{donation.donorName}</TableCell>
-                  <TableCell>{donation.campaignTitle}</TableCell>
-                  <TableCell>₹{donation.amount.toLocaleString()}</TableCell>
-                  <TableCell>{format(donation.date, "PPP")}</TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadgeVariant(donation.status)}>{donation.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleViewDetails(donation)}>
-                      <Eye className="h-4 w-4" />
-                      <span className="sr-only">View Details</span>
-                    </Button>
-                    <Button variant="ghost" size="icon">
-                      <ListChecks className="h-4 w-4" />
-                      <span className="sr-only">Change Status</span>
-                    </Button>
-                    <Button variant="ghost" size="icon">
-                      <Clock className="h-4 w-4" />
-                      <span className="sr-only">Change Status</span>
-                    </Button>
-                    <Button variant="ghost" size="icon">
-                      <XCircle className="h-4 w-4" />
-                      <span className="sr-only">Change Status</span>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Donation Details</DialogTitle>
-          </DialogHeader>
-          {currentDonation && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-2">
-                <Label>Donor Name:</Label>
-                <span>{currentDonation.donorName}</span>
-                <Label>Campaign:</Label>
-                <span>{currentDonation.campaignTitle}</span>
-                <Label>Amount:</Label>
-                <span>₹{currentDonation.amount.toLocaleString()}</span>
-                <Label>Date:</Label>
-                <span>{format(currentDonation.date, "PPP")}</span>
-                <Label>Status:</Label>
-                <span>
-                  <Badge variant={getStatusBadgeVariant(currentDonation.status)}>{currentDonation.status}</Badge>
-                </span>
-                <Label>Payment Method:</Label>
-                <span>{currentDonation.paymentMethod}</span>
-                <Label>Mobile Number:</Label>
-                <span>{currentDonation.mobileNumber}</span>
-                <Label>Country:</Label>
-                <span>{currentDonation.country}</span>
-              </div>
-              {currentDonation.message && (
-                <div className="space-y-2">
-                  <Label>Message:</Label>
-                  <p className="text-sm text-muted-foreground">{currentDonation.message}</p>
-                </div>
-              )}
-              {currentDonation.images && currentDonation.images.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Uploaded Images:</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {currentDonation.images.map((img, index) => (
-                      <Image
-                        key={index}
-                        src={img || "/placeholder.svg"}
-                        alt={`Donation image ${index + 1}`}
-                        width={80}
-                        height={80}
-                        className="rounded-md object-cover"
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+        </div>
+      )
+    },
+    {
+      key: 'campaign_title',
+      header: 'Campaign',
+      sortable: true,
+      searchable: true,
+      width: '200px',
+      render: (value, row) => (
+        <div className="max-w-[180px]">
+          <div className="font-semibold truncate">{row.campaign_title}</div>
+          <div className="text-sm text-muted-foreground truncate">
+            {row.campaign_category}
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'donation_amount',
+      header: 'Amount',
+      sortable: true,
+      width: '120px',
+      render: (value, row) => (
+        <div>
+          <div className="font-semibold">{formatCurrency(row.donation_amount)}</div>
+          {row.tip_amount > 0 && (
+            <div className="text-sm text-muted-foreground">
+              +{formatCurrency(row.tip_amount)} tip
             </div>
           )}
-          <DialogFooter>
-            <Button onClick={() => setIsViewDialogOpen(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )
+    },
+    {
+      key: 'donation_type',
+      header: 'Type',
+      sortable: true,
+      filterable: true,
+      width: '120px',
+      filterOptions: [
+        { label: 'Direct', value: 'direct' },
+        { label: 'Product Based', value: 'product_based' }
+      ],
+      render: (value, row) => (
+        <div>
+          <Badge variant={getDonationTypeBadgeVariant(value)} className="mb-1">
+            {value === 'direct' ? 'Direct' : 'Product Based'}
+          </Badge>
+          {row.donation_type === 'product_based' && row.product_items_count > 0 && (
+            <div className="text-xs text-muted-foreground">
+              {row.product_items_count} items
+            </div>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'is_public',
+      header: 'Visibility',
+      sortable: true,
+      filterable: true,
+      width: '100px',
+      filterOptions: [
+        { label: 'Public', value: 'true' },
+        { label: 'Private', value: 'false' }
+      ],
+      render: (value) => (
+        <Badge variant={value ? "default" : "outline"}>
+          {value ? 'Public' : 'Private'}
+        </Badge>
+      )
+    },
+    {
+      key: 'impact_generated',
+      header: 'Impact',
+      sortable: true,
+      filterable: true,
+      width: '100px',
+      filterOptions: [
+        { label: 'Yes', value: 'true' },
+        { label: 'No', value: 'false' }
+      ],
+      render: (value, row) => (
+        <div>
+          <Badge variant={value ? "default" : "outline"}>
+            {value ? 'Yes' : 'No'}
+          </Badge>
+          {value && row.beneficiaries_reached > 0 && (
+            <div className="text-xs text-muted-foreground mt-1">
+              {row.beneficiaries_reached} reached
+            </div>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'donation_date',
+      header: 'Date',
+      sortable: true,
+      width: '150px',
+      render: (value) => formatDate(value)
+    }
+  ], [])
+
+  // Mobile card component with useCallback
+  const renderMobileCard = useCallback((donation: Donation, index: number) => (
+    <Card key={donation.id} className="mb-4">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-base truncate">
+              {donation.donor_name || 'Anonymous Donor'}
+            </h3>
+            <p className="text-sm text-muted-foreground truncate">
+              {donation.campaign_title}
+            </p>
+          </div>
+          <div className="text-right shrink-0 ml-2">
+            <div className="font-semibold text-green-600">
+              {formatCurrency(donation.total_amount)}
+            </div>
+            <Badge variant={getDonationTypeBadgeVariant(donation.donation_type)}  >
+              {donation.donation_type === 'direct' ? 'Direct' : 'Product'}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+          <div>
+            <span className="text-muted-foreground">Category:</span>
+            <p className="font-medium truncate">{donation.campaign_category}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Date:</span>
+            <p className="font-medium">{formatDate(donation.donation_date)}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Visibility:</span>
+            <div>
+              <Badge variant={donation.is_public ? "default" : "outline"}   >
+                {donation.is_public ? 'Public' : 'Private'}
+              </Badge>
+            </div>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Impact:</span>
+            <div>
+              <Badge variant={donation.impact_generated ? "default" : "outline"}  >
+                {donation.impact_generated ? 'Generated' : 'None'}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {donation.donor_message && (
+          <div className="mb-4 p-3 bg-muted rounded-md">
+            <p className="text-sm italic">"{donation.donor_message}"</p>
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleViewDetails(donation)}
+            className="flex-1"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            View Details
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  ), [handleViewDetails])
+
+  // Statistics summary component
+  const StatisticsSummary = useCallback(() => {
+    if (!statistics) return null
+
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6">
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-green-600">
+              {statistics.totalDonations}
+            </div>
+            <div className="text-sm text-muted-foreground">Total Donations</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-blue-600">
+              {formatCurrency(statistics.totalAmount)}
+            </div>
+            <div className="text-sm text-muted-foreground">Total Raised</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-purple-600">
+              {statistics.directDonations}
+            </div>
+            <div className="text-sm text-muted-foreground">Direct Donations</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-orange-600">
+              {statistics.donationsWithImpact}
+            </div>
+            <div className="text-sm text-muted-foreground">With Impact</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-red-600">
+              {statistics.totalBeneficiariesReached}
+            </div>
+            <div className="text-sm text-muted-foreground">Beneficiaries</div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }, [statistics])
+
+  return (
+    <div className="min-h-screen">
+      <div className="mx-auto space-y-6">
+        <StatisticsSummary />
+
+        <DataTable<Donation>
+          // Data
+          data={donations}
+          columns={columns}
+          loading={loading}
+          error={error}
+          pagination={pagination}
+
+          // Header
+          title="Donations"
+          description="View and manage all donation transactions"
+
+          // Search (API-driven)
+          showSearch={true}
+          searchPlaceholder="Search by donor name or campaign..."
+          searchTerm={searchTerm}
+          onSearchChange={handleSearchChange}
+
+          // Filters (API-driven)
+          showFilters={true}
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+
+          // Sorting (API-driven)
+          sortBy={sortField}
+          sortOrder={sortDirection}
+          onSort={handleSort}
+
+          // Pagination (API-driven)
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+
+          // Actions
+          onEdit={handleViewDetails}
+          emptyMessage="No donations found"
+
+          // Configuration
+          striped={true}
+          stickyHeader={true}
+
+          // Mobile
+          showMobileCards={true}
+          mobileCardComponent={renderMobileCard}
+
+          // Column visibility
+          showColumnVisibility={true}
+        />
+      </div>
     </div>
   )
 }

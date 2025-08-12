@@ -40,6 +40,7 @@ import { useDonationCart, useDonationForm, usePayment } from "@/hooks/useDonatio
 import Image from "next/image"
 import toast from "react-hot-toast";
 import Link from 'next/link';
+import { fileToBase64, createPreviewUrl, LocalImage, uploadImages } from '@/lib/helper-function';
 
 // Country options - Move outside component to prevent recreation
 const countries = [
@@ -624,8 +625,8 @@ const ReviewCartStep = memo(({
     {Object.entries(itemsByCampaign).map(([campaignId, campaign]: [string, any]) => (
       <Card key={campaignId}>
         <CardHeader>
-          <Link  className='text-blue-700 border-b-2' href={'/cart'}>
-          <CardTitle className="text-lg">{campaign.campaignTitle}</CardTitle>
+          <Link className='text-blue-700 border-b-2' href={'/cart'}>
+            <CardTitle className="text-lg">{campaign.campaignTitle}</CardTitle>
           </Link>
         </CardHeader>
         <CardContent className="space-y-1">
@@ -919,6 +920,7 @@ export default function MultiStepDonationForm() {
   const { subtotal, totalItems } = useMemo(() => getCartTotals(), [getCartTotals])
   const customAmount = useMemo(() => parseFloat(customDonationAmount) || 0, [customDonationAmount])
   const totalDonationAmount = useMemo(() => subtotal + customAmount, [subtotal, customAmount])
+  const [bannerImage, setBannerImage] = useState<LocalImage | null>(null);
 
   // Calculate tip amount
   const calculateTipAmount = useCallback(() => {
@@ -939,31 +941,27 @@ export default function MultiStepDonationForm() {
   const itemsByCampaign = useMemo(() => getItemsByCampaign(), [getItemsByCampaign])
 
   // Memoize callbacks to prevent unnecessary re-renders
-  const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        setErrors(prev => ({ ...prev, customImage: 'Image size should be less than 5MB' }))
-        return
-      }
 
-      updateFormData({ customImage: file })
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
+    try {
+      const base64 = await fileToBase64(file);
+      const previewUrl = createPreviewUrl(file);
 
-      // Clear error
-      setErrors(prev => {
-        const newErrors = { ...prev }
-        delete newErrors.customImage
-        return newErrors
-      })
+      setBannerImage({
+        file,
+        base64,
+        url: previewUrl,
+        isExisting: false
+      });
+      updateFormData({ customImage: undefined })
+    } catch (error) {
+      console.error('Error processing banner image:', error);
+      alert('Error processing image. Please try again.');
     }
-  }, [updateFormData])
-
+  };
   const removeImage = useCallback(() => {
     updateFormData({ customImage: undefined })
     setImagePreview(null)
@@ -1036,7 +1034,23 @@ export default function MultiStepDonationForm() {
       if (userData?.id <= 0) {
         toast.error("Authorization failed! please contact us for more details");
       }
-
+      if (bannerImage) {
+        if (bannerImage.file) {
+          // New file upload
+          const uploadedUrls = await uploadImages([bannerImage.file]);
+          //@ts-ignore
+          formData.customImage = uploadedUrls[0];
+        } else if (bannerImage.base64) {
+          // Base64 upload
+          const uploadedUrls = await uploadImages([bannerImage.base64]);
+          //@ts-ignore
+          formData.customImage = uploadedUrls[0];
+        } else if (bannerImage.isExisting) {
+          // Existing image, use as is
+          //@ts-ignore
+          formData.customImage = bannerImage.url;
+        }
+      }
       // Create payment order
       const orderData = await createPaymentOrder({
         cartItems,

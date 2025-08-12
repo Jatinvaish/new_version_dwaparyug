@@ -4,7 +4,7 @@ import Razorpay from 'razorpay'
 import crypto from 'crypto'
 import { SelectQuery } from '@/lib/database'
 import { processImageUpload } from '@/lib/cloudinary'
- 
+
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
@@ -50,12 +50,12 @@ export async function POST(request: NextRequest) {
     if (contentType?.includes('multipart/form-data')) {
       // Handle form data with file upload
       const formData = await request.formData()
-      
+
       // Extract image if present
       const imageFile = formData.get('customImage') as File
       if (imageFile && imageFile.size > 0) {
         imageUrl = await processImageUpload(
-          imageFile, 
+          imageFile,
           `donation_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`
         )
       }
@@ -69,12 +69,13 @@ export async function POST(request: NextRequest) {
     } else {
       // Handle JSON request
       body = await request.json()
-      
+
       // Process base64 image if present
       if (body.customImage && typeof body.customImage === 'string') {
         imageUrl = await processImageUpload(body.customImage, `donation_${Date.now()}`)
       }
     }
+    console.log("🚀 ~ POST ~ imageUrl:", imageUrl)
 
     const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = body
 
@@ -113,9 +114,9 @@ export async function POST(request: NextRequest) {
       LEFT JOIN donation_temp_data td ON td.payment_request_id = pr.id
       WHERE pr.razorpay_order_id = $1
     `
-    
+
     const paymentRequestResult = await SelectQuery(paymentRequestQuery, [razorpay_order_id])
-    
+
     if (paymentRequestResult.length === 0) {
       return NextResponse.json(
         { error: 'Payment request not found' },
@@ -211,7 +212,7 @@ export async function POST(request: NextRequest) {
             WHERE cp.id = $1
           `
           const productResult = await SelectQuery(productQuery, [item.productId])
-          
+
           if (productResult.length > 0) {
             const product = productResult[0]
             const campaignId = product.campaign_id
@@ -223,9 +224,9 @@ export async function POST(request: NextRequest) {
               existing.totalAmount += itemTotalAmount
               existing.hasProducts = true
             } else {
-              campaignUpdates.set(campaignId, { 
-                totalAmount: itemTotalAmount, 
-                hasProducts: true 
+              campaignUpdates.set(campaignId, {
+                totalAmount: itemTotalAmount,
+                hasProducts: true
               })
             }
 
@@ -240,16 +241,16 @@ export async function POST(request: NextRequest) {
             // Check if stock update was successful
             const stockCheckQuery = `SELECT stock FROM campaign_products WHERE id = $1`
             const stockCheck = await SelectQuery(stockCheckQuery, [item.productId])
-            
+
             if (stockCheck.length === 0 || stockCheck[0].stock < 0) {
               throw new Error(`Insufficient stock for product ID: ${item.productId}`)
             }
           }
 
           // Insert personalization options if needed
-          if (formData.donorName || formData.donorCountry || formData.customMessage || 
-              formData.donationPurpose || formData.specialInstructions || imageUrl) {
-            
+          if (formData.donorName || formData.donorCountry || formData.customMessage ||
+            formData.donationPurpose || formData.specialInstructions || imageUrl) {
+
             const insertPersonalizationQuery = `
               INSERT INTO personalization_options (
                 donation_item_id, donor_name, donor_country, custom_image, 
@@ -261,8 +262,8 @@ export async function POST(request: NextRequest) {
               donationItemId,
               formData.donorName || null,
               formData.donorCountry || null,
-              imageUrl,
-              !!imageUrl,
+              formData.customImage || imageUrl,
+              !!formData.customImage,
               formData.customMessage || null,
               formData.donationPurpose || null,
               formData.specialInstructions || null
@@ -275,16 +276,15 @@ export async function POST(request: NextRequest) {
         // For direct donations, track the main campaign
         const campaignId = paymentRequest.campaign_id
         if (campaignId) {
-          campaignUpdates.set(campaignId, { 
-            totalAmount: donationAmount, 
-            hasProducts: false 
+          campaignUpdates.set(campaignId, {
+            totalAmount: donationAmount,
+            hasProducts: false
           })
         }
 
         // For direct donations, still create personalization options linked to the donation
-        if (formData.donorName || formData.donorCountry || formData.customMessage || 
-            formData.donationPurpose || formData.specialInstructions || imageUrl) {
-          
+        if (formData.donorName || formData.donorCountry || formData.customMessage ||
+          formData.donationPurpose || formData.specialInstructions || imageUrl) {
           const insertPersonalizationQuery = `
             INSERT INTO personalization_options (
               donation_id, donor_name, donor_country, custom_image, 
@@ -296,7 +296,7 @@ export async function POST(request: NextRequest) {
             donationId,
             formData.donorName || null,
             formData.donorCountry || null,
-            imageUrl,
+            formData.customImage || imageUrl,
             !!imageUrl,
             formData.customMessage || null,
             formData.donationPurpose || null,
@@ -316,15 +316,15 @@ export async function POST(request: NextRequest) {
           WHERE id = $1
         `
         const campaignResult = await SelectQuery(campaignQuery, [campaignId])
-        
+
         if (campaignResult.length > 0) {
           const campaign = campaignResult[0]
           const newTotalRaised = parseFloat(campaign.total_raised || 0) + updateData.totalAmount
           const donationGoal = parseFloat(campaign.donation_goal || 0)
-          
+
           // Calculate new progress percentage
-          const newProgressPercentage = donationGoal > 0 
-            ? Math.min((newTotalRaised / donationGoal) * 100, 100) 
+          const newProgressPercentage = donationGoal > 0
+            ? Math.min((newTotalRaised / donationGoal) * 100, 100)
             : 0
 
           // Update campaign statistics
@@ -378,14 +378,14 @@ export async function POST(request: NextRequest) {
 
     } catch (transactionError) {
       console.error('Transaction error:', transactionError)
-      
+
       // Update payment request status to failed
       await SelectQuery(
         `UPDATE donation_payment_requests 
          SET status = 'failed', payment_response = $1, updated_at = CURRENT_TIMESTAMP 
          WHERE id = $2`,
         [
-          JSON.stringify({ 
+          JSON.stringify({
             error: 'Transaction failed',
             details: transactionError instanceof Error ? transactionError.message : 'Unknown error'
           }),
@@ -398,11 +398,11 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error processing payment:', error)
-    
+
     return NextResponse.json(
-      { 
-        error: 'Failed to process payment', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
+      {
+        error: 'Failed to process payment',
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     )
