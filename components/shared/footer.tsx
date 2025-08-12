@@ -183,7 +183,7 @@ export function Footer() {
             >
               AJPR World
             </a>
-             {/* <span className="text-slate-500"> & </span>
+            <span className="text-slate-500"> & </span>
             <a 
               href="https://jatindevv.netlify.app" 
               target="_blank" 
@@ -191,7 +191,7 @@ export function Footer() {
               className="text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text font-semibold hover:from-purple-300 hover:via-pink-400 hover:to-red-400 transition-all duration-300 hover:scale-105 inline-block hover:underline"
             >
               Jatin Vaishnav ✨
-            </a> */}
+            </a>  
           </div>
         </div>
       </div>
