@@ -357,6 +357,7 @@ export const usePayment = () => {
     razorpay_order_id: string
     razorpay_signature: string
   }) => {
+    console.log("🚀 ~ usePayment ~ paymentData:", paymentData)
     setIsProcessing(true)
     setPaymentError(null)
 
