@@ -380,9 +380,9 @@ export const causes = [
 
 
 export const impactStats = [
-  { number: 50000, label: "Lives Transformed", icon: Users, color: "text-blue-600" },
-  { number: 1200, label: "Villages Reached", icon: Globe, color: "text-green-600" },
-  { number: 10000, label: "Children Educated", icon: Target, color: "text-purple-600" },
+  { number: 350000, label: "Worth Donations", icon: Users, color: "text-blue-600" },
+  { number: 1200, label: "Unique Donors", icon: Globe, color: "text-green-600" },
+  { number: 10000, label: "Lives Impacted", icon: Target, color: "text-purple-600" },
   { number: 500, label: "Healthcare Camps", icon: Award, color: "text-red-600" },
 ]
 
@@ -501,8 +501,8 @@ export const impactAreas = [
     image: "/placeholder.svg?height=300&width=400&text=Education",
   },
   {
-    title: "Healthcare",
-    description: "Delivering essential medical services to remote and underserved areas",
+    title: "Skill Development",
+    description: "Offering vocational training in areas with high employment potential particularly for youth ",
     impact: "500+ medical camps",
     image: "/placeholder.svg?height=300&width=400&text=Healthcare",
   },

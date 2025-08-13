@@ -89,21 +89,21 @@ export default function AboutPage() {
             <div className="grid grid-cols-3 gap-6 mb-8">
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-600">
-                  <CountUpAnimation end={50000} />+
+                  <CountUpAnimation end={350000} />+
                 </div>
-                <div className="text-sm text-gray-600">Lives Transformed</div>
+                <div className="text-sm text-gray-600">Worth Donations</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-blue-600">
                   <CountUpAnimation end={1200} />+
                 </div>
-                <div className="text-sm text-gray-600">Villages Reached</div>
+                <div className="text-sm text-gray-600">Unique Donors</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-purple-600">
-                  <CountUpAnimation end={5} />
+                  <CountUpAnimation end={10000} />
                 </div>
-                <div className="text-sm text-gray-600">Months of Service</div>
+                <div className="text-sm text-gray-600">Lives Impacted</div>
               </div>
             </div>
 
