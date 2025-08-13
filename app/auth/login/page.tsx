@@ -110,15 +110,15 @@ export default function LoginPage() {
           <div className="grid grid-cols-3 gap-6 text-center">
             <div>
               <div className="text-3xl font-bold text-green-600">50K+</div>
-              <div className="text-sm text-gray-600">Lives Transformed</div>
+              <div className="text-sm text-gray-600">Worth Donations</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-yellow-600">1200+</div>
-              <div className="text-sm text-gray-600">Villages Reached</div>
+              <div className="text-sm text-gray-600">Unique Donors</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-blue-600">10K+</div>
-              <div className="text-sm text-gray-600">Children Educated</div>
+              <div className="text-sm text-gray-600">Lives Impacted</div>
             </div>
           </div>
         </motion.div>

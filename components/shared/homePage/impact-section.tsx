@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button'
 import { scaleOnHover } from '@/lib/utils'
 import { motion, useInView } from 'framer-motion'
-import { TrendingUp,   Users, ArrowRight } from 'lucide-react'
+import { TrendingUp, Users, ArrowRight } from 'lucide-react'
 import React from 'react'
 import { CountUpAnimation } from './counter-up';
 import Link from 'next/link';
@@ -41,8 +41,8 @@ const ImpactSection = () => {
             </span>
           </h2>
           <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto">
-            Every number represents a life changed, a family empowered, and a community strengthened. Join thousands
-            of compassionate donors in creating lasting positive impact.
+            Every number represents a life changed, a family empowered, and a community strengthened.
+            Join Lakhs of compassionate donors in creating lasting positive impact.
           </p>
         </motion.div>
 

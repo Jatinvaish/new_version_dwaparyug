@@ -34,7 +34,7 @@ const Faqsection = () => {
             {
               question: "Can I get a tax deduction for my donation?",
               answer:
-                "Yes, all donations are eligible for tax deduction under Section 80G. You'll receive an instant digital certificate that you can use for tax filing.",
+                "As you complete your donation successfully, Please fill in your PAN number, complete address, and name as per PAN and submit. Your 80G certificate will be generated and sent via email within one month.",
             },
             {
               question: "How often will I receive updates about my donation?",
@@ -42,9 +42,9 @@ const Faqsection = () => {
                 "You'll receive immediate confirmation, weekly progress updates, and detailed impact reports. For larger donations, we also provide personalized updates and site visit opportunities.",
             },
             {
-              question: "Can I cancel or modify my recurring donation?",
+              question: "Can I change or take back my donation?",
               answer:
-                "Yes, you can modify or cancel recurring donations at any time through your donor dashboard or by contacting our support team.",
+                "Your money is a donation to a good cause, not a purchase. Once you've donated, the money can't be refunded. The only exception is if we accidentally charge you more than once; if that happens, we'll refund the extra amount.",
             },
           ].map((faq, index) => (
             <motion.div

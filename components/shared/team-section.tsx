@@ -115,7 +115,7 @@ export function TeamSection() {
         </div>
       </section>
 
-  
+
     </>
   )
 }

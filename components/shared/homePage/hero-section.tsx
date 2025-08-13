@@ -81,9 +81,9 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
           >
-            Dwaparyug Foundation is India's most trusted humanitarian nonprofit organization. We serve underprivileged
-            communities across 1,200+ villages, providing food security, healthcare access, quality education, and
-            women empowerment programs that create lasting positive change.
+            Dwaparyug Foundation is India's most trusted humanitarian nonprofit organization.
+            We serve underprivileged communities across 1,200+ villages, providing food,
+            Grocery and women Hygiene programs that create lasting positive change.
           </motion.p>
 
           <motion.div
@@ -124,21 +124,21 @@ const HeroSection = () => {
           >
             <div className="text-center">
               <div className="text-2xl sm:text-3xl font-bold text-gray-900">
-                <CountUpAnimation end={50000} />+
+                <CountUpAnimation end={350000} />+
               </div>
-              <div className="text-xs sm:text-sm text-gray-600">Lives Transformed</div>
+              <div className="text-xs sm:text-sm text-gray-600">Worth Donations</div>
             </div>
             <div className="text-center">
               <div className="text-2xl sm:text-3xl font-bold text-gray-900">
                 <CountUpAnimation end={1200} />+
               </div>
-              <div className="text-xs sm:text-sm text-gray-600">Villages Reached</div>
+              <div className="text-xs sm:text-sm text-gray-600">Unique Donors</div>
             </div>
             <div className="text-center">
               <div className="text-2xl sm:text-3xl font-bold text-gray-900">
                 <CountUpAnimation end={10000} />+
               </div>
-              <div className="text-xs sm:text-sm text-gray-600">Children Educated</div>
+              <div className="text-xs sm:text-sm text-gray-600">Lives Impacted</div>
             </div>
           </motion.div>
         </motion.div>
@@ -207,13 +207,13 @@ const HeroSection = () => {
               whileInView={{ scale: 1 }}
               transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
             >
-              57%
+              3.5%
             </motion.div>
             <div className="w-full bg-black/20 rounded-full h-3 sm:h-4 mb-6 sm:mb-8">
               <motion.div
                 className="bg-black h-3 sm:h-4 rounded-full relative"
                 initial={{ width: 0 }}
-                whileInView={{ width: "57%" }}
+                whileInView={{ width: "3.5%" }}
                 transition={{ duration: 2, delay: 0.5 }}
               >
                 <motion.div
@@ -232,7 +232,7 @@ const HeroSection = () => {
                   whileInView={{ opacity: 1 }}
                   transition={{ delay: 0.7 }}
                 >
-                  ₹28,50,000
+                  ₹3,50,000
                 </motion.div>
               </div>
               <div>
@@ -243,7 +243,7 @@ const HeroSection = () => {
                   whileInView={{ opacity: 1 }}
                   transition={{ delay: 0.9 }}
                 >
-                  ₹50,00,000
+                  ₹1,00,00,000
                 </motion.div>
               </div>
             </div>
@@ -261,10 +261,10 @@ const HeroSection = () => {
             <div className="inline-block bg-green-500 px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-semibold mb-4 sm:mb-6">
               🍽️ Emergency Food Relief
             </div>
-            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-4 sm:mb-6">Winter Food Distribution Drive</h3>
+            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-4 sm:mb-6">Food Distribution Drive</h3>
             <p className="text-green-100 text-sm sm:text-base lg:text-lg leading-relaxed">
-              Providing nutritious meals, warm clothing, and essential supplies to 10,000+ families across Delhi's
-              slums during harsh winter months. Every donation directly feeds a family for a week.
+              Providing nutritious meals, Groceries, and essential supplies to 10,000+ families across Delhi's slums.
+              Every donation directly feeds a family for a day.
             </p>
             <motion.div
               className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4"

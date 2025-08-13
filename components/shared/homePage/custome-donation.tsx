@@ -63,7 +63,7 @@ const CustomHomeSectionDonation = () => {
                 whileInView={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                ₹28,50,000
+                ₹3,50,000
               </motion.div>
             </div>
             <motion.div
@@ -72,7 +72,7 @@ const CustomHomeSectionDonation = () => {
               transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
             >
               <div className="text-3xl sm:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-red-500">
-                57%
+                3.5%
               </div>
               <div className="text-xs sm:text-sm text-gray-600">Completed</div>
             </motion.div>
@@ -84,7 +84,7 @@ const CustomHomeSectionDonation = () => {
                 whileInView={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
               >
-                ₹50,00,000
+                ₹1,00,00,000
               </motion.div>
             </div>
           </div>
@@ -93,7 +93,7 @@ const CustomHomeSectionDonation = () => {
             <motion.div
               className="bg-gradient-to-r from-yellow-400 to-red-400 h-4 sm:h-6 rounded-full relative shadow-lg"
               initial={{ width: 0 }}
-              whileInView={{ width: "57%" }}
+              whileInView={{ width: "3.5%" }}
               transition={{ duration: 2, delay: 0.5 }}
             >
               <motion.div
