@@ -169,7 +169,7 @@ const HeaderSection = () => {
             >
               <Link href={'/causes/19'} className='flex' >
                 <Sparkles className="w-3 lg:w-4 h-3 lg:h-4 mr-1 lg:mr-2" />
-                🚨 URGENT: Relief for Flood-Affected Families For Uttrrakashi
+                🚨 URGENT: Relief For Uttrrakashi
               </Link>
             </Button>
           </motion.div>
