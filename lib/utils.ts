@@ -258,14 +258,14 @@ export const teamMembers = [
   {
     id: 1,
     name: "Abhishek Nirman",
-    role: "Founder & CEO",
-    image: "/placeholder.svg?height=300&width=300&text=Dr.+Rajesh+Kumar",
-    bio: "With over 15 years of experience in social work, Dr. Kumar has dedicated his life to serving underprivileged communities across India.",
-    achievements: ["Founded 3 NGOs", "Served 50,000+ families", "Award recipient"],
+    role: "Director",
+    image: "/images/teams/abhishek-nirman.webp",
+    bio: "With over 10 years of experience in social work, Mr. Abhishek has dedicated his life to serving underprivileged communities across India.",
+    achievements: ["Rescued Lifes", "Served 50,000+ families", "Community leader"],
     social: {
-      linkedin: "#",
-      twitter: "#",
-      email: "rajesh@dwaparyug.org",
+      linkedin: "https://www.linkedin.com/in/abhishek-nirman/",
+      twitter: "https://x.com/Dwapar_yug_",
+      email: "abhisheknirman9642@gmail.com",
     },
   },
   {
@@ -412,9 +412,9 @@ export const orderItems = [
 
 export const testimonials = [
   {
-    name: "Priya Sharma",
+    name: "Priyanjan",
     role: "Volunteer Coordinator",
-    image: "/placeholder.svg?height=80&width=80&text=Priya",
+    image: "/images/testimonials/priyanjan.webp",
     quote:
       "Working with Dwaparyug Foundation has been life-changing. Seeing the direct impact of our efforts on communities fills my heart with purpose every single day.",
     rating: 5,

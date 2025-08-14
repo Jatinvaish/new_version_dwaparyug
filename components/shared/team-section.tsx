@@ -99,14 +99,14 @@ export function TeamSection() {
                         </div>
                       ))}
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full border-green-600 text-green-600 hover:bg-green-600 hover:text-white cursor-pointer bg-transparent"
-                    >
-                      <Mail className="w-4 h-4 mr-2" />
-                      Contact
-                    </Button>
+                    {/* <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-green-600 text-green-600 hover:bg-green-600 hover:text-white cursor-pointer bg-transparent"
+                      >
+                        <Mail className="w-4 h-4 mr-2" />
+                        Contact
+                      </Button> */}
                   </CardContent>
                 </Card>
               </motion.div>
