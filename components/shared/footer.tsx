@@ -59,7 +59,7 @@ export function Footer() {
                 />
               </div>
             </div>
-            <p className="text-slate-300 text-base leading-relaxed">Empowering communities through dharma and compassion</p>
+            <p className="text-slate-300 text-base leading-relaxed">On His Path Of Dharma</p>
             <div className="text-yellow-400 text-sm font-medium">dwaparyugfoundation@gmail.com</div>
             <div className="text-sm text-slate-400">
               <div className="font-medium text-slate-300 text-base">Hours:</div>
