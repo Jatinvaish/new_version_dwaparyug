@@ -138,7 +138,7 @@ export default function CauseDetailsPage() {
   // Share functionality
   const shareData = campaign ? {
     title: `Help Support: ${campaign.title}`,
-    text: `${campaign.overview} - ${campaign.details}. Goal: ₹${campaign.donation_goal.toLocaleString()}, Raised: ₹${campaign.total_raised?.toLocaleString()}. Join ${campaign.total_donors_till_now} donors in making a difference!`,
+    text: `${campaign.overview} - ${campaign.details}. Goal: ₹${campaign.donation_goal.toLocaleString()}, Raised: ₹${campaign.total_raised?.toLocaleString()}. Joined: ${campaign.total_donors_till_now} donors in making a difference!`,
     url: typeof window !== 'undefined' ? window.location.href : '',
   } : null
 
