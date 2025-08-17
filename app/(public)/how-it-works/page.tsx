@@ -23,7 +23,9 @@ import { donationTypes, features, steps } from "@/lib/utils"
 
 
 
+
 export default function HowItWorksPage() {
+  const images = ["cause", "impact", "secure", "track"];
   return (
     <div className="min-h-screen bg-white">
 
@@ -135,10 +137,14 @@ export default function HowItWorksPage() {
                 </div>
 
                 {/* Image Section */}
-                <div className={`order-2 w-full ${index % 2 === 1 ? "lg:col-start-1 lg:order-1" : "lg:order-2"}`}>
+
+                <div
+                  className={`order-2 w-full ${index % 2 === 1 ? "lg:col-start-1 lg:order-1" : "lg:order-2"
+                    }`}
+                >
                   <Card className="p-4 sm:p-6 md:p-8 shadow-2xl bg-gradient-to-br from-gray-50 to-white">
                     <Image
-                      src={`/placeholder.svg?height=400&width=500&text=Step+${step.step}+${step.title.replace(" ", "+")}`}
+                      src={`/images/how-it-works/${images[step.step - 1]}.webp`}
                       alt={step.title}
                       width={500}
                       height={400}
@@ -359,7 +365,7 @@ export default function HowItWorksPage() {
             >
               <Card className="p-4 sm:p-6 md:p-8 shadow-2xl bg-white">
                 <Image
-                  src="/placeholder.svg?height=400&width=500&text=Security+Features"
+                  src="/images/how-it-works/trusted.webp"
                   alt="Security and trust features"
                   width={500}
                   height={400}

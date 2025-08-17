@@ -491,26 +491,26 @@ export const impactAreas = [
   {
     title: "Food Security",
     description: "Providing nutritious meals and combating hunger in underserved communities",
-    impact: "2.5M+ meals served",
-    image: "/placeholder.svg?height=300&width=400&text=Food+Security",
+    impact: "50k+ meals served",
+    image: "/images/area_of_impact/food_delhi.webp",
   },
   {
     title: "Education",
     description: "Ensuring quality education access for children from disadvantaged backgrounds",
     impact: "10,000+ children educated",
-    image: "/placeholder.svg?height=300&width=400&text=Education",
+    image: "/images/area_of_impact/edu_delhi.webp",
   },
   {
     title: "Skill Development",
     description: "Offering vocational training in areas with high employment potential particularly for youth ",
-    impact: "500+ medical camps",
-    image: "/placeholder.svg?height=300&width=400&text=Healthcare",
+    impact: "50+ skill camps",
+    image: "/images/area_of_impact/skill_delhi.webp",
   },
   {
     title: "Women Empowerment",
     description: "Supporting women through skill development and economic opportunities",
-    impact: "10,000+ women empowered",
-    image: "/placeholder.svg?height=300&width=400&text=Women+Empowerment",
+    impact: "1,000+ women empowered",
+    image: "/images/area_of_impact/women_delhi.webp",
   },
 ]
 
@@ -531,7 +531,7 @@ export const officeLocations = [
     city: "Delhi (Head Office)",
     address: "719 Mehalla Mohalla, Madanpur Khadar, Delhi - 110076",
     phone: "+91 99993 03166",
-    email: "delhi@dwaparyug.org",
+    email: "dwaparyugfoundation@gmail.com",
     hours: "Mon-Fri: 9:30 AM - 6:30 PM",
     mapUrl: "#",
   },
