@@ -11,7 +11,7 @@ const razorpay = new Razorpay({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { cartItems, formData, totalAmount, donationAmount, tipAmount, userId } = body
+    const { cartItems, customDonationId, formData, totalAmount, donationAmount, tipAmount, userId } = body
     console.log("🚀 ~ POST ~ formData:", formData)
 
     // Validation
@@ -43,6 +43,11 @@ export async function POST(request: NextRequest) {
 
     // Get campaign ID (for direct donations, use the first available campaign or a default one)
     let campaignId = cartItems && cartItems.length > 0 ? cartItems[0].campaignId : null
+
+
+    if(!campaignId || campaignId<=0 && Number(customDonationId) >0){
+      campaignId = customDonationId
+    }
 
     if (!campaignId) {
       // For direct donations, get an active campaign or create a default one

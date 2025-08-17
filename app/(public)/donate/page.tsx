@@ -1051,10 +1051,13 @@ export default function MultiStepDonationForm() {
           formData.customImage = bannerImage.url;
         }
       }
+      const custDonationId:any = localStorage.getItem('customDonationId')
       // Create payment order
       const orderData = await createPaymentOrder({
         cartItems,
+        customDonationId: Number(JSON.parse(custDonationId)||0),
         //@ts-ignore
+
         formData: {
           ...formData,
           customAmount: customAmount,

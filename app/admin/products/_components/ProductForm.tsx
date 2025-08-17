@@ -100,7 +100,7 @@ export default function ProductForm({ productId, mode, onSuccess, onCancel }: Pr
     try {
       setInitialLoading(true);
       // Using your existing API with query parameter
-      const response = await fetch(`/api/independent-products?id=${id}`);
+      const response = await fetch(`/api/independent-products/${id}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch product');

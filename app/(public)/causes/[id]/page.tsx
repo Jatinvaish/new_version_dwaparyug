@@ -296,6 +296,7 @@ export default function CauseDetailsPage() {
   }
 
   const redirectToDonate = () => {
+    localStorage.setItem('customDonationId', JSON.stringify(params.id));
     router.push('/donate')
   }
 
@@ -878,7 +879,8 @@ export default function CauseDetailsPage() {
                     </div>
                     <Button
                       className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold cursor-pointer text-sm p-3 sm:text-base"
-                      onClick={redirectToDonate}
+
+                      onClick={() => redirectToDonate()}
                     >
                       <Heart className="w-3 h-3 mr-2 sm:w-4 sm:h-4" />
                       Donate Now
