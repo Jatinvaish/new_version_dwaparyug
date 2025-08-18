@@ -183,7 +183,7 @@ export function Footer() {
             >
               AJPR World
             </a>
-            {process.env.NEXT_PUBLIC_MY_NAME_SHOW &&
+            {Number(process.env.NEXT_PUBLIC_MY_NAME_SHOW) === 1  &&
               <>
                 <span className="text-slate-500"> & </span>
                 <a
