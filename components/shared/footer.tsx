@@ -179,11 +179,11 @@ export function Footer() {
               href="https://ajprworld.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text font-semibold hover:from-purple-300 hover:via-pink-400 hover:to-red-400 transition-all duration-300 hover:scale-105 inline-block hover:underline"
+              className="text-yellow-400 hover:text-yellow-300 transition-colors font-medium hover:underline"
             >
               AJPR World
             </a>
-            {/* {Number(process.env.NEXT_PUBLIC_MY_NAME_SHOW) === 1 &&
+            {Number(process.env.NEXT_PUBLIC_MY_NAME_SHOW) === 1  &&
               <>
                 <span className="text-slate-500"> & </span>
                 <a
@@ -195,7 +195,7 @@ export function Footer() {
                   Jatin Vaishnav ✨
                 </a>
               </>
-            } */}
+            }
           </div>
         </div>
       </div>
