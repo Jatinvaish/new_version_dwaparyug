@@ -3,12 +3,12 @@ import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { 
-  Heart, 
-  HandHeart, 
-  Search, 
-  Filter, 
-  Users, 
+import {
+  Heart,
+  HandHeart,
+  Search,
+  Filter,
+  Users,
   Award,
   Calendar,
   Mail,
@@ -147,14 +147,14 @@ export default function VolunteerPage() {
   const filteredOpportunities = useMemo(() => {
     return allVolunteerOpportunities.filter(opportunity => {
       const matchesSearch = opportunity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           opportunity.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           opportunity.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-      
+        opportunity.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        opportunity.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+
       const matchesCategory = selectedCategory === "All" || opportunity.category === selectedCategory
-      
-      const matchesUrgency = selectedUrgency === "All" || 
-                            (selectedUrgency.toLowerCase() === opportunity.urgency)
-      
+
+      const matchesUrgency = selectedUrgency === "All" ||
+        (selectedUrgency.toLowerCase() === opportunity.urgency)
+
       return matchesSearch && matchesCategory && matchesUrgency
     })
   }, [searchQuery, selectedCategory, selectedUrgency])
@@ -166,7 +166,7 @@ export default function VolunteerPage() {
         {/* Decorative Elements */}
         <motion.div
           className="absolute top-20 right-20 text-pink-400 opacity-10"
-          animate={{ 
+          animate={{
             rotate: [0, 10, -10, 0],
             scale: [1, 1.1, 0.9, 1]
           }}
@@ -174,10 +174,10 @@ export default function VolunteerPage() {
         >
           <Heart className="w-32 h-32" />
         </motion.div>
-        
+
         <motion.div
           className="absolute bottom-10 left-10 text-blue-400 opacity-10"
-          animate={{ 
+          animate={{
             y: [0, -20, 0],
             rotate: [0, 5, -5, 0]
           }}
@@ -196,7 +196,7 @@ export default function VolunteerPage() {
               <HandHeart className="w-4 h-4 mr-2 text-pink-600" />
               Join Our Cause • Make a Difference
             </div>
-            
+
             <h1 className="text-6xl md:text-7xl font-bold text-gray-900 mb-6">
               Become a{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600">
@@ -204,10 +204,10 @@ export default function VolunteerPage() {
               </span>{" "}
               Hero
             </h1>
-            
+
             <p className="text-xl text-gray-600 max-w-4xl mx-auto mb-12">
-              Join our community of dedicated volunteers and help us create meaningful change. 
-              Every hour you contribute makes a lasting impact on someone's life. Find the perfect 
+              Join our community of dedicated volunteers and help us create meaningful change.
+              Every hour you contribute makes a lasting impact on someone's life. Find the perfect
               opportunity that matches your skills, schedule, and passion.
             </p>
 
@@ -222,7 +222,7 @@ export default function VolunteerPage() {
                 <div className="text-2xl font-bold text-gray-900">500+</div>
                 <div className="text-sm text-gray-600">Active Volunteers</div>
               </motion.div>
-              
+
               <motion.div
                 className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg"
                 whileHover={{ scale: 1.05 }}
@@ -232,7 +232,7 @@ export default function VolunteerPage() {
                 <div className="text-2xl font-bold text-gray-900">10K+</div>
                 <div className="text-sm text-gray-600">Lives Impacted</div>
               </motion.div>
-              
+
               <motion.div
                 className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg"
                 whileHover={{ scale: 1.05 }}
@@ -242,7 +242,7 @@ export default function VolunteerPage() {
                 <div className="text-2xl font-bold text-gray-900">50+</div>
                 <div className="text-sm text-gray-600">Programs</div>
               </motion.div>
-              
+
               <motion.div
                 className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg"
                 whileHover={{ scale: 1.05 }}
@@ -277,7 +277,7 @@ export default function VolunteerPage() {
                   className="pl-10 h-12 text-lg"
                 />
               </div>
-              
+
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="w-full md:w-48 h-12">
                   <SelectValue placeholder="Category" />
@@ -290,7 +290,7 @@ export default function VolunteerPage() {
                   ))}
                 </SelectContent>
               </Select>
-              
+
               <Select value={selectedUrgency} onValueChange={setSelectedUrgency}>
                 <SelectTrigger className="w-full md:w-48 h-12">
                   <SelectValue placeholder="Priority Level" />
@@ -303,7 +303,7 @@ export default function VolunteerPage() {
                   ))}
                 </SelectContent>
               </Select>
-              
+
               <Button
                 onClick={() => {
                   setSearchQuery("")
@@ -317,7 +317,7 @@ export default function VolunteerPage() {
                 Clear Filters
               </Button>
             </div>
-            
+
             <div className="mt-4 text-sm text-gray-600">
               Showing {filteredOpportunities.length} of {allVolunteerOpportunities.length} opportunities
             </div>
@@ -384,7 +384,7 @@ export default function VolunteerPage() {
               With Us?
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Discover the incredible benefits of volunteering and join a community 
+              Discover the incredible benefits of volunteering and join a community
               that's making a real difference in the world.
             </p>
           </motion.div>
@@ -462,28 +462,28 @@ export default function VolunteerPage() {
               Ready to Get Started?
             </h2>
             <p className="text-xl mb-8 max-w-3xl mx-auto opacity-90">
-              Have questions or need help finding the right volunteer opportunity? 
+              Have questions or need help finding the right volunteer opportunity?
               Our volunteer coordinators are here to help you get started on your journey.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-6 justify-center mb-8">
               <Link href="/volunteer/kitchen-helper">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg font-semibold"
                 >
                   <Mail className="w-5 h-5 mr-2" />
                   Contact Volunteer Coordinator
                 </Button>
               </Link>
-              
-              <Button 
-                size="lg" 
+
+              <Button
+                size="lg"
                 variant="outline"
-                className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg font-semibold"
+                className="bg-white text-red-600 hover:bg-gray-100 px-8 py-4 text-lg font-semibold"
               >
                 <Phone className="w-5 h-5 mr-2" />
-                Call: (555) 123-4567
+                Call: +91 99993 03166
               </Button>
             </div>
 
