@@ -144,7 +144,7 @@ export function Footer() {
             </h4>
             <div className="flex space-x-3">
               {[
-                { icon: Facebook, href: "#", color: "hover:text-blue-400" },
+                { icon: Facebook, href: "https://www.facebook.com/profile.php?id=61575709810420", color: "hover:text-blue-400" },
                 { icon: Instagram, href: "https://www.instagram.com/dwaparyugfoundation/", color: "hover:text-pink-400" },
                 { icon: Twitter, href: "https://x.com/Dwapar_yug_", color: "hover:text-blue-300" },
                 { icon: Linkedin, href: "https://www.linkedin.com/company/dwaparyug-foundation/", color: "hover:text-blue-500" }
@@ -183,7 +183,7 @@ export function Footer() {
             >
               AJPR World
             </a>
-            {Number(process.env.NEXT_PUBLIC_MY_NAME_SHOW) === 1  &&
+            {Number(process.env.NEXT_PUBLIC_MY_NAME_SHOW) === 1 &&
               <>
                 <span className="text-slate-500"> & </span>
                 <a
