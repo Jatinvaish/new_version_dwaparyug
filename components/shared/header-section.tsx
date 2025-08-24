@@ -232,10 +232,10 @@ const HeaderSection = () => {
               animate="animate"
             >
               {[
-                { Icon: Facebook, color: "hover:text-blue-600", href: "#" },
-                { Icon: Instagram, color: "hover:text-pink-600", href: "#" },
-                { Icon: Twitter, color: "hover:text-blue-400", href: "#" },
-                { Icon: Linkedin, color: "hover:text-blue-700", href: "#" },
+                { Icon: Facebook, color: "hover:text-blue-600", href: "https://www.facebook.com/profile.php?id=61575709810420" },
+                { Icon: Instagram, color: "hover:text-pink-600", href: "https://www.instagram.com/dwaparyugfoundation/" },
+                { Icon: Twitter, color: "hover:text-blue-400", href: "https://x.com/Dwapar_yug_" },
+                { Icon: Linkedin, color: "hover:text-blue-700", href: "https://www.linkedin.com/company/dwaparyug-foundation" },
               ].map(({ Icon, color, href }, index) => (
                 <motion.div key={index} variants={fadeInUp}>
                   <Link
@@ -337,10 +337,10 @@ const HeaderSection = () => {
 
               <div className="flex justify-center space-x-4 px-4 pt-2">
                 {[
-                  { Icon: Facebook, color: "hover:text-blue-600", href: "#" },
-                  { Icon: Instagram, color: "hover:text-pink-600", href: "#" },
-                  { Icon: Twitter, color: "hover:text-blue-400", href: "#" },
-                  { Icon: Linkedin, color: "hover:text-blue-700", href: "#" },
+                  { Icon: Facebook, color: "hover:text-blue-600", href: "https://www.facebook.com/profile.php?id=61575709810420" },
+                  { Icon: Instagram, color: "hover:text-pink-600", href: "https://www.instagram.com/dwaparyugfoundation/" },
+                  { Icon: Twitter, color: "hover:text-blue-400", href: "https://x.com/Dwapar_yug_" },
+                  { Icon: Linkedin, color: "hover:text-blue-700", href: "https://www.linkedin.com/company/dwaparyug-foundation" },
                 ].map(({ Icon, color, href }, index) => (
                   <Link
                     key={index}
