@@ -9,16 +9,28 @@ import { Analytics } from "@vercel/analytics/next";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.dwaparyug.org"), // 👈 your domain here
+  metadataBase: new URL("https://www.dwaparyug.org"),
   title: {
     default: "Dwaparyug NGO - Foundation",
     template: "%s | Dwaparyug Foundation",
   },
   description:
     "NGO Welfare Society dedicated to social causes and community development",
+  keywords: [
+    "India's most trusted humanitarian nonprofit",
+    "underprivileged communities",
+    "food distribution drive",
+    "emergency food relief",
+    "women hygiene programs",
+    "volunteer opportunities in Delhi",
+    "NGO welfare society India",
+    "transparent donation platform",
+    "relief campaigns India",
+    "social development NGO"
+  ],
   generator: "AJPR WORLD",
   alternates: {
-    canonical: "/", // 👈 this makes https://www.dwaparyug.org the default canonical
+    canonical: "/",
   },
 };
 
