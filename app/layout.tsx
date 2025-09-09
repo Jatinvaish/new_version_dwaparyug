@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   ],
   generator: "AJPR WORLD",
   alternates: {
-    canonical: "/",
+    canonical: "https://www.dwaparyug.org/",
   },
 };
 
