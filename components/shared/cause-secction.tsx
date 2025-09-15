@@ -39,7 +39,7 @@ const CauseSection = () => {
             </p>
           </div>
           <div className="flex space-x-3">
-            <Button
+            {/* <Button
               variant="outline"
               size="icon"
               className="rounded-full bg-green-700 text-white border-green-700 hover:bg-green-800 w-10 sm:w-12 h-10 sm:h-12 cursor-pointer"
@@ -47,8 +47,8 @@ const CauseSection = () => {
               {...scaleOnHover}
             >
               <ChevronLeft className="w-5 sm:w-6 h-5 sm:h-6" />
-            </Button>
-            <Button
+            </Button> */}
+            {/* <Button
               variant="outline"
               size="icon"
               className="rounded-full bg-yellow-400 text-black border-yellow-400 hover:bg-yellow-500 w-10 sm:w-12 h-10 sm:h-12 cursor-pointer"
@@ -56,7 +56,7 @@ const CauseSection = () => {
               {...scaleOnHover}
             >
               <ChevronRight className="w-5 sm:w-6 h-5 sm:h-6" />
-            </Button>
+            </Button> */}
           </div>
         </motion.div>
 
