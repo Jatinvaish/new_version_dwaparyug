@@ -1,15 +1,8 @@
 // app/api/donations/process-payment/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import Razorpay from 'razorpay'
 import crypto from 'crypto'
 import { SelectQuery } from '@/lib/database'
 import { processImageUpload } from '@/lib/cloudinary'
-import { generateAndSend80G } from '@/lib/generate80GCertificate'
-
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-})
 
 interface CartItem {
   productId: number
