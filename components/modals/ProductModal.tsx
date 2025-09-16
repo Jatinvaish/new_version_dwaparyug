@@ -48,7 +48,7 @@ export default function ProductModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[95vh] overflow-hidden p-0 flex flex-col">
+      <DialogContent className="max-h-[95vh] overflow-hidden p-0 flex flex-col max-w-3xl">
         {/* Sticky Header */}
         <DialogHeader className="px-6 py-4 border-b bg-white sticky top-0 z-10">
           <DialogTitle className="text-lg font-semibold">

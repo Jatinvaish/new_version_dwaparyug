@@ -190,7 +190,7 @@ const HeaderSection = () => {
             whileTap={{ scale: 0.95 }}
           >
             {/* todo */}
-            <div className="from-gray-800 to-gray-900 rounded-lg shadow-lg">
+            <div className="from-gray-800 to-gray-900 rounded-lg  ">
               <Image
                 onClick={() => router.push("/")}
                 src={logo}
