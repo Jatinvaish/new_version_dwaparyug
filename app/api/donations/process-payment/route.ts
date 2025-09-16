@@ -367,18 +367,18 @@ export async function POST(request: NextRequest) {
       `
 
       const completeDonation = await SelectQuery(completeDonationQuery, [donationId])
-      if (process.env.DIRECT_80G_SEND === 'TRUE' && paymentRequest.user_id) {
-        try {
-          await generateAndSend80G(
-            parseInt(paymentRequest.user_id.toString()),
-            parseInt(donationId.toString()),
-            true
-          )
-        } catch (certificateError) {
-          console.error('80G certificate generation failed:', certificateError)
-          // Don't fail the donation if certificate generation fails
-        }
-      }
+      // if (process.env.DIRECT_80G_SEND === 'TRUE' && paymentRequest.user_id) {
+      //   try {
+      //     await generateAndSend80G(
+      //       parseInt(paymentRequest.user_id.toString()),
+      //       parseInt(donationId.toString()),
+      //       true
+      //     )
+      //   } catch (certificateError) {
+      //     console.error('80G certificate generation failed:', certificateError)
+      //     // Don't fail the donation if certificate generation fails
+      //   }
+      // }
       return NextResponse.json({
         success: true,
         message: 'Donation processed successfully',
