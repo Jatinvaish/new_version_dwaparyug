@@ -458,6 +458,69 @@ export default function CompactDonationDetailsPage() {
               </Card>
             )}
 
+            {/* Quick Stats */}
+            <Card className="p-3">
+              <h4 className="font-semibold mb-2 text-xs">Stats</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-center p-2 bg-blue-50 rounded">
+                  <div className="text-lg font-bold text-blue-600">#{donation.id}</div>
+                  <div className="text-xs text-muted-foreground">ID</div>
+                </div>
+
+                {donation.impact_generated && donation.beneficiaries_reached > 0 && (
+                  <div className="text-center p-2 bg-purple-50 rounded">
+                    <div className="text-lg font-bold text-purple-600">{donation.beneficiaries_reached}</div>
+                    <div className="text-xs text-muted-foreground">Beneficiaries</div>
+                  </div>
+                )}
+
+                {donation.items.length > 0 && (
+                  <div className="text-center p-2 bg-green-50 rounded">
+                    <div className="text-lg font-bold text-green-600">
+                      {donation.items.reduce((sum, item) => sum + item.quantity, 0)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Items</div>
+                  </div>
+                )}
+
+                <div className="text-center p-2 bg-gray-50 rounded">
+                  <div className="text-lg font-semibold text-gray-600">{donation.campaign.progress_percentage.toFixed(0)}%</div>
+                  <div className="text-xs text-muted-foreground">Progress</div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Timeline */}
+            <Card className="p-3">
+              <h4 className="font-semibold mb-2 text-xs flex items-center">
+                <Clock className="h-3 w-3 mr-1" />Timeline
+              </h4>
+              <div className="space-y-2">
+                <div className="flex items-start">
+                  <div className="w-1 h-1 rounded-full bg-blue-500 mt-1 mr-2"></div>
+                  <div>
+                    <p className="text-xs font-medium">Created</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(donation.created_at)}</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <div className="w-1 h-1 rounded-full bg-green-500 mt-1 mr-2"></div>
+                  <div>
+                    <p className="text-xs font-medium">Paid</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(donation.payment_created_at)}</p>
+                  </div>
+                </div>
+                {donation.impact_stories.length > 0 && (
+                  <div className="flex items-start">
+                    <div className="w-1 h-1 rounded-full bg-red-500 mt-1 mr-2"></div>
+                    <div>
+                      <p className="text-xs font-medium">Impact</p>
+                      <p className="text-xs text-muted-foreground">{donation.impact_stories.length} stories</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
             {/* Impact Stories */}
             {donation.impact_stories.length > 0 && (
               <Card className="p-6">
@@ -542,16 +605,6 @@ export default function CompactDonationDetailsPage() {
                 <p className="text-sm text-muted-foreground">Anonymous Donor</p>
               )}
             </Card>
-            {donation.user ? (
-              <div className="space-y-1 text-xs">
-                <div><span className="text-muted-foreground">Name:</span> {donation.user.name}</div>
-                <div><span className="text-muted-foreground">Email:</span> {donation.user.email}</div>
-                {donation.user.mobile && <div><span className="text-muted-foreground">Mobile:</span> {donation.user.mobile}</div>}
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">Anonymous</p>
-            )}
-
             {/* Payment Details */}
             <Card className="p-3">
               <h4 className="font-semibold mb-2 text-xs flex items-center">
@@ -585,81 +638,21 @@ export default function CompactDonationDetailsPage() {
               </div>
             </Card>
 
-            {/* Quick Stats */}
-            <Card className="p-3">
-              <h4 className="font-semibold mb-2 text-xs">Stats</h4>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-center p-2 bg-blue-50 rounded">
-                  <div className="text-lg font-bold text-blue-600">#{donation.id}</div>
-                  <div className="text-xs text-muted-foreground">ID</div>
-                </div>
-
-                {donation.impact_generated && donation.beneficiaries_reached > 0 && (
-                  <div className="text-center p-2 bg-purple-50 rounded">
-                    <div className="text-lg font-bold text-purple-600">{donation.beneficiaries_reached}</div>
-                    <div className="text-xs text-muted-foreground">Beneficiaries</div>
-                  </div>
-                )}
-
-                {donation.items.length > 0 && (
-                  <div className="text-center p-2 bg-green-50 rounded">
-                    <div className="text-lg font-bold text-green-600">
-                      {donation.items.reduce((sum, item) => sum + item.quantity, 0)}
-                    </div>
-                    <div className="text-xs text-muted-foreground">Items</div>
-                  </div>
-                )}
-
-                <div className="text-center p-2 bg-gray-50 rounded">
-                  <div className="text-lg font-semibold text-gray-600">{donation.campaign.progress_percentage.toFixed(0)}%</div>
-                  <div className="text-xs text-muted-foreground">Progress</div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Timeline */}
-            <Card className="p-3">
-              <h4 className="font-semibold mb-2 text-xs flex items-center">
-                <Clock className="h-3 w-3 mr-1" />Timeline
-              </h4>
-              <div className="space-y-2">
-                <div className="flex items-start">
-                  <div className="w-1 h-1 rounded-full bg-blue-500 mt-1 mr-2"></div>
-                  <div>
-                    <p className="text-xs font-medium">Created</p>
-                    <p className="text-xs text-muted-foreground">{formatDate(donation.created_at)}</p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <div className="w-1 h-1 rounded-full bg-green-500 mt-1 mr-2"></div>
-                  <div>
-                    <p className="text-xs font-medium">Paid</p>
-                    <p className="text-xs text-muted-foreground">{formatDate(donation.payment_created_at)}</p>
-                  </div>
-                </div>
-                {donation.impact_stories.length > 0 && (
-                  <div className="flex items-start">
-                    <div className="w-1 h-1 rounded-full bg-red-500 mt-1 mr-2"></div>
-                    <div>
-                      <p className="text-xs font-medium">Impact</p>
-                      <p className="text-xs text-muted-foreground">{donation.impact_stories.length} stories</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </Card>
 
             {/* Actions */}
             <Card className="p-3">
-              <div className="space-y-1">
-                <Button size="sm" className="w-full text-xs h-6" variant="outline">
-                  <FileText className="h-2 w-2 mr-1" />Receipt
+              <div className="flex justify-center items-center gap-2">
+                <Button size="sm" className="w-1/2 text-xs h-8 flex items-center justify-center" variant="outline">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Receipt
                 </Button>
-                <Button size="sm" className="w-full text-xs h-6" variant="outline">
-                  <Heart className="h-2 w-2 mr-1" />View Campaign
+                <Button size="sm" className="w-1/2 text-xs h-8 flex items-center justify-center" variant="outline">
+                  <Heart className="h-4 w-4 mr-2" />
+                  View Campaign
                 </Button>
               </div>
             </Card>
+
           </div>
         </div>
       </div>
