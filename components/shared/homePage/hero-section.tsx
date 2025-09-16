@@ -207,7 +207,7 @@ const HeroSection = () => {
               whileInView={{ scale: 1 }}
               transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
             >
-              3.5%
+              47.24%
             </motion.div>
             <div className="w-full bg-black/20 rounded-full h-3 sm:h-4 mb-6 sm:mb-8">
               <motion.div
@@ -232,7 +232,7 @@ const HeroSection = () => {
                   whileInView={{ opacity: 1 }}
                   transition={{ delay: 0.7 }}
                 >
-                  ₹3,50,000
+                  ₹47,23,700
                 </motion.div>
               </div>
               <div>

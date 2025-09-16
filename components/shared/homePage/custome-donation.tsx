@@ -63,7 +63,7 @@ const CustomHomeSectionDonation = () => {
                 whileInView={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                ₹3,50,000
+                ₹47,23,700
               </motion.div>
             </div>
             <motion.div
