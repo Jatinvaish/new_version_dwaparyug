@@ -4,10 +4,11 @@ import { NextRequest, NextResponse } from 'next/server';
 // GET single campaign with all related data
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const campaignId = parseInt(params.id);
+    const { id } = await params;
+    const campaignId = parseInt(id);
 
     // Get campaign details
     const campaignResult = await SelectQuery(`
@@ -39,9 +40,6 @@ export async function GET(
       WHERE campaign_id = $1   
       ORDER BY sequence 
     `, [campaignId]);
-
-
-
 
     // Get campaign FAQ
     const faqResult = await SelectQuery(`
@@ -78,14 +76,15 @@ export async function GET(
 // PUT update campaign
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const client = await getClient();
 
   try {
     await client.query('BEGIN');
 
-    const campaignId = parseInt(params.id);
+    const { id } = await params;
+    const campaignId = parseInt(id);
     const body = await request.json();
     const {
       title,
@@ -198,10 +197,11 @@ export async function PUT(
 // DELETE campaign
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const campaignId = parseInt(params.id);
+    const { id } = await params;
+    const campaignId = parseInt(id);
 
     // Check if campaign has donations
     const donationsResult = await SelectQuery(
