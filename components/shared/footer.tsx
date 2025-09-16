@@ -49,7 +49,7 @@ export function Footer() {
                 </div>
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-yellow-300 to-yellow-500 transform rotate-45 opacity-80"></div>
               </div>
-              <div className="bg-gradient-to-r from-slate-800 to-black px-4 py-2 rounded text-sm font-bold border border-slate-700 flex items-center">
+              <div className=" ">
                 <Image
                   src={logo}
                   alt="Dwaparyug Foundation Logo"

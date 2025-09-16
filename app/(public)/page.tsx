@@ -7,10 +7,6 @@ import TestimonialsSection from "@/components/shared/testimonial"
 import { TeamSection } from "@/components/shared/team-section"
 import CauseSection from "@/components/shared/cause-secction"
 import Faqsection from "@/components/shared/homePage/faq-section";
-import { VolunteerCard } from "@/components/shared/volanture-card";
-import { motion } from "framer-motion";
-import { Heart, HandHeart, ArrowRight } from "lucide-react";
-import Link from "next/link";
 import Beomecolanture from "@/components/shared/homePage/become-a-volanture";
 
 

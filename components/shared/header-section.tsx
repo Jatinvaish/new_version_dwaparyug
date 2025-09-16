@@ -167,7 +167,7 @@ const HeaderSection = () => {
               className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black text-xs px-4 lg:px-6 py-2 h-auto rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
               {...scaleOnHover}
             >
-              <Link href={'/causes/19'} className='flex' >
+              <Link href={'/causes/26'} className='flex' >
                 <Sparkles className="w-3 lg:w-4 h-3 lg:h-4 mr-1 lg:mr-2" />
                 🚨 URGENT: Relief For Uttrrakashi
               </Link>
