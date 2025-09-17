@@ -89,7 +89,7 @@ export default function AboutPage() {
             <div className="grid grid-cols-3 gap-6 mb-8">
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-600">
-                  <CountUpAnimation end={350000} />+
+                  <CountUpAnimation end={4723700} />+
                 </div>
                 <div className="text-sm text-gray-600">Worth Donations</div>
               </div>
