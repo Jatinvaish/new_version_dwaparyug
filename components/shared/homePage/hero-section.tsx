@@ -124,7 +124,7 @@ const HeroSection = () => {
           >
             <div className="text-center">
               <div className="text-2xl sm:text-3xl font-bold text-gray-900">
-                <CountUpAnimation end={350000} />+
+                <CountUpAnimation end={4723700} />+
               </div>
               <div className="text-xs sm:text-sm text-gray-600">Worth Donations</div>
             </div>
