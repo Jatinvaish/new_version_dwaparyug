@@ -213,7 +213,7 @@ const HeroSection = () => {
               <motion.div
                 className="bg-black h-3 sm:h-4 rounded-full relative"
                 initial={{ width: 0 }}
-                whileInView={{ width: "3.5%" }}
+                whileInView={{ width: "47.24%" }}
                 transition={{ duration: 2, delay: 0.5 }}
               >
                 <motion.div
