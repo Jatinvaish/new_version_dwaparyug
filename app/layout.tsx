@@ -5,6 +5,7 @@ import "./globals.css";
 import NextAuthProvider from "@/providers/providers";
 import ToasterProvider from "@/components/ui/sooner";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import Script from "next/script"; // ✅ import Next.js Script
 
 const inter = Inter({ subsets: ["latin"] });
@@ -18,7 +19,9 @@ export const metadata: Metadata = {
   description:
     "NGO Welfare Society dedicated to social causes and community development",
   keywords: [
-    "India's most trusted humanitarian nonprofit",
+    "India's most trusted NGO",
+    "India's Best NGO",
+    "Dwaparyug",
     "underprivileged communities",
     "food distribution drive",
     "emergency food relief",
@@ -47,6 +50,7 @@ export default function RootLayout({
           <ToasterProvider />
           {children}
           <Analytics />
+          <SpeedInsights />
 
           {/* ✅ Google Analytics */}
           <Script
