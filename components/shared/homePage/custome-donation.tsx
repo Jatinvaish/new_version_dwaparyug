@@ -72,7 +72,7 @@ const CustomHomeSectionDonation = () => {
               transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
             >
               <div className="text-3xl sm:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-red-500">
-                3.5%
+                47.24%
               </div>
               <div className="text-xs sm:text-sm text-gray-600">Completed</div>
             </motion.div>
@@ -93,7 +93,7 @@ const CustomHomeSectionDonation = () => {
             <motion.div
               className="bg-gradient-to-r from-yellow-400 to-red-400 h-4 sm:h-6 rounded-full relative shadow-lg"
               initial={{ width: 0 }}
-              whileInView={{ width: "3.5%" }}
+              whileInView={{ width: "47.24%" }}
               transition={{ duration: 2, delay: 0.5 }}
             >
               <motion.div
