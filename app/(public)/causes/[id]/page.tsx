@@ -135,10 +135,49 @@ export default function CauseDetailsPage() {
     }
   }, [params.id])
 
-  // Share functionality
+  // Function to generate rich, professional share content
+  const generateRichShareContent = (campaign: Campaign) => {
+    const progressPercentage = campaign.total_progress_percentage;
+    const remainingAmount = campaign.donation_goal - (campaign.total_raised || 0);
+    const daysLeft = Math.ceil((new Date(campaign.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    
+    return `🌟 *${campaign.title}* 🌟
+
+👥 *Organized by:* ${campaign.organizer}
+${campaign.verified ? '✅ *Verified Campaign*' : ''}
+
+📖 *Campaign Overview:*
+${campaign.overview}
+
+${campaign.details}
+
+💰 *Financial Progress:*
+🎯 Goal: ₹${campaign.donation_goal.toLocaleString()}
+💚 Raised: ₹${campaign.total_raised?.toLocaleString()} (${progressPercentage}%)
+🔴 Still needed: ₹${remainingAmount.toLocaleString()}
+
+👥 *Community Impact:*
+🤝 ${campaign.total_donors_till_now} generous donors have joined
+❤️ ${campaign.beneficiaries?.toLocaleString()} people will benefit
+⏰ ${daysLeft > 0 ? `${daysLeft} days left` : 'Campaign ending soon'}
+
+🚨 *Priority Level:* ${campaign.priority.toUpperCase()}
+📊 *Status:* ${campaign.status}
+
+💡 *How You Can Help:*
+• Donate any amount - every rupee counts
+• Share this campaign with your network  
+• Spread awareness about this cause
+
+🙏 *Together, we can make a real difference!*
+
+👆 Click the link to donate now and be part of this meaningful change.`;
+  }
+
+  // Enhanced Share functionality with rich content
   const shareData = campaign ? {
-    title: `Help Support: ${campaign.title}`,
-    text: `${campaign.overview} - ${campaign.details}. Goal: ₹${campaign.donation_goal.toLocaleString()}, Raised: ₹${campaign.total_raised?.toLocaleString()}. Joined: ${campaign.total_donors_till_now} donors in making a difference!`,
+    title: `🙏 Help Support: ${campaign.title}`,
+    text: generateRichShareContent(campaign),
     url: typeof window !== 'undefined' ? window.location.href : '',
   } : null
 
@@ -161,41 +200,95 @@ export default function CauseDetailsPage() {
     setShowShareOptions(!showShareOptions)
   }
 
+  // Enhanced shareToSocial function with platform-specific formatting
   const shareToSocial = (platform: string) => {
-    if (!shareData) return
+    if (!shareData || !campaign) return
 
     const encodedUrl = encodeURIComponent(shareData.url)
-    const encodedTitle = encodeURIComponent(shareData.title)
-    const encodedText = encodeURIComponent(shareData.text)
-
-    let shareUrl = ''
-
+    const baseTitle = encodeURIComponent(`🙏 Help Support: ${campaign.title}`)
+    
+    // Create platform-specific content
     switch (platform) {
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`
-        break
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedText}`
-        break
-      case 'linkedin':
-        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}&title=${encodedTitle}&summary=${encodedText}`
-        break
       case 'whatsapp':
-        shareUrl = `https://wa.me/?text=${encodedText}%20${encodedUrl}`
+        const whatsappContent = encodeURIComponent(`${shareData.text}
+
+🔗 *Donate Here:* ${shareData.url}
+
+#CharityDonation #${campaign.category_name.replace(/\s+/g, '')} #HelpingHands #MakeADifference #${campaign.location.replace(/\s+/g, '')}`)
+        window.open(`https://wa.me/?text=${whatsappContent}`, '_blank')
         break
+        
+      case 'facebook':
+        const fbText = encodeURIComponent(`${campaign.overview}
+
+🎯 Goal: ₹${campaign.donation_goal.toLocaleString()}
+💚 Raised: ₹${campaign.total_raised?.toLocaleString()}
+👥 ${campaign.total_donors_till_now} donors joined • ${campaign.beneficiaries?.toLocaleString()} beneficiaries
+
+Join us in making a difference! Every donation counts.
+
+#CharityDonation #${campaign.category_name.replace(/\s+/g, '')} #CommunitySupport`)
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${fbText}`, '_blank', 'width=600,height=400')
+        break
+        
+      case 'twitter':
+        const twitterText = encodeURIComponent(`🌟 ${campaign.title}
+
+${campaign.overview}
+
+🎯 ₹${campaign.total_raised?.toLocaleString()} of ₹${campaign.donation_goal.toLocaleString()} raised
+👥 ${campaign.total_donors_till_now} donors • ${campaign.beneficiaries?.toLocaleString()} beneficiaries
+
+Help us reach our goal! 🙏
+
+#CharityDonation #${campaign.category_name.replace(/\s+/g, '')} #HelpingHands`)
+        window.open(`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${twitterText}`, '_blank', 'width=600,height=400')
+        break
+        
+      case 'linkedin':
+        const linkedinTitle = encodeURIComponent(`Supporting ${campaign.title} - Join Our Mission`)
+        const linkedinSummary = encodeURIComponent(`🌟 Campaign: ${campaign.title}
+📍 Location: ${campaign.location}
+👥 Organized by: ${campaign.organizer}
+
+${campaign.overview}
+
+Current Progress:
+• Goal: ₹${campaign.donation_goal.toLocaleString()}
+• Raised: ₹${campaign.total_raised?.toLocaleString()} (${campaign.total_progress_percentage}%)
+• Supporters: ${campaign.total_donors_till_now} donors
+• Impact: ${campaign.beneficiaries?.toLocaleString()} beneficiaries
+
+Every contribution makes a meaningful difference. Join us in this noble cause.
+
+#SocialImpact #CharityDonation #CommunitySupport #${campaign.category_name.replace(/\s+/g, '')}`)
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}&title=${linkedinTitle}&summary=${linkedinSummary}`, '_blank', 'width=600,height=400')
+        break
+        
       default:
         return
     }
 
-    window.open(shareUrl, '_blank', 'width=600,height=400')
     setShowShareOptions(false)
   }
 
+  // Enhanced clipboard copy with rich formatting
   const copyToClipboard = async () => {
     if (!shareData) return
 
+    const richClipboardContent = `${shareData.title}
+
+${shareData.text}
+
+🔗 Donate Now: ${shareData.url}
+
+📱 Share this campaign to help us reach more people!
+
+---
+Powered by Your Platform Name - Making giving meaningful and transparent.`
+
     try {
-      await navigator.clipboard.writeText(`${shareData.title}\n\n${shareData.text}\n\n${shareData.url}`)
+      await navigator.clipboard.writeText(richClipboardContent)
       setShareSuccess(true)
       setTimeout(() => setShareSuccess(false), 3000)
       setShowShareOptions(false)
@@ -251,6 +344,60 @@ export default function CauseDetailsPage() {
     }
   } : null
 
+  // Helper function to extract YouTube video ID
+  const getYouTubeVideoId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
+    const match = url.match(regExp)
+    return (match && match[2].length === 11) ? match[2] : null
+  }
+
+  // Helper function to check if URL is a video
+  const isVideoUrl = (url: string) => {
+    return url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')
+  }
+
+  // Create combined media array with videos first, then images
+  const createMediaArray = () => {
+    const mediaItems = []
+    
+    // Add videos first (they will be at index 0, 1, 2, etc.)
+    if (campaign?.videoLinks) {
+      campaign.videoLinks.forEach((videoUrl, index) => {
+        mediaItems.push({
+          type: 'video',
+          url: videoUrl,
+          id: `video-${index}`,
+          thumbnail: getYouTubeVideoId(videoUrl) ? 
+            `https://img.youtube.com/vi/${getYouTubeVideoId(videoUrl)}/maxresdefault.jpg` : 
+            null
+        })
+      })
+    }
+
+    // Then add images
+    if (campaign?.image) {
+      mediaItems.push({
+        type: 'image',
+        url: campaign.image,
+        id: 'main-image'
+      })
+    }
+    
+    if (campaign?.images_array) {
+      campaign.images_array.forEach((imageUrl, index) => {
+        if (imageUrl) {
+          mediaItems.push({
+            type: 'image',
+            url: imageUrl,
+            id: `image-${index}`
+          })
+        }
+      })
+    }
+
+    return mediaItems
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -304,14 +451,14 @@ export default function CauseDetailsPage() {
     router.push('/cart')
   }
 
+  const mediaItems = createMediaArray()
+
   const nextImage = () => {
-    const images = [campaign.image, ...(campaign.images_array || [])].filter((img): img is string => !!img)
-    setCurrentImageIndex((prev) => (prev + 1) % images.length)
+    setCurrentImageIndex((prev) => (prev + 1) % mediaItems.length)
   }
 
   const prevImage = () => {
-    const images = [campaign.image, ...(campaign.images_array || [])].filter((img): img is string => !!img)
-    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
+    setCurrentImageIndex((prev) => (prev - 1 + mediaItems.length) % mediaItems.length)
   }
 
   const toggleFaq = (index: number) => {
@@ -381,13 +528,7 @@ export default function CauseDetailsPage() {
     }
   }
 
-  const getYouTubeVideoId = (url: string) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
-    const match = url.match(regExp)
-    return (match && match[2].length === 11) ? match[2] : null
-  }
-
-  const allImages = [campaign.image, ...(campaign.images_array || [])].filter((img): img is string => !!img)
+  const currentMedia = mediaItems[currentImageIndex]
   const { totalItems, subtotal } = getCartTotals()
 
   return (
@@ -474,48 +615,86 @@ export default function CauseDetailsPage() {
                   transition={{ duration: 0.8 }}
                   className="space-y-4 sm:space-y-6"
                 >
-                  {/* Image Gallery - Mobile Optimized */}
+                  {/* Enhanced Media Gallery - Mobile Optimized */}
                   <div className="relative">
                     <div className="relative h-48 rounded-lg overflow-hidden shadow-lg sm:h-64 md:h-80 lg:h-96 lg:rounded-2xl lg:shadow-xl">
-                      <Image
-                        src={allImages[currentImageIndex] || "/placeholder.svg"}
-                        alt={campaign.title}
-                        width={800}
-                        height={600}
-                        className="w-full h-full object-cover"
-                        priority
-                      />
+                      {currentMedia?.type === 'video' ? (
+                        // Embedded YouTube Video with Autoplay
+                        <div className="w-full h-full">
+                          {getYouTubeVideoId(currentMedia.url) ? (
+                            <iframe
+                              src={`https://www.youtube.com/embed/${getYouTubeVideoId(currentMedia.url)}?autoplay=1&mute=1&rel=0&modestbranding=1`}
+                              title={`Campaign Video`}
+                              className="w-full h-full border-0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            />
+                          ) : (
+                            // Fallback for non-YouTube videos
+                            <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                              <div className="text-center">
+                                <Play className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                                <p className="text-gray-600">Video not supported for embedding</p>
+                                <Button 
+                                  className="mt-2 cursor-pointer"
+                                  onClick={() => window.open(currentMedia.url, '_blank')}
+                                >
+                                  Watch on External Site
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        // Regular Image
+                        <Image
+                          src={currentMedia?.url || "/placeholder.svg"}
+                          alt={campaign.title}
+                          width={800}
+                          height={600}
+                          className="w-full h-full object-cover"
+                          priority
+                        />
+                      )}
 
                       {/* Navigation Arrows */}
-                      {allImages.length > 1 && (
+                      {mediaItems.length > 1 && (
                         <>
                           <button
                             onClick={prevImage}
                             className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/60 text-white p-2 rounded-full hover:bg-black/80 transition-colors touch-manipulation sm:left-4"
-                            aria-label="Previous image"
+                            aria-label="Previous media"
                           >
                             <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                           </button>
                           <button
                             onClick={nextImage}
                             className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/60 text-white p-2 rounded-full hover:bg-black/80 transition-colors touch-manipulation sm:right-4"
-                            aria-label="Next image"
+                            aria-label="Next media"
                           >
                             <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                           </button>
                         </>
                       )}
 
-                      {/* Image Indicators */}
-                      {allImages.length > 1 && (
+                      {/* Media Type Indicator */}
+                      {currentMedia?.type === 'video' && (
+                        <div className="absolute top-3 right-3 bg-red-600 text-white px-2 py-1 rounded-full text-xs font-semibold sm:top-4 sm:right-4">
+                          <Play className="w-3 h-3 inline mr-1" />
+                          VIDEO
+                        </div>
+                      )}
+
+                      {/* Media Indicators */}
+                      {mediaItems.length > 1 && (
                         <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 sm:bottom-4 sm:space-x-2">
-                          {allImages.map((_, index) => (
+                          {mediaItems.map((_, index) => (
                             <button
                               key={index}
                               onClick={() => setCurrentImageIndex(index)}
                               className={`w-2 h-2 rounded-full transition-colors touch-manipulation ${index === currentImageIndex ? "bg-white" : "bg-white/50"
                                 }`}
-                              aria-label={`Go to image ${index + 1}`}
+                              aria-label={`Go to ${mediaItems[index]?.type} ${index + 1}`}
                             />
                           ))}
                         </div>
@@ -539,23 +718,29 @@ export default function CauseDetailsPage() {
                       )}
                     </div>
 
-                    {/* Thumbnail Gallery */}
-                    {allImages.length > 1 && (
+                    {/* Enhanced Thumbnail Gallery */}
+                    {mediaItems.length > 1 && (
                       <div className="flex space-x-2 mt-3 overflow-x-auto pb-2 sm:mt-4 scrollbar-hide">
-                        {allImages.map((image, index) => (
+                        {mediaItems.map((media, index) => (
                           <button
-                            key={index}
+                            key={media.id}
                             onClick={() => setCurrentImageIndex(index)}
-                            className={`flex-shrink-0 w-16 h-12 rounded-md overflow-hidden border-2 transition-colors touch-manipulation sm:w-20 sm:h-16 sm:rounded-lg ${index === currentImageIndex ? "border-blue-400 ring-2 ring-blue-100" : "border-gray-200 hover:border-gray-300"
+                            className={`relative flex-shrink-0 w-16 h-12 rounded-md overflow-hidden border-2 transition-colors touch-manipulation sm:w-20 sm:h-16 sm:rounded-lg ${index === currentImageIndex ? "border-blue-400 ring-2 ring-blue-100" : "border-gray-200 hover:border-gray-300"
                               }`}
                           >
                             <Image
-                              src={image || "/placeholder.svg"}
-                              alt={`Gallery image ${index + 1}`}
+                            //@ts-ignore
+                              src={media.type === 'video' && media.thumbnail ? media.thumbnail : media.url}
+                              alt={`${media.type === 'video' ? 'Video' : 'Image'} ${index + 1}`}
                               width={80}
                               height={64}
                               className="w-full h-full object-cover"
                             />
+                            {media.type === 'video' && (
+                              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                <Play className="w-3 h-3 text-white fill-current" />
+                              </div>
+                            )}
                           </button>
                         ))}
                       </div>
@@ -614,65 +799,7 @@ export default function CauseDetailsPage() {
                       </div>
                     </div>
 
-                    {/* Video Links Section */}
-                    {campaign.videoLinks && campaign.videoLinks.length > 0 && (
-                      <div>
-                        <h2 className="text-xl font-bold text-gray-900 mb-3 sm:text-2xl sm:mb-4">
-                          Campaign Videos
-                        </h2>
-                        <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
-                          {campaign.videoLinks.map((videoUrl, index) => {
-                            const videoId = getYouTubeVideoId(videoUrl)
-                            return (
-                              <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow">
-                                {videoId ? (
-                                  <div className="relative aspect-video">
-                                    <Image
-                                      src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
-                                      alt={`Campaign Video ${index + 1}`}
-                                      width={400}
-                                      height={225}
-                                      className="w-full h-full object-cover"
-                                    />
-                                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                      <Button
-                                        variant="secondary"
-                                        size="lg"
-                                        className="bg-white/90 hover:bg-white cursor-pointer"
-                                        onClick={() => window.open(videoUrl, '_blank')}
-                                      >
-                                        <Play className="w-5 h-5 mr-2 fill-current" />
-                                        Watch Video
-                                      </Button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <CardContent className="p-4">
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center space-x-3">
-                                        <Play className="w-5 h-5 text-red-500" />
-                                        <span className="text-sm font-medium">Campaign Video {index + 1}</span>
-                                      </div>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="cursor-pointer"
-                                        onClick={() => window.open(videoUrl, '_blank')}
-                                      >
-                                        <ExternalLink className="w-4 h-4" />
-                                      </Button>
-                                    </div>
-                                  </CardContent>
-                                )}
-                              </Card>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* FAQ Section */}
-
+                    {/* Products Section */}
                     {campaign.assignedProducts && campaign.assignedProducts.length > 0 && (
                       <section className="py-8 px-3 bg-gray-50 sm:py-12 sm:px-4 lg:py-16">
                         <div className="max-w-7xl mx-auto">
@@ -794,6 +921,7 @@ export default function CauseDetailsPage() {
                       </section>
                     )}
 
+                    {/* FAQ Section */}
                     {campaign.faq_questions && campaign.faq_questions.length > 0 && (
                       <div>
                         <h2 className="text-xl font-bold text-gray-900 mb-3 sm:text-2xl sm:mb-4">
@@ -928,77 +1056,118 @@ export default function CauseDetailsPage() {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="mb-3 p-2 bg-green-100 border border-green-300 text-green-800 rounded-lg text-sm flex items-center"
+                        className="mb-3 p-3 bg-green-50 border border-green-200 text-green-800 rounded-lg text-sm flex items-center shadow-sm"
                       >
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Shared successfully!
+                        <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                        <span className="font-medium">Successfully copied to clipboard!</span>
                       </motion.div>
                     )}
 
-                    <div className="space-y-2">
+                    <div className="space-y-3">
+                      {/* Main Share Button */}
                       <Button
                         variant="outline"
-                        className="w-full cursor-pointer bg-transparent text-sm p-3 sm:text-base hover:bg-blue-50"
+                        className="w-full cursor-pointer bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 border-blue-200 text-blue-700 text-sm p-3 sm:text-base transition-all duration-300 shadow-sm"
                         onClick={handleShare}
                       >
-                        <Share2 className="w-3 h-3 mr-2 sm:w-4 sm:h-4" />
-                        Share Campaign
+                        <Share2 className="w-4 h-4 mr-2" />
+                        {showShareOptions ? 'Hide Share Options' : 'Share Campaign'}
                       </Button>
 
-                      {/* Share Options */}
+                      {/* Enhanced Share Options */}
                       {showShareOptions && (
                         <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="mt-3 p-3 bg-gray-50 rounded-lg space-y-2"
+                          initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ duration: 0.2, ease: "easeOut" }}
+                          className="mt-3 p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm space-y-3"
                         >
-                          <div className="grid grid-cols-2 gap-2">
+                          <h4 className="text-sm font-semibold text-gray-700 mb-2 text-center">Choose Platform</h4>
+                          
+                          {/* Social Media Grid */}
+                          <div className="grid grid-cols-2 gap-3">
                             <Button
                               variant="outline"
                               size="sm"
-                              className="cursor-pointer hover:bg-blue-500 hover:text-white"
+                              className="cursor-pointer bg-white hover:bg-blue-600 hover:text-white border-blue-200 text-blue-600 transition-all duration-300 flex items-center justify-center p-3 rounded-lg shadow-sm hover:shadow-md group"
                               onClick={() => shareToSocial('facebook')}
                             >
-                              <Facebook className="w-3 h-3 mr-1" />
-                              Facebook
+                              <div className="w-5 h-5 mr-2 rounded bg-blue-600 flex items-center justify-center group-hover:bg-white">
+                                <svg viewBox="0 0 24 24" className="w-3 h-3 fill-white group-hover:fill-blue-600">
+                                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                                </svg>
+                              </div>
+                              <span className="text-xs font-medium">Facebook</span>
                             </Button>
+
                             <Button
                               variant="outline"
                               size="sm"
-                              className="cursor-pointer hover:bg-blue-400 hover:text-white"
+                              className="cursor-pointer bg-white hover:bg-sky-500 hover:text-white border-sky-200 text-sky-500 transition-all duration-300 flex items-center justify-center p-3 rounded-lg shadow-sm hover:shadow-md group"
                               onClick={() => shareToSocial('twitter')}
                             >
-                              <Twitter className="w-3 h-3 mr-1" />
-                              Twitter
+                              <div className="w-5 h-5 mr-2 rounded bg-sky-500 flex items-center justify-center group-hover:bg-white">
+                                <svg viewBox="0 0 24 24" className="w-3 h-3 fill-white group-hover:fill-sky-500">
+                                  <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                                </svg>
+                              </div>
+                              <span className="text-xs font-medium">Twitter</span>
                             </Button>
+
                             <Button
                               variant="outline"
                               size="sm"
-                              className="cursor-pointer hover:bg-blue-600 hover:text-white"
+                              className="cursor-pointer bg-white hover:bg-blue-700 hover:text-white border-blue-300 text-blue-700 transition-all duration-300 flex items-center justify-center p-3 rounded-lg shadow-sm hover:shadow-md group"
                               onClick={() => shareToSocial('linkedin')}
                             >
-                              <Linkedin className="w-3 h-3 mr-1" />
-                              LinkedIn
+                              <div className="w-5 h-5 mr-2 rounded bg-blue-700 flex items-center justify-center group-hover:bg-white">
+                                <svg viewBox="0 0 24 24" className="w-3 h-3 fill-white group-hover:fill-blue-700">
+                                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                                </svg>
+                              </div>
+                              <span className="text-xs font-medium">LinkedIn</span>
                             </Button>
+
                             <Button
                               variant="outline"
                               size="sm"
-                              className="cursor-pointer hover:bg-green-500 hover:text-white"
+                              className="cursor-pointer bg-white hover:bg-green-500 hover:text-white border-green-200 text-green-600 transition-all duration-300 flex items-center justify-center p-3 rounded-lg shadow-sm hover:shadow-md group"
                               onClick={() => shareToSocial('whatsapp')}
                             >
-                              <MessageCircle className="w-3 h-3 mr-1" />
-                              WhatsApp
+                              <div className="w-5 h-5 mr-2 rounded bg-green-500 flex items-center justify-center group-hover:bg-white">
+                                <svg viewBox="0 0 24 24" className="w-3 h-3 fill-white group-hover:fill-green-500">
+                                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.570-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893A11.821 11.821 0 0020.531 3.488"/>
+                                </svg>
+                              </div>
+                              <span className="text-xs font-medium">WhatsApp</span>
                             </Button>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full cursor-pointer hover:bg-gray-600 hover:text-white"
-                            onClick={copyToClipboard}
-                          >
-                            <Copy className="w-3 h-3 mr-2" />
-                            Copy Link
-                          </Button>
+
+                          {/* Copy Link Section */}
+                          <div className="border-t border-gray-200 pt-3 mt-3">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full cursor-pointer bg-gray-50 hover:bg-gray-600 hover:text-white border-gray-200 text-gray-700 transition-all duration-300 flex items-center justify-center p-3 rounded-lg shadow-sm hover:shadow-md"
+                              onClick={copyToClipboard}
+                            >
+                              <Copy className="w-4 h-4 mr-2" />
+                              <span className="text-sm font-medium">Copy Campaign Link</span>
+                            </Button>
+                          </div>
+
+                          {/* Campaign Stats Preview for Sharing */}
+                          {/* <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg border border-blue-100 mt-3">
+                            <div className="text-center">
+                              <div className="text-xs text-gray-600 mb-1">Sharing will include:</div>
+                              <div className="text-sm font-semibold text-gray-800">
+                                ₹{campaign.total_raised?.toLocaleString()} raised of ₹{campaign.donation_goal.toLocaleString()}
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                {campaign.total_donors_till_now} donors • {campaign.beneficiaries?.toLocaleString()} beneficiaries
+                              </div>
+                            </div>
+                          </div> */}
                         </motion.div>
                       )}
                     </div>

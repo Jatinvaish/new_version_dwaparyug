@@ -54,7 +54,6 @@ export default function LoginPage() {
       if (response?.ok) {
         toast.success("Login Successful")
         router.push('/'); reset()
-         window.location.reload();
       } else if (response?.error) {
         toast.error(response.error)
       }
