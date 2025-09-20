@@ -4,32 +4,10 @@ import Razorpay from 'razorpay'
 import { SelectQuery } from '@/lib/database' // Adjust import path as needed
 
 // Create Razorpay instance inside function to avoid build-time initialization
-function getRazorpayInstance() {
-  const keyId = process.env.RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
-
-  console.log('Debug - Environment variables:', {
-    keyIdExists: !!keyId,
-    keySecretExists: !!keySecret,
-    keyIdLength: keyId?.length,
-    keySecretLength: keySecret?.length,
-    keyIdPrefix: keyId?.substring(0, 12), // Safe to log prefix
-    platform: 'Vercel'
-  });
-
-  if (!keyId || !keySecret) {
-    console.error('Missing Razorpay credentials:', {
-      keyId: keyId ? 'Present' : 'Missing',
-      keySecret: keySecret ? 'Present' : 'Missing'
-    });
-    throw new Error('Razorpay credentials not found. Please check RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables.');
-  }
-
-  return new Razorpay({
-    key_id: keyId,
-    key_secret: keySecret,
-  });
-}
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID!,
+  key_secret: process.env.RAZORPAY_KEY_SECRET!,
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -86,7 +64,6 @@ export async function POST(request: NextRequest) {
     }
     
     // Get Razorpay instance
-    const razorpay = getRazorpayInstance();
     console.log("🚀 ~ PQWEOST ~ SAEDFAERRHRJYT786687786:", razorpay)
     
     // Create Razorpay order
@@ -103,7 +80,6 @@ export async function POST(request: NextRequest) {
       }
     }
     console.log("🚀 ~ POST ~ orderOptions:", orderOptions)
-    console.log("🚀 ~ POST ~ asdasdasasdsad:")
     
     const razorpayOrder = await razorpay.orders.create(orderOptions)
     console.log("🚀 ~ POST ~ userIDDDDDDDDDd:", userId)
