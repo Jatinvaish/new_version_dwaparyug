@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
       }
     }
     console.log("🚀 ~ POST ~ orderOptions:", orderOptions)
+    console.log("🚀 ~ POST ~ asdasdasasdsad:")
     
     const razorpayOrder = await razorpay.orders.create(orderOptions)
     console.log("🚀 ~ POST ~ userIDDDDDDDDDd:", userId)
