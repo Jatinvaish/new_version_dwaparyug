@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
 
     const hashedPassword = await hashPassword(password);
     const defaultRoleId = 3; // Donor
+    console.log("🚀 ~ POST ~ :",)
 
     const result = await InsertQuery(
       `INSERT INTO users (first_name, last_name, mobile_no, dob, email,  password, role_id)
