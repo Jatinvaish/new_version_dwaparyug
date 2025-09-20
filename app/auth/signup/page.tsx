@@ -77,7 +77,6 @@ export default function SignupPage() {
 
         console.log("🚀 ~ onSubmit ~ assaasasas:", registerResponse.status)
         if (registerResponse.status === 201) {
-          // toast.success("Account created successfully!");
           console.log("🚀 ~ onSubmit ~ otpResponse:")
 
           // Step 2: Send OTP for email verification
@@ -109,7 +108,9 @@ export default function SignupPage() {
 
   // If OTP verification is shown, render the OTP component
   if (showOTPVerification) {
-    return <OTPVerificationPage email={registeredEmail} />;
+    return (
+      <OTPVerificationPage email={registeredEmail} />
+    );
   }
 
   return (
@@ -283,9 +284,7 @@ export default function SignupPage() {
                     type={showPassword ? "text" : "password"}
                     placeholder="Create a strong password"
                     {...register("password")}
-
                     className="pr-10"
-
                   />
                   <button
                     type="button"
@@ -296,7 +295,6 @@ export default function SignupPage() {
                   </button>
                 </div>
                 {errors.password && <p className="text-red-500 text-sm">{errors.password.message as string}</p>}
-
               </div>
 
               <div>
@@ -311,7 +309,6 @@ export default function SignupPage() {
                     placeholder="Confirm your password"
                     {...register("confirm_password")}
                     className="pr-10"
-
                   />
                   <button
                     type="button"
@@ -370,4 +367,4 @@ export default function SignupPage() {
       </div>
     </div>
   )
-} 
+}

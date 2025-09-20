@@ -53,7 +53,10 @@ export default function LoginPage() {
 
       if (response?.ok) {
         toast.success("Login Successful")
-        router.push('/'); reset()
+        reset()
+        // Reload the page and then redirect
+        window.location.reload()
+        window.location.replace('/')
       } else if (response?.error) {
         toast.error(response.error)
       }
@@ -66,7 +69,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50 flex items-center justify-center p-4">
       {/* Background Decorations */}
       <motion.div
-        className="absolute top-20 left-20 text-green-400 opacity-20"
+        className="absolute top-20 left-20 text-green-400 opacity-20 hidden lg:block"
         animate={{ rotate: [0, 360] }}
         transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
       >
@@ -74,7 +77,7 @@ export default function LoginPage() {
       </motion.div>
 
       <motion.div
-        className="absolute bottom-20 right-20 text-yellow-400 opacity-20"
+        className="absolute bottom-20 right-20 text-yellow-400 opacity-20 hidden lg:block"
         animate={{ y: [0, -20, 0] }}
         transition={{ duration: 4, repeat: Infinity }}
       >
@@ -82,12 +85,12 @@ export default function LoginPage() {
       </motion.div>
 
       <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-12 items-center">
-        {/* Left Side - Branding */}
+        {/* Left Side - Branding (Hidden on mobile) */}
         <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-center lg:text-left"
+          className="text-center lg:text-left hidden lg:block"
         >
           <div className="mb-8">
             <div className="bg-gradient-to-br from-gray-800 to-gray-900 text-white px-6 py-4 text-lg font-bold rounded-lg shadow-lg inline-block">
@@ -123,12 +126,20 @@ export default function LoginPage() {
           </div>
         </motion.div>
 
-        {/* Right Side - Login Form */}
+        {/* Right Side - Login Form (Full width on mobile) */}
         <motion.div
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
+          className="w-full lg:w-auto"
         >
+          {/* Mobile Brand Logo (Only visible on mobile) */}
+          <div className="text-center mb-8 lg:hidden">
+            <div className="bg-gradient-to-br from-gray-800 to-gray-900 text-white px-6 py-4 text-lg font-bold rounded-lg shadow-lg inline-block">
+              dwaparyug
+            </div>
+          </div>
+
           <Card className="p-8 shadow-2xl bg-white/95 backdrop-blur-sm">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign In</h2>

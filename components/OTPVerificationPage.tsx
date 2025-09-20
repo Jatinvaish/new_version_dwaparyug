@@ -57,20 +57,16 @@ export default function OTPVerificationPage({ email }: OTPVerificationPageProps)
 
       if (response.status === 200) {
         toast.success("Email verified successfully!")
-        
+
         // Auto sign-in after successful verification
         const signInResponse = await signIn('credentials', {
           email,
           password: '', // You might need to handle this differently
           redirect: false
         })
+        window.location.reload()
+        window.location.replace('/')
 
-        if (signInResponse?.ok) {
-          router.push("/dashboard") // or home page
-        } else {
-          // If auto sign-in fails, redirect to login
-          router.push("/auth/login?verified=true")
-        }
       }
     } catch (error: any) {
       toast.error(error.response?.data?.error || "Invalid OTP. Please try again.")
@@ -85,7 +81,7 @@ export default function OTPVerificationPage({ email }: OTPVerificationPageProps)
 
     try {
       const response = await api.post("/auth/send-otp", { email })
-      
+
       if (response.status === 200) {
         toast.success("New OTP sent to your email")
         setCountdown(60)
@@ -139,15 +135,15 @@ export default function OTPVerificationPage({ email }: OTPVerificationPageProps)
                   dwaparyug
                 </div>
               </div>
-              
+
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Mail className="w-8 h-8 text-blue-600" />
               </div>
-              
+
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 Verify Your Email
               </h1>
-              
+
               <p className="text-gray-600 mb-2">
                 We've sent a 6-digit verification code to
               </p>
@@ -191,7 +187,7 @@ export default function OTPVerificationPage({ email }: OTPVerificationPageProps)
                 <p className="text-sm text-gray-600">
                   Didn't receive the code?
                 </p>
-                
+
                 {canResend ? (
                   <Button
                     onClick={handleResendOTP}
@@ -218,7 +214,7 @@ export default function OTPVerificationPage({ email }: OTPVerificationPageProps)
                       Security Note
                     </p>
                     <p className="text-xs text-blue-600 mt-1">
-                      The verification code expires in 10 minutes. If you don't see the email, 
+                      The verification code expires in 10 minutes. If you don't see the email,
                       check your spam folder.
                     </p>
                   </div>

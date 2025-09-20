@@ -8,6 +8,7 @@ import { SelectQuery } from "@/lib/database";
 import { errorResponse } from "@/lib/api-response";
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
+const AUTH_TOKEN_COOKIE_EXPIRY = parseInt(process.env.AUTH_TOKEN_COOKIE_EXPIRY || "1296000"); // 6 months in seconds
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -78,7 +79,7 @@ export const authOptions: NextAuthOptions = {
   secret: JWT_SECRET,
   session: {
     strategy: "jwt",
-    maxAge: 36000,
+    maxAge: AUTH_TOKEN_COOKIE_EXPIRY, // 6 months
   },
   callbacks: {
     async jwt({ token, user, account }) {
@@ -128,6 +129,37 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NEXT_PUBLIC_APP_ENV === 'production',
+        maxAge: AUTH_TOKEN_COOKIE_EXPIRY, // 6 months
+      },
+    },
+    callbackUrl: {
+      name: `next-auth.callback-url`,
+      options: {
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NEXT_PUBLIC_APP_ENV === 'production',
+        maxAge: AUTH_TOKEN_COOKIE_EXPIRY, // 6 months
+      },
+    },
+    csrfToken: {
+      name: `next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NEXT_PUBLIC_APP_ENV === 'production',
+        maxAge: AUTH_TOKEN_COOKIE_EXPIRY, // 6 months
+      },
+    },
+  },
   pages: {
     signIn: '/auth/signin',
     signOut: '/auth/signout',
@@ -144,7 +176,9 @@ export function generateToken(payload: {
   role: string;
   provider?: string;
 }): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "10h" });
+  // Convert seconds to a format jwt understands (6 months)
+  const expirationTime:any = Math.floor(AUTH_TOKEN_COOKIE_EXPIRY / 3600) + 'h'; // Convert seconds to hours
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: expirationTime });
 }
 
 export function verifyToken(token: string): jwt.JwtPayload {
