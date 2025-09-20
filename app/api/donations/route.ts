@@ -8,7 +8,20 @@ function getRazorpayInstance() {
   const keyId = process.env.RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
+  console.log('Debug - Environment variables:', {
+    keyIdExists: !!keyId,
+    keySecretExists: !!keySecret,
+    keyIdLength: keyId?.length,
+    keySecretLength: keySecret?.length,
+    keyIdPrefix: keyId?.substring(0, 12), // Safe to log prefix
+    platform: 'Vercel'
+  });
+
   if (!keyId || !keySecret) {
+    console.error('Missing Razorpay credentials:', {
+      keyId: keyId ? 'Present' : 'Missing',
+      keySecret: keySecret ? 'Present' : 'Missing'
+    });
     throw new Error('Razorpay credentials not found. Please check RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables.');
   }
 
