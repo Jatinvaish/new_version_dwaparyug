@@ -1,9 +1,8 @@
-// app/api/donations/route.ts
+// app/api/donations/create-payment-order/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import Razorpay from 'razorpay'
 import { SelectQuery } from '@/lib/database' // Adjust import path as needed
 
-// Create Razorpay instance inside function to avoid build-time initialization
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
@@ -13,9 +12,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { cartItems, customDonationId, formData, totalAmount, donationAmount, tipAmount, userId } = body
-    console.log("🚀 ~ PQWEOST ~ uasddwaawdWQEWEQserId:", userId)
     console.log("🚀 ~ POST ~ formData:", formData)
-    
+
     // Validation
     if (!totalAmount || totalAmount <= 0) {
       return NextResponse.json(
@@ -23,28 +21,34 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
     if (!userId || userId <= 0) {
       return NextResponse.json(
         { error: 'Authorization failed! Please login and continue you donations♥️' },
         { status: 400 }
       )
     }
+
+
+
     if (!cartItems || (!Array.isArray(cartItems) && !donationAmount)) {
       return NextResponse.json(
         { error: 'Cart items or donation amount required' },
         { status: 400 }
       )
     }
-    console.log("🚀 ~ PQWEOST ~ 098765433ERFGV:", userId)
-    
+
     // Determine donation type
     const donationType = cartItems && cartItems.length > 0 ? 'product_based' : 'direct'
-    
+
     // Get campaign ID (for direct donations, use the first available campaign or a default one)
     let campaignId = cartItems && cartItems.length > 0 ? cartItems[0].campaignId : null
+
+
     if(!campaignId || campaignId<=0 && Number(customDonationId) >0){
       campaignId = customDonationId
     }
+
     if (!campaignId) {
       // For direct donations, get an active campaign or create a default one
       const defaultCampaignQuery = `
@@ -53,19 +57,17 @@ export async function POST(request: NextRequest) {
         ORDER BY created_at DESC LIMIT 1
       `
       const defaultCampaign = await SelectQuery(defaultCampaignQuery, [])
-      // if (defaultCampaign.length > 0) {
-      //   campaignId = defaultCampaign[0].id
-      // } else {
-      //   return NextResponse.json(
-      //     { error: 'No active campaigns found' },
-      //     { status: 400 }
-      //   )
-      // }
+
+      if (defaultCampaign.length > 0) {
+        campaignId = defaultCampaign[0].id
+      } else {
+        return NextResponse.json(
+          { error: 'No active campaigns found' },
+          { status: 400 }
+        )
+      }
     }
-    
-    // Get Razorpay instance
-    console.log("🚀 ~ PQWEOST ~ SAEDFAERRHRJYT786687786:", razorpay)
-    
+
     // Create Razorpay order
     const orderOptions = {
       amount: Math.round(totalAmount * 100), // Amount in paise
@@ -79,11 +81,10 @@ export async function POST(request: NextRequest) {
         donation_amount: donationAmount.toString()
       }
     }
-    console.log("🚀 ~ POST ~ orderOptions:", orderOptions)
-    
+
     const razorpayOrder = await razorpay.orders.create(orderOptions)
-    console.log("🚀 ~ POST ~ userIDDDDDDDDDd:", userId)
-    
+    console.log("🚀 ~ POST ~ userId:", userId)
+
     // Insert payment request into database
     const insertPaymentRequestQuery = `
       INSERT INTO donation_payment_requests (
@@ -92,6 +93,7 @@ export async function POST(request: NextRequest) {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id
     `
+
     const paymentRequestParams = [
       campaignId,
       userId || null,
@@ -101,22 +103,24 @@ export async function POST(request: NextRequest) {
       donationType,
       'created'
     ]
-    
+
     const paymentRequestResult = await SelectQuery(insertPaymentRequestQuery, paymentRequestParams)
     const paymentRequestId = paymentRequestResult[0].id
-    
+
     // Store temporary data for processing after payment success
+    // You might want to use Redis or a temporary table for this
     const tempDataQuery = `
       INSERT INTO donation_temp_data (
         payment_request_id, cart_items, form_data, created_at
       ) VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
     `
+
     await SelectQuery(tempDataQuery, [
       paymentRequestId,
       JSON.stringify(cartItems || []),
       JSON.stringify(formData || {})
     ])
-    
+
     return NextResponse.json({
       success: true,
       orderId: razorpayOrder.id,
@@ -125,9 +129,10 @@ export async function POST(request: NextRequest) {
       paymentRequestId: paymentRequestId,
       key: process.env.RAZORPAY_KEY_ID
     }, { status: 200 })
-    
+
   } catch (error) {
     console.error('Error creating payment order:', error)
+
     return NextResponse.json(
       {
         error: 'Failed to create payment order',
@@ -137,6 +142,7 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
 
 // GET - List donations with search, pagination, sorting, and filtering
 export async function GET(request: NextRequest) {
