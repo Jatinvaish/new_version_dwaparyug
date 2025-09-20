@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     
     // Get Razorpay instance
     const razorpay = getRazorpayInstance();
-    console.log("🚀 ~ PQWEOST ~ SAEDFAERRHRJYT786687786:", userId)
+    console.log("🚀 ~ PQWEOST ~ SAEDFAERRHRJYT786687786:", razorpay)
     
     // Create Razorpay order
     const orderOptions = {
