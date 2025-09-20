@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { cartItems, customDonationId, formData, totalAmount, donationAmount, tipAmount, userId } = body
+    console.log("🚀 ~ PQWEOST ~ uasddwaawdWQEWEQserId:", userId)
     console.log("🚀 ~ POST ~ formData:", formData)
     
     // Validation
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    console.log("🚀 ~ PQWEOST ~ 098765433ERFGV:", userId)
     
     // Determine donation type
     const donationType = cartItems && cartItems.length > 0 ? 'product_based' : 'direct'
@@ -60,18 +62,19 @@ export async function POST(request: NextRequest) {
         ORDER BY created_at DESC LIMIT 1
       `
       const defaultCampaign = await SelectQuery(defaultCampaignQuery, [])
-      if (defaultCampaign.length > 0) {
-        campaignId = defaultCampaign[0].id
-      } else {
-        return NextResponse.json(
-          { error: 'No active campaigns found' },
-          { status: 400 }
-        )
-      }
+      // if (defaultCampaign.length > 0) {
+      //   campaignId = defaultCampaign[0].id
+      // } else {
+      //   return NextResponse.json(
+      //     { error: 'No active campaigns found' },
+      //     { status: 400 }
+      //   )
+      // }
     }
     
     // Get Razorpay instance
     const razorpay = getRazorpayInstance();
+    console.log("🚀 ~ PQWEOST ~ SAEDFAERRHRJYT786687786:", userId)
     
     // Create Razorpay order
     const orderOptions = {
@@ -86,9 +89,10 @@ export async function POST(request: NextRequest) {
         donation_amount: donationAmount.toString()
       }
     }
+    console.log("🚀 ~ POST ~ orderOptions:", orderOptions)
     
     const razorpayOrder = await razorpay.orders.create(orderOptions)
-    console.log("🚀 ~ POST ~ userId:", userId)
+    console.log("🚀 ~ POST ~ userIDDDDDDDDDd:", userId)
     
     // Insert payment request into database
     const insertPaymentRequestQuery = `

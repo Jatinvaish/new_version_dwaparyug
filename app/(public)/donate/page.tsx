@@ -394,7 +394,7 @@ const PaymentStep = memo(({
       )}
 
       {/* Impact Preview */}
-      {totalDonationAmount > 0 && (
+      {/* {totalDonationAmount > 0 && (
         <Card className="bg-gradient-to-r from-green-50 to-blue-50">
           <CardContent className="p-6">
             <div className="text-center">
@@ -410,7 +410,7 @@ const PaymentStep = memo(({
             </div>
           </CardContent>
         </Card>
-      )}
+      )} */}
     </motion.div>
   )
 })
@@ -785,7 +785,7 @@ const SuccessStep = memo(({
           </CardContent>
         </Card>
 
-        <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 max-w-md mx-auto">
+        {/* <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 max-w-md mx-auto">
           <h3 className="font-semibold text-gray-900 mb-2">Your Impact</h3>
           <p className="text-gray-600 text-sm">
             Your donation will help approximately{' '}
@@ -794,7 +794,7 @@ const SuccessStep = memo(({
             </span>{' '}
             in need. Updates on your impact will be shared with you soon!
           </p>
-        </div>
+        </div> */}
 
         <div className="space-x-4">
           <Button onClick={() => router.push('/causes')}>
