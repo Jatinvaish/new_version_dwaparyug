@@ -124,7 +124,7 @@ const HeroSection = () => {
           >
             <div className="text-center">
               <div className="text-2xl sm:text-3xl font-bold text-gray-900">
-                <CountUpAnimation end={350000} />+
+                <CountUpAnimation end={4723700} />+
               </div>
               <div className="text-xs sm:text-sm text-gray-600">Worth Donations</div>
             </div>
@@ -213,7 +213,7 @@ const HeroSection = () => {
               <motion.div
                 className="bg-black h-3 sm:h-4 rounded-full relative"
                 initial={{ width: 0 }}
-                whileInView={{ width: "3.5%" }}
+                whileInView={{ width: "47.24%" }}
                 transition={{ duration: 2, delay: 0.5 }}
               >
                 <motion.div
