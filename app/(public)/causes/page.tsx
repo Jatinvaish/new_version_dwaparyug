@@ -343,7 +343,7 @@ const CampaignCard: React.FC<{
   // Grid View - Keep original desktop card design
   return (
     <div
-      className="bg-white rounded-lg border-2 hover:shadow-1xl transition-all duration-500 overflow-hidden cursor-pointer h-full flex flex-col group"
+      className="bg-white rounded-lg border-0 sm:border-2  hover:shadow-1xl transition-all duration-500 overflow-hidden cursor-pointer h-full flex flex-col group"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleCardClick}
