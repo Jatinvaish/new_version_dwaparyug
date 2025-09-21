@@ -79,7 +79,7 @@ export const authOptions: NextAuthOptions = {
   secret: JWT_SECRET,
   session: {
     strategy: "jwt",
-    maxAge: AUTH_TOKEN_COOKIE_EXPIRY, // 6 months
+    maxAge: AUTH_TOKEN_COOKIE_EXPIRY,
   },
   callbacks: {
     async jwt({ token, user, account }) {
@@ -129,37 +129,6 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  cookies: {
-    sessionToken: {
-      name: `next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NEXT_PUBLIC_APP_ENV === 'production',
-        maxAge: AUTH_TOKEN_COOKIE_EXPIRY, // 6 months
-      },
-    },
-    callbackUrl: {
-      name: `next-auth.callback-url`,
-      options: {
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NEXT_PUBLIC_APP_ENV === 'production',
-        maxAge: AUTH_TOKEN_COOKIE_EXPIRY, // 6 months
-      },
-    },
-    csrfToken: {
-      name: `next-auth.csrf-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NEXT_PUBLIC_APP_ENV === 'production',
-        maxAge: AUTH_TOKEN_COOKIE_EXPIRY, // 6 months
-      },
-    },
-  },
   pages: {
     signIn: '/auth/signin',
     signOut: '/auth/signout',
@@ -176,8 +145,7 @@ export function generateToken(payload: {
   role: string;
   provider?: string;
 }): string {
-  // Convert seconds to a format jwt understands (6 months)
-  const expirationTime:any = Math.floor(AUTH_TOKEN_COOKIE_EXPIRY / 3600) + 'h'; // Convert seconds to hours
+  const expirationTime: any = Math.floor(AUTH_TOKEN_COOKIE_EXPIRY / 3600) + 'h'; // Convert seconds to hours
   return jwt.sign(payload, JWT_SECRET, { expiresIn: expirationTime });
 }
 
