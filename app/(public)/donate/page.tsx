@@ -18,6 +18,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   ArrowLeft,
   ArrowRight,
   Upload,
@@ -32,7 +40,9 @@ import {
   MessageSquare,
   Camera,
   Loader2,
-  LogIn // Add this icon
+  LogIn, // Add this icon
+  AlertTriangle,
+  Info
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
@@ -838,6 +848,10 @@ export default function MultiStepDonationForm() {
   const [customTipValue, setCustomTipValue] = useState("")
   const [grandTotalAfterPayment, setGrandTotalAfterPayment] = useState(0)
 
+  // Warning dialog states
+  const [showWarningDialog, setShowWarningDialog] = useState(false)
+  const [warningType, setWarningType] = useState<'campaign' | 'direct'>('direct')
+
   const totalSteps = 4
 
   // Check authentication status
@@ -1012,12 +1026,29 @@ export default function MultiStepDonationForm() {
     setCurrentStep(prev => prev - 1)
   }, [])
 
-  const handlePayment = useCallback(async () => {
-    // Check authentication first
-    if (!isAuthenticated) {
-      handleLoginRequired()
-      return
+  // Check donation type and show appropriate warning
+  const checkDonationTypeAndShowWarning = useCallback(() => {
+    const custDonationId: any = localStorage.getItem('customDonationId')
+    const isCartEmpty = cartItems.length === 0
+    const hasCustomDonationId = custDonationId && Number(JSON.parse(custDonationId)) > 0
+
+    if (isCartEmpty && hasCustomDonationId) {
+      // Cart is empty but has customDonationId - campaign donation without products
+      setWarningType('campaign')
+      setShowWarningDialog(true)
+    } else if (isCartEmpty && !hasCustomDonationId) {
+      // Both cart is empty and no customDonationId - direct donation
+      setWarningType('direct')
+      setShowWarningDialog(true)
+    } else {
+      // Has products in cart, proceed directly
+      handlePaymentAfterWarning()
     }
+  }, [cartItems.length])
+
+  const handlePaymentAfterWarning = useCallback(async () => {
+    // Close dialog first
+    setShowWarningDialog(false)
 
     if (!validateStep(3)) return
 
@@ -1131,7 +1162,18 @@ export default function MultiStepDonationForm() {
       setErrors({ payment: 'Failed to initiate payment. Please try again.' })
       setIsSubmitting(false)
     }
-  }, [isAuthenticated, handleLoginRequired, validateStep, isRazorpayLoaded, createPaymentOrder, cartItems, formData, grandTotal, totalDonationAmount, tipAmount, processPaymentSuccess, clearCart, clearFormData, customAmount, session])
+  }, [validateStep, isRazorpayLoaded, createPaymentOrder, cartItems, formData, grandTotal, totalDonationAmount, tipAmount, processPaymentSuccess, clearCart, clearFormData, customAmount, session])
+
+  const handlePayment = useCallback(async () => {
+    // Check authentication first
+    if (!isAuthenticated) {
+      handleLoginRequired()
+      return
+    }
+
+    // Check donation type and show warning if needed
+    checkDonationTypeAndShowWarning()
+  }, [isAuthenticated, handleLoginRequired, checkDonationTypeAndShowWarning])
 
   // Memoize step rendering to prevent unnecessary re-renders
   const renderStep = useMemo(() => {
@@ -1206,6 +1248,71 @@ export default function MultiStepDonationForm() {
   return (
     <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
       <div className="max-w-4xl mx-auto px-3 sm:px-4">
+        {/* Warning Dialog */}
+        <Dialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                {warningType === 'campaign' ? (
+                  <>
+                    <AlertTriangle className="w-5 h-5 text-amber-500 mr-2" />
+                    Campaign Donation Notice
+                  </>
+                ) : (
+                  <>
+                    <Info className="w-5 h-5 text-blue-500 mr-2" />
+                    Direct Donation Notice
+                  </>
+                )}
+              </DialogTitle>
+              <DialogDescription className="text-left space-y-2">
+                {warningType === 'campaign' ? (
+                  <>
+                    <p>
+                      You didn't select any campaign products. You are making a direct donation which will be counted towards this campaign but not associated with any specific product.
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Your donation will still help the campaign reach its goal and support the cause.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      You are making a direct donation. This will go to the NGO's welfare fund to help with children's education and other necessary support.
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Your contribution will be used where it's needed most to make the maximum impact.
+                    </p>
+                  </>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowWarningDialog(false)}
+                className="w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handlePaymentAfterWarning}
+                className={`w-full sm:w-auto ${warningType === 'campaign' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                disabled={isSubmitting || isProcessing}
+              >
+                {isSubmitting || isProcessing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  'Continue with Payment'
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Progress Header */}
         <div className="mb-6 sm:mb-8">
           <div className="flex items-center justify-between mb-4">

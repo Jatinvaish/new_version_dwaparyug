@@ -66,6 +66,9 @@ const HeaderSection = () => {
             <DropdownMenuItem>
               <Link href="/profile">My Profile</Link>
             </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Link href="/cart">My Cart</Link>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => signOut()}>
               Logout
             </DropdownMenuItem>
@@ -312,6 +315,13 @@ const HeaderSection = () => {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     My Profile
+                  </Link>
+                  <Link
+                    href="/cart"
+                    className="text-gray-700 hover:text-green-600 font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    My cart
                   </Link>
                   <Button
                     variant="ghost"
