@@ -1,4 +1,3 @@
-// app/api/donations/create-payment-order/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import Razorpay from 'razorpay'
 import { SelectQuery } from '@/lib/database' // Adjust import path as needed
@@ -8,10 +7,122 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
 })
 
+// Function to normalize mobile number (extract last 10 digits)
+function normalizeMobileNumber(mobile: string): string {
+  // Remove all non-digit characters
+  const digitsOnly = mobile.replace(/\D/g, '');
+  
+  // Extract last 10 digits
+  if (digitsOnly.length >= 10) {
+    return digitsOnly.slice(-10);
+  }
+  
+  return digitsOnly; // Return as is if less than 10 digits
+}
+
+// Function to find or create user based on mobile number
+async function findOrCreateUser(formData: any): Promise<number> {
+  const { donorName, mobileNumber, donorCountry } = formData;
+  
+  if (!mobileNumber || !donorName) {
+    throw new Error('Mobile number and name are required');
+  }
+
+  const normalizedMobile = normalizeMobileNumber(mobileNumber);
+  
+  if (normalizedMobile.length !== 10) {
+    throw new Error('Invalid mobile number format');
+  }
+
+  try {
+    // First, try to find existing user by mobile number (last 10 digits)
+    const findUserQuery = `
+      SELECT id, first_name, last_name, email, mobile_no 
+      FROM users 
+      WHERE RIGHT(REGEXP_REPLACE(mobile_no, '[^0-9]', '', 'g'), 10) = $1
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    
+    const existingUsers = await SelectQuery(findUserQuery, [normalizedMobile]);
+    
+    if (existingUsers.length > 0) {
+      console.log(`Found existing user with ID: ${existingUsers[0].id} for mobile: ${normalizedMobile}`);
+      return existingUsers[0].id;
+    }
+
+    // If user doesn't exist, create a new one
+    console.log(`Creating new user for mobile: ${normalizedMobile}`);
+    
+    // Split donor name into first and last name
+    const nameParts = donorName.trim().split(' ');
+    const firstName = nameParts[0] || 'Anonymous';
+    const lastName = nameParts.slice(1).join(' ') || 'Donor';
+    
+    // Generate a dummy email since it's required
+    const dummyEmail = `donor_${normalizedMobile}@temp.dwaparyug.org`;
+    
+    // Create new user
+    const createUserQuery = `
+      INSERT INTO users (
+        first_name, 
+        last_name, 
+        email, 
+        mobile_no, 
+        password, 
+        is_verified, 
+        role_id,
+        created_at,
+        updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+      ) RETURNING id
+    `;
+    
+    // Use a default role_id (assuming 3 is for regular users/donors)
+    const defaultRoleId = 3;
+    const dummyPassword = '$2b$10$D.if7JHKhz0OReIHOaPenOL63aN6g2BrRwAtFPACFQ/Gucq56z1IS'; // This should be hashed in production
+    
+    const createUserParams = [
+      firstName,
+      lastName,
+      dummyEmail,
+      mobileNumber, // Store original mobile number
+      dummyPassword, // In production, hash this password
+      false, // is_verified
+      defaultRoleId
+    ];
+
+    const newUserResult = await SelectQuery(createUserQuery, createUserParams);
+    
+    if (newUserResult.length === 0) {
+      throw new Error('Failed to create new user');
+    }
+
+    const newUserId = newUserResult[0].id;
+    console.log(`Created new user with ID: ${newUserId} for mobile: ${normalizedMobile}`);
+    
+    return newUserId;
+
+  } catch (error) {
+    console.error('Error in findOrCreateUser:', error);
+    throw new Error(`User management failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { cartItems, customDonationId, formData, totalAmount, donationAmount, tipAmount, userId } = body
+    const { 
+      cartItems, 
+      customDonationId, 
+      formData, 
+      totalAmount, 
+      donationAmount, 
+      tipAmount, 
+      mobileNumber 
+    } = body
+
     console.log("🚀 ~ POST ~ formData:", formData)
 
     // Validation
@@ -22,18 +133,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!userId || userId <= 0) {
+    if (!formData || !formData.mobileNumber || !formData.donorName) {
       return NextResponse.json(
-        { error: 'Authorization failed! Please login and continue you donations♥️' },
+        { error: 'Mobile number and donor name are required' },
         { status: 400 }
       )
     }
 
-
-
     if (!cartItems || (!Array.isArray(cartItems) && !donationAmount)) {
       return NextResponse.json(
         { error: 'Cart items or donation amount required' },
+        { status: 400 }
+      )
+    }
+
+    // Find or create user based on mobile number
+    let userId: number;
+    try {
+      userId = await findOrCreateUser(formData);
+    } catch (error) {
+      console.error('User management error:', error);
+      return NextResponse.json(
+        { 
+          error: 'Failed to process user information',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        },
         { status: 400 }
       )
     }
@@ -44,8 +168,7 @@ export async function POST(request: NextRequest) {
     // Get campaign ID (for direct donations, use the first available campaign or a default one)
     let campaignId = cartItems && cartItems.length > 0 ? cartItems[0].campaignId : null
 
-
-    if(!campaignId || campaignId<=0 && Number(customDonationId) >0){
+    if (!campaignId || campaignId <= 0 && Number(customDonationId) > 0) {
       campaignId = customDonationId
     }
 
@@ -76,14 +199,15 @@ export async function POST(request: NextRequest) {
       notes: {
         donation_type: donationType,
         campaign_id: campaignId.toString(),
-        user_id: userId?.toString() || 'anonymous',
+        user_id: userId.toString(),
         tip_amount: tipAmount.toString(),
-        donation_amount: donationAmount.toString()
+        donation_amount: donationAmount.toString(),
+        mobile_number: normalizeMobileNumber(formData.mobileNumber)
       }
     }
 
     const razorpayOrder = await razorpay.orders.create(orderOptions)
-    console.log("🚀 ~ POST ~ userId:", userId)
+    console.log("🚀 ~ POST ~ Created Razorpay order for userId:", userId)
 
     // Insert payment request into database
     const insertPaymentRequestQuery = `
@@ -96,7 +220,7 @@ export async function POST(request: NextRequest) {
 
     const paymentRequestParams = [
       campaignId,
-      userId || null,
+      userId,
       razorpayOrder.id,
       totalAmount,
       'INR',
@@ -108,7 +232,6 @@ export async function POST(request: NextRequest) {
     const paymentRequestId = paymentRequestResult[0].id
 
     // Store temporary data for processing after payment success
-    // You might want to use Redis or a temporary table for this
     const tempDataQuery = `
       INSERT INTO donation_temp_data (
         payment_request_id, cart_items, form_data, created_at
@@ -127,6 +250,7 @@ export async function POST(request: NextRequest) {
       amount: totalAmount,
       currency: razorpayOrder.currency,
       paymentRequestId: paymentRequestId,
+      userId: userId, // Return the user ID for reference
       key: process.env.RAZORPAY_KEY_ID
     }, { status: 200 })
 
@@ -142,7 +266,6 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
 
 // GET - List donations with search, pagination, sorting, and filtering
 export async function GET(request: NextRequest) {

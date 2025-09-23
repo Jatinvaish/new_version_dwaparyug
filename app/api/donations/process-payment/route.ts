@@ -35,6 +35,82 @@ interface DonationFormData {
   customImage?: string | File
 }
 
+// Helper function to normalize mobile number for comparison
+function normalizeMobileNumber(mobileNumber: string): string {
+  // Remove all non-digit characters
+  const digitsOnly = mobileNumber.replace(/\D/g, '')
+  
+  // Get last 10 digits
+  if (digitsOnly.length >= 10) {
+    return digitsOnly.slice(-10)
+  }
+  
+  return digitsOnly
+}
+
+// Helper function to find or create user based on mobile number
+async function findOrCreateUser(formData: DonationFormData): Promise<number> {
+  const normalizedMobile = normalizeMobileNumber(formData.mobileNumber)
+  
+  if (normalizedMobile.length !== 10) {
+    throw new Error('Invalid mobile number format')
+  }
+
+  // Try to find existing user by last 10 digits of mobile number
+  const existingUserQuery = `
+    SELECT id, mobile_no, full_name 
+    FROM users 
+    WHERE RIGHT(REGEXP_REPLACE(mobile_no, '[^0-9]', '', 'g'), 10) = $1
+    ORDER BY id DESC
+    LIMIT 1
+  `
+  
+  const existingUsers = await SelectQuery(existingUserQuery, [normalizedMobile])
+  
+  if (existingUsers.length > 0) {
+    // User exists, return their ID
+    return existingUsers[0].id
+  }
+
+  // User doesn't exist, create new user
+  const createUserQuery = `
+    INSERT INTO users (
+      first_name, 
+      last_name, 
+      mobile_no, 
+      email, 
+      password,
+      is_verified,
+      role_id,
+      created_at,
+      updated_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    RETURNING id
+  `
+
+  // Split donor name into first and last name
+  const nameParts = (formData.donorName || 'Anonymous Donor').trim().split(' ')
+  const firstName = nameParts[0] || 'Anonymous'
+  const lastName = nameParts.slice(1).join(' ') || 'Donor'
+
+  // Generate a placeholder email and password for the user
+  const placeholderEmail = `donor_${normalizedMobile}@placeholder.com`
+  const placeholderPassword = 'placeholder_password' // This should be hashed in production
+
+  const userParams = [
+    firstName,
+    lastName,
+    formData.mobileNumber,
+    placeholderEmail,
+    placeholderPassword, // In production, hash this
+    false, // is_verified
+    5 // role_id for 'User' role (assuming 5 is the User role ID)
+  ]
+
+  const newUserResult = await SelectQuery(createUserQuery, userParams)
+  return newUserResult[0].id
+}
+
 export async function POST(request: NextRequest) {
   try {
     const contentType = request.headers.get('content-type')
@@ -69,7 +145,6 @@ export async function POST(request: NextRequest) {
         imageUrl = await processImageUpload(body.customImage, `donation_${Date.now()}`)
       }
     }
-    console.log("🚀 ~ POST ~ imageUrl:", imageUrl)
 
     const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = body
 
@@ -122,13 +197,25 @@ export async function POST(request: NextRequest) {
     const cartItems: CartItem[] = paymentRequest.cart_items || []
     const formData: DonationFormData = paymentRequest.form_data || {}
 
+    // Find or create user based on mobile number
+    let userId: number
+    try {
+      userId = await findOrCreateUser(formData)
+    } catch (error) {
+      console.error('Error finding/creating user:', error)
+      return NextResponse.json(
+        { error: 'Failed to process user information' },
+        { status: 400 }
+      )
+    }
+
     // Start transaction
     try {
       // Update payment request status
       await SelectQuery(
         `UPDATE donation_payment_requests 
-         SET status = 'paid', payment_response = $1, updated_at = CURRENT_TIMESTAMP 
-         WHERE id = $2`,
+         SET status = 'paid', payment_response = $1, user_id = $2, updated_at = CURRENT_TIMESTAMP 
+         WHERE id = $3`,
         [
           JSON.stringify({
             razorpay_payment_id,
@@ -136,6 +223,7 @@ export async function POST(request: NextRequest) {
             razorpay_signature,
             verified_at: new Date().toISOString()
           }),
+          userId,
           paymentRequest.id
         ]
       )
@@ -156,7 +244,7 @@ export async function POST(request: NextRequest) {
       `
 
       const donationParams = [
-        paymentRequest.user_id,
+        userId,
         paymentRequest.campaign_id,
         paymentRequest.id,
         razorpay_payment_id,
@@ -257,7 +345,7 @@ export async function POST(request: NextRequest) {
               formData.donorName || null,
               formData.donorCountry || null,
               formData.customImage || imageUrl,
-              !!formData.customImage,
+              !!(formData.customImage || imageUrl),
               formData.customMessage || null,
               formData.donationPurpose || null,
               formData.specialInstructions || null
@@ -291,7 +379,7 @@ export async function POST(request: NextRequest) {
             formData.donorName || null,
             formData.donorCountry || null,
             formData.customImage || imageUrl,
-            !!imageUrl,
+            !!(formData.customImage || imageUrl),
             formData.customMessage || null,
             formData.donationPurpose || null,
             formData.specialInstructions || null
@@ -360,25 +448,17 @@ export async function POST(request: NextRequest) {
       `
 
       const completeDonation = await SelectQuery(completeDonationQuery, [donationId])
-      // if (process.env.DIRECT_80G_SEND === 'TRUE' && paymentRequest.user_id) {
-      //   try {
-      //     await generateAndSend80G(
-      //       parseInt(paymentRequest.user_id.toString()),
-      //       parseInt(donationId.toString()),
-      //       true
-      //     )
-      //   } catch (certificateError) {
-      //     console.error('80G certificate generation failed:', certificateError)
-      //     // Don't fail the donation if certificate generation fails
-      //   }
-      // }
+
       return NextResponse.json({
         success: true,
         message: 'Donation processed successfully',
         donation: completeDonation[0],
         payment_id: razorpay_payment_id,
         order_id: razorpay_order_id,
-        campaigns_updated: Array.from(campaignUpdates.keys())
+        user_id: userId,
+        campaigns_updated: Array.from(campaignUpdates.keys()),
+        total_amount: totalAmount,
+        tip_amount: tipAmount
       }, { status: 200 })
 
     } catch (transactionError) {

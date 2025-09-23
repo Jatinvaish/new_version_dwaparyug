@@ -987,7 +987,7 @@ Powered by Your Platform Name - Making giving meaningful and transparent.`
                   </Card>
 
                   {/* Quick Donate */}
-                  <Card className="p-4 shadow-lg sm:p-6 sm:shadow-xl">
+                  {/* <Card className="p-4 shadow-lg sm:p-6 sm:shadow-xl">
                     <h3 className="text-lg font-bold text-gray-900 mb-3 sm:text-xl sm:mb-4">Quick Donate</h3>
                     <div className="grid grid-cols-2 gap-2 mb-4 sm:gap-3">
                       {[500, 1000, 2500, 5000].map((amount) => (
@@ -1013,7 +1013,7 @@ Powered by Your Platform Name - Making giving meaningful and transparent.`
                       <Heart className="w-3 h-3 mr-2 sm:w-4 sm:h-4" />
                       Donate Now
                     </Button>
-                  </Card>
+                  </Card> */}
 
                   {/* Campaign Info */}
                   <Card className="p-4 shadow-lg sm:p-6 sm:shadow-xl">

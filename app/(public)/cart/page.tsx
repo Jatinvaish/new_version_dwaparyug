@@ -305,7 +305,7 @@ export default function CartPage() {
                         <motion.div
                           key={`${item.productId}-${item.campaignId}`}
                           layout
-                          className="bg-gray-50 rounded-lg p-3 sm:p-4"
+                          className="bg-gray-50 rounded-lg  "
                         >
                           {/* Mobile Layout */}
                           <div className="sm:hidden">

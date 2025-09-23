@@ -43,13 +43,13 @@ const HeaderSection = () => {
   // Conditional logic for the right side of the desktop nav
   const renderRightNav = () => {
     // If not logged in, show the Login button
-    if (!session) {
-      return (
-        <Link href="/auth/login" className="hidden sm:inline text-gray-700 hover:text-green-600 font-medium cursor-pointer text-sm lg:text-base">
-          Login
-        </Link>
-      );
-    }
+    // if (!session) {
+    //   return (
+    //     <Link href="/auth/login" className="hidden sm:inline text-gray-700 hover:text-green-600 font-medium cursor-pointer text-sm lg:text-base">
+    //       Login
+    //     </Link>
+    //   );
+    // }
 
     // If logged in and NOT an admin, show the profile dropdown
     if (session && session.user && session.user?.role?.toLowerCase() !== 'admin') {
