@@ -625,3 +625,7 @@ CREATE TABLE otp_verifications (
 
  CREATE INDEX idx_otp_verifications_email ON otp_verifications(email);
 CREATE INDEX idx_otp_verifications_expires_at ON otp_verifications(expires_at);
+
+ALTER TABLE users
+ADD CONSTRAINT users_mobile_no_key UNIQUE (mobile_no);
+

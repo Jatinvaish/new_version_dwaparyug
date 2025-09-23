@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
-const protectedRoutes = ['/donate', '/my-profiles', '/my-donations'];
+// const protectedRoutes = ['/donate', '/my-profiles', '/my-donations'];
+const protectedRoutes: any = [];
 const adminRoutes = ['/admin'];
 const superadminRoutes = ['/superadmin'];
 
@@ -15,7 +16,6 @@ export async function middleware(req: NextRequest) {
   const token = await getToken({ req, secret: process.env.JWT_SECRET });
   const isAuthenticated = Boolean(token);
   const userRole = token?.role;
-
 
 
   // 2. Admin routes

@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo, memo } from 'react'
-import { useSession } from 'next-auth/react' // Add this import
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -40,9 +39,15 @@ import {
   MessageSquare,
   Camera,
   Loader2,
-  LogIn, // Add this icon
   AlertTriangle,
-  Info
+  Info,
+  Crown,
+  HandHeart,
+  Sparkles,
+  Star,
+  Trophy,
+  Users,
+  Zap
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
@@ -62,9 +67,7 @@ const countries = [
   // Add more countries as needed
 ]
 
-// ... (Keep all the existing memoized components unchanged: PersonalInfoStep, ReviewCartStep, SuccessStep)
-
-// Update PaymentStep to show authentication warning
+// Update PaymentStep to remove authentication requirements
 const PaymentStep = memo(({
   subtotal,
   customAmount,
@@ -80,9 +83,7 @@ const PaymentStep = memo(({
   customTipValue,
   setCustomTipValue,
   customDonationAmount,
-  setCustomDonationAmount,
-  isAuthenticated, // Add this prop
-  onLoginRequired // Add this prop
+  setCustomDonationAmount
 }: {
   subtotal: number
   customAmount: number
@@ -99,8 +100,6 @@ const PaymentStep = memo(({
   setCustomTipValue: (value: string) => void
   customDonationAmount: string
   setCustomDonationAmount: (value: string) => void
-  isAuthenticated: boolean // Add this prop type
-  onLoginRequired: () => void // Add this prop type
 }) => {
   // Show direct donation section if there are no products or current donation is 0
   const showDirectDonation = subtotal === 0 || totalDonationAmount === 0
@@ -120,30 +119,6 @@ const PaymentStep = memo(({
           {showDirectDonation ? 'Enter donation amount and proceed to payment' : 'Review and confirm your donation'}
         </p>
       </div>
-
-      {/* Authentication Warning - Show if not authenticated */}
-      {!isAuthenticated && (
-        <Card className="border-2 border-amber-200 bg-amber-50">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <LogIn className="w-5 h-5 text-amber-600" />
-              <div className="flex-1">
-                <h3 className="font-medium text-amber-800">Login Required</h3>
-                <p className="text-sm text-amber-700 mt-1">
-                  You need to login to complete your donation. Your cart items will be saved.
-                </p>
-              </div>
-              <Button
-                size="sm"
-                onClick={onLoginRequired}
-                className="bg-amber-600 hover:bg-amber-700 text-white"
-              >
-                Login Now
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Direct Donation Section (when no products or amount is 0) */}
       {showDirectDonation && (
@@ -402,25 +377,6 @@ const PaymentStep = memo(({
           </div>
         </div>
       )}
-
-      {/* Impact Preview */}
-      {/* {totalDonationAmount > 0 && (
-        <Card className="bg-gradient-to-r from-green-50 to-blue-50">
-          <CardContent className="p-6">
-            <div className="text-center">
-              <Gift className="w-8 h-8 text-green-500 mx-auto mb-2" />
-              <h3 className="font-semibold text-gray-900 mb-2">Your Impact</h3>
-              <p className="text-gray-600 text-sm">
-                Your generous donation of ₹{grandTotal.toLocaleString()} can help approximately{' '}
-                <span className="font-bold text-green-600">
-                  {Math.floor(totalDonationAmount / 100)} people
-                </span>{' '}
-                in need. Thank you for making a difference!
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )} */}
     </motion.div>
   )
 })
@@ -455,25 +411,29 @@ const PersonalInfoStep = memo(({
 
     <div className="grid md:grid-cols-2 gap-4">
       <div>
-        <Label htmlFor="donorName">Full Name (Optional)</Label>
+        <Label htmlFor="donorName">Full Name *</Label>
         <Input
           id="donorName"
           placeholder="Enter your full name"
+          required
           value={formData.donorName || ''}
           onChange={(e) => updateFormData({ donorName: e.target.value })}
         />
+        {errors.donorName && (
+          <p className="text-red-500 text-sm mt-1">{errors.donorName}</p>
+        )}
       </div>
 
       <div>
         <Label htmlFor="donorCountry">Country *</Label>
         <Select
-          value={'IN'}
+          value={formData.donorCountry || 'IN'}
           onValueChange={(value) => updateFormData({ donorCountry: value })}
         >
-          <SelectTrigger disabled>
+          <SelectTrigger>
             <SelectValue placeholder="Select your country" />
           </SelectTrigger>
-          <SelectContent >
+          <SelectContent>
             {countries.map((country) => (
               <SelectItem key={country.value} value={country.value}>
                 {country.label}
@@ -493,12 +453,11 @@ const PersonalInfoStep = memo(({
         id="mobileNumber"
         placeholder="Enter your mobile number"
         value={formData.mobileNumber || ''}
-        maxLength={10}
+        maxLength={15}
         onChange={(e) => {
           const input = e.target.value;
-
-          // Allow only digits and limit length to 10
-          if (/^\d{0,10}$/.test(input)) {
+          // Allow digits, +, and - for international numbers
+          if (/^[\d+\-\s()]*$/.test(input)) {
             updateFormData({ mobileNumber: input });
           }
         }}
@@ -509,7 +468,7 @@ const PersonalInfoStep = memo(({
     </div>
 
     <div>
-      <Label htmlFor="donatedOnBehalfOf">Donating on behalf of someone? (Optional)</Label>
+      <Label htmlFor="donatedOnBehalfOf">Donating on behalf of someone?</Label>
       <Input
         id="donatedOnBehalfOf"
         placeholder="Enter name if donating on someone's behalf"
@@ -519,7 +478,11 @@ const PersonalInfoStep = memo(({
     </div>
 
     <div className="space-y-4">
-      <Label>Custom Image (Optional)</Label>
+      <Label>Get a photograph printed</Label>
+      <br />
+      <span className='text-[10px] '>
+        Personalize your product by adding a custom image, whether it's an image of your loved ones or your organization's logo, the choice is yours
+      </span>
       <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
         {imagePreview ? (
           <div className="relative">
@@ -567,15 +530,6 @@ const PersonalInfoStep = memo(({
     </div>
 
     <div className="grid md:grid-cols-2 gap-4">
-      {/* <div className="flex items-center space-x-2">
-        <Checkbox
-          id="isPublic"
-          checked={formData.isPublic || false}
-          onCheckedChange={(checked) => updateFormData({ isPublic: !!checked })}
-        />
-        <Label htmlFor="isPublic">Make my donation public</Label>
-      </div> */}
-
       <div className="flex items-center space-x-2">
         <Checkbox
           id="isAnonymous"
@@ -673,7 +627,7 @@ const ReviewCartStep = memo(({
       <CardHeader>
         <CardTitle className="flex items-center">
           <MessageSquare className="w-5 h-5 mr-2 text-blue-500" />
-          Add Personal Touch (Optional)
+          Add Personal Touch
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -738,100 +692,312 @@ const SuccessStep = memo(({
   grandTotal: number
   setCurrentStep: (step: number) => void
   router: any
-}) => (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.95 }}
-    animate={{ opacity: 1, scale: 1 }}
-    className="text-center space-y-6"
-  >
-    {paymentError ? (
-      // Payment Failed
-      <div className="space-y-4">
-        <AlertCircle className="w-16 h-16 text-red-500 mx-auto" />
-        <h2 className="text-2xl font-bold text-gray-900">Payment Failed</h2>
-        <p className="text-gray-600 max-w-md mx-auto">
-          Unfortunately, your payment could not be processed. Please try again or contact support.
-        </p>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
-          <p className="text-red-700 text-sm">{paymentError}</p>
-        </div>
-        <div className="space-x-4">
-          <Button onClick={() => setCurrentStep(3)} variant="outline">
-            Try Again
-          </Button>
-          <Button onClick={() => router.push('/cart')}>
-            Back to Cart
-          </Button>
-        </div>
-      </div>
-    ) : (
-      // Payment Success
-      <div className="space-y-4">
-        <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
-        <h2 className="text-2xl font-bold text-gray-900">Thank You!</h2>
-        <p className="text-gray-600 max-w-md mx-auto">
-          Your donation has been successfully processed. You'll receive a confirmation email shortly.
-        </p>
+}) => {
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  
+  const impactMessages = [
+    "You just changed someone's life forever",
+    "Your kindness will echo through generations",
+    "You are the hero someone was praying for",
+    "This moment makes you part of something beautiful"
+  ];
 
-        <Card className="max-w-md mx-auto">
-          <CardContent className="p-6">
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span>Donation Amount:</span>
-                <span className="font-medium">₹{totalDonationAmount.toLocaleString()}</span>
+  const confettiParticles = Array.from({ length: 50 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    delay: Math.random() * 3,
+    duration: 3 + Math.random() * 2,
+    color: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'][Math.floor(Math.random() * 5)]
+  }));
+
+  useEffect(() => {
+    if (!paymentError) {
+      setShowConfetti(true);
+      const messageInterval = setInterval(() => {
+        setCurrentMessageIndex((prev) => (prev + 1) % impactMessages.length);
+      }, 3000);
+
+      return () => clearInterval(messageInterval);
+    }
+  }, [paymentError]);
+
+  if (paymentError) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="text-center space-y-6"
+      >
+        <div className="space-y-4">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto" />
+          <h2 className="text-2xl font-bold text-gray-900">Payment Failed</h2>
+          <p className="text-gray-600 max-w-md mx-auto">
+            Unfortunately, your payment could not be processed. Please try again or contact support.
+          </p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
+            <p className="text-red-700 text-sm">{paymentError}</p>
+          </div>
+          <div className="space-x-4">
+            <Button onClick={() => setCurrentStep(3)} variant="outline">
+              Try Again
+            </Button>
+            <Button onClick={() => router.push('/cart')}>
+              Back to Cart
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+    )
+  }
+
+  return (
+    <div className="relative min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 overflow-hidden -m-8">
+      {/* Animated Background */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-20 w-64 h-64 bg-gradient-to-r from-purple-300 to-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-64 h-64 bg-gradient-to-r from-yellow-300 to-orange-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute bottom-20 left-40 w-64 h-64 bg-gradient-to-r from-blue-300 to-green-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
+
+      {/* Confetti Animation */}
+      <AnimatePresence>
+        {showConfetti && confettiParticles.map((particle) => (
+          <motion.div
+            key={particle.id}
+            initial={{ y: -20, x: `${particle.x}vw`, opacity: 1, rotate: 0 }}
+            animate={{ 
+              y: '110vh', 
+              rotate: 360,
+              opacity: [1, 1, 0]
+            }}
+            transition={{ 
+              duration: particle.duration, 
+              delay: particle.delay,
+              ease: "easeOut"
+            }}
+            className="absolute w-3 h-3 rounded-full z-10"
+            style={{ backgroundColor: particle.color }}
+          />
+        ))}
+      </AnimatePresence>
+
+      <div className="relative z-20 min-h-screen flex items-center justify-center p-6">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="max-w-2xl w-full"
+        >
+          {/* Main Success Icon with Pulse Effect */}
+          <motion.div 
+            className="text-center mb-8 relative"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+          >
+            <div className="relative inline-block">
+              <motion.div
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-32 h-32 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto  "
+              >
+                <CheckCircle className="w-16 h-16 text-white" />
+              </motion.div>
+              
+              {/* Floating Icons Around Main Icon */}
+              {[Heart, Star, Gift, Crown].map((Icon, index) => (
+                <motion.div
+                  key={index}
+                  className="absolute"
+                  style={{
+                    top: index === 0 ? '-10px' : index === 1 ? '20px' : index === 2 ? '60px' : '40px',
+                    left: index === 0 ? '20px' : index === 1 ? '-20px' : index === 2 ? '-15px' : '100px'
+                  }}
+                  animate={{
+                    y: [0, -10, 0],
+                    rotate: [0, 5, -5, 0],
+                    scale: [0.8, 1.1, 0.8]
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    delay: index * 0.5
+                  }}
+                >
+                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                    <Icon className="w-6 h-6 text-purple-500" />
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Dynamic Headline */}
+          <motion.div
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="text-center mb-6"
+          >
+            <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+              You're a Hero!
+            </h1>
+            
+            <motion.div
+              className="text-xl md:text-2xl text-gray-700 font-medium min-h-[2.5rem] flex items-center justify-center"
+              key={currentMessageIndex}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.8 }}
+            >
+              {impactMessages[currentMessageIndex]}
+            </motion.div>
+          </motion.div>
+
+          {/* Impact Stats */}
+          <motion.div
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            className="grid grid-cols-3 gap-4 mb-8"
+          >
+            {[
+              { icon: Users, number: "50+", label: "Lives Touched", color: "from-blue-500 to-cyan-500" },
+              { icon: Heart, number: "∞", label: "Love Shared", color: "from-red-500 to-pink-500" },
+              { icon: Sparkles, number: "1st", label: "In Our Hearts", color: "from-yellow-500 to-orange-500" }
+            ].map((stat, index) => (
+              <motion.div
+                key={index}
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 1 + index * 0.2, type: "spring" }}
+                className="text-center"
+              >
+                <div className={`w-16 h-16 bg-gradient-to-br ${stat.color} rounded-2xl mx-auto mb-2 flex items-center justify-center `}>
+                  <stat.icon className="w-8 h-8 text-white" />
+                </div>
+                <div className="text-2xl font-bold text-gray-800">{stat.number}</div>
+                <div className="text-sm text-gray-600">{stat.label}</div>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Donation Summary Card */}
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 1 }}
+            className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-white/50 mb-8"
+          >
+            <div className="flex items-center justify-center mb-6">
+              <Trophy className="w-8 h-8 text-yellow-500 mr-3" />
+              <h3 className="text-2xl font-bold text-gray-800">Your Incredible Impact</h3>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex justify-between items-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl">
+                <span className="text-lg text-gray-700 flex items-center">
+                  <HandHeart className="w-5 h-5 mr-2 text-green-600" />
+                  Donation Amount
+                </span>
+                <span className="text-2xl font-bold text-green-600">₹{totalDonationAmount.toLocaleString()}</span>
               </div>
+              
               {tipAmount > 0 && (
-                <div className="flex justify-between">
-                  <span>Platform Tip:</span>
-                  <span className="font-medium">₹{tipAmount.toLocaleString()}</span>
+                <div className="flex justify-between items-center p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl">
+                  <span className="text-lg text-gray-700 flex items-center">
+                    <Zap className="w-5 h-5 mr-2 text-purple-600" />
+                    Platform Support
+                  </span>
+                  <span className="text-xl font-bold text-purple-600">₹{tipAmount.toLocaleString()}</span>
                 </div>
               )}
-              <Separator />
-              <div className="flex justify-between font-bold">
-                <span>Total Paid (with tip ♥️):</span>
-                <span>₹{grandTotal.toLocaleString()}</span>
+              
+              <div className="border-t-2 border-dashed border-gray-200 pt-4">
+                <div className="flex justify-between items-center p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl">
+                  <span className="text-xl font-bold text-gray-800 flex items-center">
+                    <Crown className="w-6 h-6 mr-2 text-yellow-600" />
+                    Total Blessing Given
+                  </span>
+                  <span className="text-3xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
+                    ₹{grandTotal.toLocaleString()}
+                  </span>
+                </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </motion.div>
 
-        {/* <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 max-w-md mx-auto">
-          <h3 className="font-semibold text-gray-900 mb-2">Your Impact</h3>
-          <p className="text-gray-600 text-sm">
-            Your donation will help approximately{' '}
-            <span className="font-bold text-green-600">
-              {Math.floor(totalDonationAmount / 100)} people
-            </span>{' '}
-            in need. Updates on your impact will be shared with you soon!
-          </p>
-        </div> */}
+          {/* Emotional Message */}
+          <motion.div
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 1.2 }}
+            className="text-center mb-8"
+          >
+            <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl p-6 text-white  ">
+              <p className="text-lg leading-relaxed">
+                <strong>You didn't just donate money today.</strong><br/>
+                You gave hope to someone who needed it most. You became part of their story of survival, growth, and dreams coming true. 
+                <br/><br/>
+                <span className="text-yellow-200 font-semibold">Somewhere, someone is smiling because of you.</span>
+              </p>
+            </div>
+          </motion.div>
 
-        <div className="space-x-4">
-          <Button onClick={() => router.push('/causes')}>
-            Donate More
-          </Button>
-          <Button onClick={() => router.push('/')} variant="outline">
-            Go Home
-          </Button>
-        </div>
+          {/* Action Buttons */}
+          <motion.div
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 1.4 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center"
+          >
+            <motion.button
+              onClick={() => router?.push('/causes')}
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center justify-center"
+            >
+              <Heart className="w-6 h-6 mr-2" />
+              Spread More Love
+            </motion.button>
+            
+            <motion.button
+              onClick={() => router?.push('/')}
+              className="bg-white text-gray-700 px-8 py-4 rounded-2xl font-semibold text-lg transition-all duration-300 border-2 border-gray-200"
+            >
+              Return Home
+            </motion.button>
+          </motion.div>
+
+          {/* Certificate Badge */}
+          <motion.div
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 2, type: "spring", stiffness: 100 }}
+            className="text-center mt-12"
+          >
+            <div className="inline-block bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-yellow-900 px-6 py-3 rounded-full font-bold text-sm  ">
+              🏆 CERTIFIED CHANGEMAKER 🏆
+            </div>
+          </motion.div>
+        </motion.div>
       </div>
-    )}
-  </motion.div>
-))
+    </div>
+  )
+})
 
 // Add display names for better debugging
 PersonalInfoStep.displayName = 'PersonalInfoStep'
 ReviewCartStep.displayName = 'ReviewCartStep'
 SuccessStep.displayName = 'SuccessStep'
-
-// Add display names for better debugging
 PaymentStep.displayName = 'PaymentStep'
 
 export default function MultiStepDonationForm() {
 
   const router = useRouter()
-  const { data: session, status } = useSession() // Add session hook
-  const userData: any = session?.user;
   const { cartItems, getCartTotals, getItemsByCampaign, clearCart } = useDonationCart()
   const { formData, updateFormData, getTipAmount, clearFormData } = useDonationForm()
   const { createPaymentOrder, processPaymentSuccess, isProcessing, paymentError } = usePayment()
@@ -853,44 +1019,6 @@ export default function MultiStepDonationForm() {
   const [warningType, setWarningType] = useState<'campaign' | 'direct'>('direct')
 
   const totalSteps = 4
-
-  // Check authentication status
-  const isAuthenticated = userData?.id > 0;
-
-  // Handle login requirement
-  const handleLoginRequired = useCallback(() => {
-    // Save current form data and cart to localStorage before redirecting
-    localStorage.setItem('donationFormData', JSON.stringify({
-      ...formData,
-      customAmount: parseFloat(customDonationAmount) || 0
-    }))
-    localStorage.setItem('returnToDonation', 'true')
-
-    // Redirect to login page
-    router.push('/auth/login?callbackUrl=' + encodeURIComponent(window.location.pathname))
-  }, [formData, customDonationAmount, router])
-
-  // Load saved data when user returns from login
-  useEffect(() => {
-    if (isAuthenticated && localStorage.getItem('returnToDonation')) {
-      const savedFormData = localStorage.getItem('donationFormData')
-      if (savedFormData) {
-        try {
-          const parsedData = JSON.parse(savedFormData)
-          updateFormData(parsedData)
-          if (parsedData.customAmount) {
-            setCustomDonationAmount(parsedData.customAmount.toString())
-          }
-        } catch (error) {
-          console.error('Error parsing saved form data:', error)
-        }
-      }
-
-      // Clean up
-      localStorage.removeItem('donationFormData')
-      localStorage.removeItem('returnToDonation')
-    }
-  }, [isAuthenticated, updateFormData])
 
   // Load Razorpay script with proper loading state management
   useEffect(() => {
@@ -949,13 +1077,12 @@ export default function MultiStepDonationForm() {
     }
     return Math.floor(tipValue)
   }, [selectedTip, customTipValue, totalDonationAmount])
-  console.log("🚀 ~ MultiStepDonationForm ~ totalDonationAmount:", totalDonationAmount)
+
   const tipAmount = useMemo(() => calculateTipAmount(), [calculateTipAmount])
   const grandTotal = useMemo(() => totalDonationAmount + tipAmount, [totalDonationAmount, tipAmount])
   const itemsByCampaign = useMemo(() => getItemsByCampaign(), [getItemsByCampaign])
 
   // Memoize callbacks to prevent unnecessary re-renders
-
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -970,15 +1097,18 @@ export default function MultiStepDonationForm() {
         url: previewUrl,
         isExisting: false
       });
+      setImagePreview(previewUrl)
       updateFormData({ customImage: undefined })
     } catch (error) {
       console.error('Error processing banner image:', error);
-      alert('Error processing image. Please try again.');
+      toast.error('Error processing image. Please try again.');
     }
   };
+
   const removeImage = useCallback(() => {
     updateFormData({ customImage: undefined })
     setImagePreview(null)
+    setBannerImage(null)
     setErrors(prev => {
       const newErrors = { ...prev }
       delete newErrors.customImage
@@ -993,9 +1123,12 @@ export default function MultiStepDonationForm() {
       if (!formData.donorCountry) {
         formData.donorCountry = 'IN'
       }
+      if (!formData.donorName || formData?.donorName?.trim() == '') {
+        newErrors.donorName = 'Full name is required'
+      }
       if (!formData.mobileNumber) {
         newErrors.mobileNumber = 'Mobile number is required'
-      } else if (!/^\+?[\d\s-()]+$/.test(formData.mobileNumber)) {
+      } else if (!/^[\d+\-\s()]*$/.test(formData.mobileNumber)) {
         newErrors.mobileNumber = 'Please enter a valid mobile number'
       }
     }
@@ -1005,16 +1138,11 @@ export default function MultiStepDonationForm() {
       if (totalDonationAmount <= 0) {
         newErrors.customAmount = 'Please enter a donation amount greater than ₹0'
       }
-
-      // Check authentication before payment
-      if (!isAuthenticated) {
-        newErrors.authentication = 'Please login to complete your donation'
-      }
     }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
-  }, [formData.donorCountry, formData.mobileNumber, totalDonationAmount, isAuthenticated])
+  }, [formData.donorName, formData.donorCountry, formData.mobileNumber, totalDonationAmount])
 
   const handleNext = useCallback(() => {
     if (validateStep(currentStep)) {
@@ -1062,9 +1190,7 @@ export default function MultiStepDonationForm() {
     setErrors({}) // Clear previous errors
 
     try {
-      if (userData?.id <= 0) {
-        toast.error("Authorization failed! please contact us for more details");
-      }
+      // Upload banner image if exists
       if (bannerImage) {
         if (bannerImage.file) {
           // New file upload
@@ -1082,13 +1208,14 @@ export default function MultiStepDonationForm() {
           formData.customImage = bannerImage.url;
         }
       }
-      const custDonationId:any = localStorage.getItem('customDonationId')
-      // Create payment order
+
+      const custDonationId: any = localStorage.getItem('customDonationId')
+
+      // Create payment order - API will handle user creation/lookup internally
       const orderData = await createPaymentOrder({
         cartItems,
-        customDonationId: Number(JSON.parse(custDonationId)||0),
+        customDonationId: Number(JSON.parse(custDonationId) || 0),
         //@ts-ignore
-
         formData: {
           ...formData,
           customAmount: customAmount,
@@ -1096,9 +1223,7 @@ export default function MultiStepDonationForm() {
         },
         totalAmount: grandTotal,
         donationAmount: totalDonationAmount,
-        tipAmount: tipAmount,
-        userId: userData?.id
-
+        tipAmount: tipAmount
       })
 
       // Configure Razorpay options
@@ -1109,24 +1234,28 @@ export default function MultiStepDonationForm() {
         name: "Dwaparyug Foundation",
         description: "Donation Payment",
         order_id: orderData.orderId,
+        method: {
+          upi: true,
+          card: true,
+          netbanking: true,
+          wallet: true
+        },
         handler: async function (response: any) {
           try {
             // Process successful payment
-            const paymentresponse: any = await processPaymentSuccess({
+            await processPaymentSuccess({
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature
             })
-            // updateFormData({ customAmount: parseFloat(paymentresponse?.total_amount) || 0 })
-            // updateFormData({ tipAmount: parseFloat(paymentresponse?.tip_amount) || 0 })
+
             // Clear cart and form data
             clearCart()
-            // clearFormData()
-
-            // // Clear local state
-            // setCustomDonationAmount("")
-            // setSelectedTip(5)
+            setCustomDonationAmount("")
+            setSelectedTip(5)
             setCustomTipValue("")
+            setBannerImage(null)
+            setImagePreview(null)
             setIsSubmitting(false)
 
             // Move to success step
@@ -1139,8 +1268,7 @@ export default function MultiStepDonationForm() {
           }
         },
         prefill: {
-          name: formData.donorName || session?.user?.name || '',
-          email: session?.user?.email || '',
+          name: formData.donorName || '',
           contact: formData.mobileNumber || '',
         },
         theme: {
@@ -1162,18 +1290,12 @@ export default function MultiStepDonationForm() {
       setErrors({ payment: 'Failed to initiate payment. Please try again.' })
       setIsSubmitting(false)
     }
-  }, [validateStep, isRazorpayLoaded, createPaymentOrder, cartItems, formData, grandTotal, totalDonationAmount, tipAmount, processPaymentSuccess, clearCart, clearFormData, customAmount, session])
+  }, [validateStep, isRazorpayLoaded, createPaymentOrder, cartItems, formData, grandTotal, totalDonationAmount, tipAmount, processPaymentSuccess, clearCart, customAmount, bannerImage])
 
   const handlePayment = useCallback(async () => {
-    // Check authentication first
-    if (!isAuthenticated) {
-      handleLoginRequired()
-      return
-    }
-
     // Check donation type and show warning if needed
     checkDonationTypeAndShowWarning()
-  }, [isAuthenticated, handleLoginRequired, checkDonationTypeAndShowWarning])
+  }, [checkDonationTypeAndShowWarning])
 
   // Memoize step rendering to prevent unnecessary re-renders
   const renderStep = useMemo(() => {
@@ -1216,8 +1338,6 @@ export default function MultiStepDonationForm() {
             setCustomTipValue={setCustomTipValue}
             customDonationAmount={customDonationAmount}
             setCustomDonationAmount={setCustomDonationAmount}
-            isAuthenticated={isAuthenticated}
-            onLoginRequired={handleLoginRequired}
           />
         )
       case 4:
@@ -1243,7 +1363,7 @@ export default function MultiStepDonationForm() {
           />
         )
     }
-  }, [currentStep, formData, updateFormData, errors, imagePreview, handleImageUpload, removeImage, customAmount, itemsByCampaign, subtotal, totalDonationAmount, tipAmount, grandTotal, paymentError, router, selectedTip, setSelectedTip, customTipValue, setCustomTipValue, customDonationAmount, setCustomDonationAmount, isAuthenticated, handleLoginRequired])
+  }, [currentStep, formData, updateFormData, errors, imagePreview, handleImageUpload, removeImage, customAmount, itemsByCampaign, subtotal, totalDonationAmount, tipAmount, grandTotal, paymentError, router, selectedTip, setSelectedTip, customTipValue, setCustomTipValue, customDonationAmount, setCustomDonationAmount, grandTotalAfterPayment])
 
   return (
     <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
@@ -1288,14 +1408,14 @@ export default function MultiStepDonationForm() {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setShowWarningDialog(false)}
                 className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={handlePaymentAfterWarning}
                 className={`w-full sm:w-auto ${warningType === 'campaign' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-blue-600 hover:bg-blue-700'}`}
                 disabled={isSubmitting || isProcessing}
@@ -1321,11 +1441,6 @@ export default function MultiStepDonationForm() {
               <Badge variant="outline" className="text-sm">
                 Step {currentStep} of {totalSteps}
               </Badge>
-              {session?.user && (
-                <Badge variant="secondary" className="text-xs">
-                  {session.user.name || session.user.email}
-                </Badge>
-              )}
             </div>
           </div>
 
@@ -1374,16 +1489,11 @@ export default function MultiStepDonationForm() {
 
               {currentStep === 3 && (
                 <Button
-                  onClick={isAuthenticated ? handlePayment : handleLoginRequired}
-                  disabled={isSubmitting || isProcessing || grandTotal <= 0 || (!isAuthenticated ? false : !isRazorpayLoaded)}
+                  onClick={handlePayment}
+                  disabled={isSubmitting || isProcessing || grandTotal <= 0 || !isRazorpayLoaded}
                   className="min-w-[150px] w-full sm:w-auto"
                 >
-                  {!isAuthenticated ? (
-                    <>
-                      <LogIn className="w-4 h-4 mr-2" />
-                      Login to Pay
-                    </>
-                  ) : !isRazorpayLoaded ? (
+                  {!isRazorpayLoaded ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Loading Payment...
@@ -1417,20 +1527,8 @@ export default function MultiStepDonationForm() {
           </div>
         )}
 
-        {/* Authentication status for step 3 */}
-        {currentStep === 3 && !isAuthenticated && status !== 'loading' && (
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center">
-              <LogIn className="w-4 h-4 text-blue-500 mr-2" />
-              <span className="text-sm text-blue-700">
-                Please login to complete your donation. Your form data will be saved.
-              </span>
-            </div>
-          </div>
-        )}
-
         {/* Payment system loading indicator */}
-        {isAuthenticated && !isRazorpayLoaded && currentStep === 3 && (
+        {!isRazorpayLoaded && currentStep === 3 && (
           <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center">
               <Loader2 className="w-4 h-4 text-blue-500 mr-2 animate-spin" />
@@ -1448,18 +1546,6 @@ export default function MultiStepDonationForm() {
               <AlertCircle className="w-4 h-4 text-red-500 mr-2" />
               <span className="text-sm text-red-700">
                 {errors.payment}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Authentication error display */}
-        {errors.authentication && (
-          <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-            <div className="flex items-center">
-              <LogIn className="w-4 h-4 text-orange-500 mr-2" />
-              <span className="text-sm text-orange-700">
-                {errors.authentication}
               </span>
             </div>
           </div>

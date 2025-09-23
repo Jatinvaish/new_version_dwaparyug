@@ -23,7 +23,6 @@ export interface DonationFormData {
   donorCountry: string
   mobileNumber: string
   customMessage?: string
-  userId: number
   donationPurpose?: string
   specialInstructions?: string
   donatedOnBehalfOf?: string
@@ -39,12 +38,12 @@ export interface DonationFormData {
   tipPercentage?: number
   
   // Image
-  customImage?: File
+  customImage?: File | string
 }
 
 const CART_STORAGE_KEY = 'donationCart'
 const FORM_DATA_STORAGE_KEY = 'donationFormData'
-const CUSTOM_DONATION_STORAGE_KEY = 'customDonationAmount' // New key for custom donation
+const CUSTOM_DONATION_STORAGE_KEY = 'customDonationAmount'
 
 // Cart management functions
 const getCartFromStorage = (): CartItem[] => {
@@ -315,16 +314,15 @@ export const usePayment = () => {
   const [isProcessing, setIsProcessing] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
 
-  // Create payment order
+  // Create payment order - Removed userId requirement since API will handle user creation
   const createPaymentOrder = useCallback(async (donationData: {
     cartItems: CartItem[]
+    customDonationId?: number
     formData: DonationFormData
     totalAmount: number
     donationAmount: number
     tipAmount: number
-    userId: number
   }) => {
-    console.log("🚀 ~ usePayment ~ donationData:", donationData)
     setIsProcessing(true)
     setPaymentError(null)
 
@@ -358,7 +356,6 @@ export const usePayment = () => {
     razorpay_order_id: string
     razorpay_signature: string
   }) => {
-    console.log("🚀 ~ usePayment ~ paymentData:", paymentData)
     setIsProcessing(true)
     setPaymentError(null)
 
