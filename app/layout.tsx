@@ -7,6 +7,7 @@ import ToasterProvider from "@/components/ui/sooner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import Script from "next/script"; // ✅ import Next.js Script
+import { GoogleTagManager } from '@next/third-parties/google'
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -48,6 +49,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <NextAuthProvider>
           <ToasterProvider />
+          <GoogleTagManager gtmId="GTM-P33WDTHR" />
           {children}
           <Analytics />
           <SpeedInsights />
