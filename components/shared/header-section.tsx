@@ -205,7 +205,7 @@ const HeaderSection = () => {
           </motion.div>
 
           <div className="hidden lg:flex items-center space-x-8">
-            {["Home", "About Us", "How It Works", "Causes", "Contact Us"].map((item, index) => (
+            {["About Us", "How It Works", "Causes", "Contact Us"].map((item, index) => (
               <motion.div
                 key={item}
                 initial={{ opacity: 0, y: -20 }}
