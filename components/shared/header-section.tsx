@@ -8,7 +8,6 @@ import Link from "next/link";
 import { useSession, signOut } from 'next-auth/react';
 import { useMediaQuery } from 'react-responsive';
 import Image from "next/image";
-import logo from "@/public/images/logo/logo.png";
 import { useRouter } from "next/navigation";
 
 // Import Shadcn UI Dropdown components
@@ -172,7 +171,7 @@ const HeaderSection = () => {
             >
               <Link href={'/causes/26'} className='flex' >
                 <Sparkles className="w-3 lg:w-4 h-3 lg:h-4 mr-1 lg:mr-2" />
-                🚨 URGENT: Relief For Uttrrakashi
+                ✨ Navratri Festival Drive
               </Link>
             </Button>
           </motion.div>
@@ -196,7 +195,7 @@ const HeaderSection = () => {
             <div className="from-gray-800 to-gray-900 rounded-lg  ">
               <Image
                 onClick={() => router.push("/")}
-                src={logo}
+                src="/images/logo/logo.png"
                 alt="Dwaparyug Logo"
                 width={160}
                 height={90}
