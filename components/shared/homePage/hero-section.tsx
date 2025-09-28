@@ -90,11 +90,19 @@ const apiService = {
     }
   }
 };
+const optimizeCloudinaryUrl = (url: string, width = 1600, height = 900) => {
+  if (!url) return "/images/placeholder-campaign.jpg";
+
+  // Only modify Cloudinary-hosted images
+  if (!url.includes("res.cloudinary.com")) return url;
+
+  return url.replace("/upload/", `/upload/f_auto,q_auto,c_fill,w_${width},h_${height}/`);
+};
 
 // Utility functions
 const getCategoryGradient = (categoryName?: string): string => {
   if (!categoryName) return 'from-blue-500 to-indigo-600';
-  
+
   const category = categoryName.toLowerCase();
   const gradients: Record<string, string> = {
     'education': 'from-blue-600 to-purple-700',
@@ -109,20 +117,19 @@ const getCategoryGradient = (categoryName?: string): string => {
     'children': 'from-pink-500 to-purple-600',
     'elderly': 'from-indigo-500 to-blue-600'
   };
-  
-  // Check for partial matches
+
   for (const key in gradients) {
     if (category.includes(key)) {
       return gradients[key];
     }
   }
-  
+
   return 'from-blue-500 to-indigo-600';
 };
 
 const getCategoryCtaText = (categoryName?: string): string => {
   if (!categoryName) return 'Donate Now';
-  
+
   const category = categoryName.toLowerCase();
   const ctaTexts: Record<string, string> = {
     'education': 'Support Education',
@@ -137,14 +144,13 @@ const getCategoryCtaText = (categoryName?: string): string => {
     'children': 'Help Children',
     'elderly': 'Support Elderly'
   };
-  
-  // Check for partial matches
+
   for (const key in ctaTexts) {
     if (category.includes(key)) {
       return ctaTexts[key];
     }
   }
-  
+
   return 'Donate Now';
 };
 
@@ -169,6 +175,20 @@ const getDaysRemaining = (endDate?: string): number => {
   return Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
 };
 
+// Ultra-fast animation variants
+const fastFadeInUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.12, ease: "easeOut" },
+};
+
+const instantFade = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+  transition: { duration: 0.15, ease: "easeInOut" },
+};
+
 const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolean }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
@@ -177,8 +197,8 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
     if (isAutoPlaying && slides.length > 1 && !loading) {
       const timer = setInterval(() => {
         setCurrentSlide((prev) => (prev + 1) % slides.length);
-      }, 5000);
-      
+      }, 3000); // Reduced from 5000 to 3000
+
       return () => clearInterval(timer);
     }
   }, [currentSlide, isAutoPlaying, slides.length, loading]);
@@ -199,16 +219,16 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
     setIsAutoPlaying(!isAutoPlaying);
   };
 
-  if (loading) {
-    return (
-      <div className="relative w-full h-[60vh] sm:h-[70vh] lg:h-[80vh] overflow-hidden bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
-        <div className="text-center text-white">
-          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4" />
-          <p className="text-xl font-semibold">Loading Campaigns...</p>
-        </div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="relative w-full h-[60vh] sm:h-[70vh] lg:h-[80vh] overflow-hidden bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
+  //       <div className="text-center text-white">
+  //         <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4" />
+  //         <p className="text-xl font-semibold">Loading Campaigns...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   if (slides.length === 0) {
     return (
@@ -227,24 +247,18 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
       <AnimatePresence mode="wait">
         <motion.div
           key={currentSlide}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.8, ease: "easeInOut" }}
+          {...instantFade}
           className="absolute inset-0"
         >
           <div className="absolute inset-0">
             <Image
-              src={slides[currentSlide].image}
+              src={optimizeCloudinaryUrl(slides[currentSlide].image, 1920, 1080)}
               alt={slides[currentSlide].title}
               fill
               className="object-cover"
               priority
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = '/images/placeholder-campaign.jpg';
-              }}
             />
+
             <div className="absolute inset-0 bg-black/40" />
           </div>
 
@@ -252,9 +266,9 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
               <div className="max-w-3xl">
                 <motion.div
-                  initial={{ y: 50, opacity: 0 }}
+                  initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2, duration: 0.8 }}
+                  transition={{ duration: 0.1 }}
                   className="mb-4"
                 >
                   <span className="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm font-medium">
@@ -263,31 +277,31 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
                 </motion.div>
 
                 <motion.h1
-                  initial={{ y: 50, opacity: 0 }}
+                  initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.4, duration: 0.8 }}
+                  transition={{ duration: 0.12, delay: 0.02 }}
                   className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight"
                 >
                   {slides[currentSlide].title}
                 </motion.h1>
 
                 <motion.p
-                  initial={{ y: 50, opacity: 0 }}
+                  initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.6, duration: 0.8 }}
+                  transition={{ duration: 0.12, delay: 0.04 }}
                   className="text-lg sm:text-xl text-white/90 mb-8 leading-relaxed max-w-2xl"
                 >
                   {slides[currentSlide].description}
                 </motion.p>
 
                 <motion.div
-                  initial={{ y: 50, opacity: 0 }}
+                  initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.8, duration: 0.8 }}
+                  transition={{ duration: 0.12, delay: 0.06 }}
                   className="flex flex-col sm:flex-row gap-4"
                 >
                   <Button
-                    className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-4 rounded-full text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer"
+                    className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-4 rounded-full text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-150 cursor-pointer"
                     {...scaleOnHover}
                     asChild
                   >
@@ -297,10 +311,10 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
                       <ArrowRight className="w-5 h-5 ml-3" />
                     </Link>
                   </Button>
-                  
+
                   <Button
                     variant="outline"
-                    className="border-2 border-white text-white hover:bg-white hover:text-gray-900 px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 cursor-pointer bg-transparent"
+                    className="border-2 border-white text-white hover:bg-white hover:text-gray-900 px-8 py-4 rounded-full text-lg font-semibold transition-all duration-150 cursor-pointer bg-transparent"
                     {...scaleOnHover}
                     asChild
                   >
@@ -319,7 +333,7 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
                 className="h-full bg-white"
                 initial={{ width: "0%" }}
                 animate={{ width: "100%" }}
-                transition={{ duration: 5, ease: "linear" }}
+                transition={{ duration: 3, ease: "linear" }} // Reduced from 5 to 3
               />
             </div>
           )}
@@ -330,18 +344,18 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
         <>
           <button
             onClick={prevSlide}
-            className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-20 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white p-3 rounded-full transition-all duration-300 group"
+            className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-20 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white p-3 rounded-full transition-all duration-150 group"
             aria-label="Previous slide"
           >
-            <ChevronLeft className="w-6 h-6 group-hover:scale-110 transition-transform" />
+            <ChevronLeft className="w-6 h-6 group-hover:scale-110 transition-transform duration-100" />
           </button>
 
           <button
             onClick={nextSlide}
-            className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-20 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white p-3 rounded-full transition-all duration-300 group"
+            className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-20 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white p-3 rounded-full transition-all duration-150 group"
             aria-label="Next slide"
           >
-            <ChevronRight className="w-6 h-6 group-hover:scale-110 transition-transform" />
+            <ChevronRight className="w-6 h-6 group-hover:scale-110 transition-transform duration-100" />
           </button>
 
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex space-x-2">
@@ -349,18 +363,17 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  index === currentSlide
-                    ? 'bg-white scale-125'
-                    : 'bg-white/50 hover:bg-white/75'
-                }`}
+                className={`w-3 h-3 rounded-full transition-all duration-150 ${index === currentSlide
+                  ? 'bg-white scale-125'
+                  : 'bg-white/50 hover:bg-white/75'
+                  }`}
               />
             ))}
           </div>
 
           <button
             onClick={toggleAutoPlay}
-            className="absolute bottom-6 right-6 z-20 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white p-2 rounded-full transition-all duration-300"
+            className="absolute bottom-6 right-6 z-20 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white p-2 rounded-full transition-all duration-150"
             aria-label={isAutoPlaying ? 'Pause slideshow' : 'Play slideshow'}
           >
             {isAutoPlaying ? (
@@ -377,8 +390,8 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
 
 const HeroSection = () => {
   const { scrollY } = useScroll();
-  const y1 = useTransform(scrollY, [0, 300], [0, -50]);
-  const y2 = useTransform(scrollY, [0, 300], [0, 50]);
+  const y1 = useTransform(scrollY, [0, 300], [0, -25]); // Reduced parallax effect
+  const y2 = useTransform(scrollY, [0, 300], [0, 25]);
 
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
@@ -404,7 +417,6 @@ const HeroSection = () => {
     const activeCampaigns = campaigns.filter(c => c.status === 'Active');
     if (activeCampaigns.length === 0) return campaigns[0];
 
-    // Sort by priority and total raised
     const priorityOrder = { 'critical': 4, 'high': 3, 'medium': 2, 'low': 1 };
     return activeCampaigns.sort((a, b) => {
       const priorityDiff = (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
@@ -417,7 +429,7 @@ const HeroSection = () => {
   const slides = React.useMemo(() => {
     const activeCampaigns = campaigns.filter(c => c.status === 'Active');
     const sortedCampaigns = activeCampaigns.length > 0 ? activeCampaigns : campaigns;
-    return transformCampaignsToSlides(sortedCampaigns.slice(0, 6)); // Limit to 6 slides
+    return transformCampaignsToSlides(sortedCampaigns.slice(0, 6));
   }, [campaigns]);
 
   // Progress percentage for featured campaign
@@ -432,10 +444,9 @@ const HeroSection = () => {
         setLoading(true);
         setError(null);
 
-        // Fetch active campaigns with priority on high/critical
         const { campaigns: fetchedCampaigns } = await apiService.fetchCampaigns({
           page: 1,
-          pageSize: 20 // Get more campaigns to have variety
+          pageSize: 20
         });
 
         if (fetchedCampaigns.length === 0) {
@@ -468,8 +479,8 @@ const HeroSection = () => {
           <Heart className="w-16 h-16 mx-auto mb-4 opacity-50" />
           <p className="text-xl font-semibold mb-2">Unable to Load Campaigns</p>
           <p className="text-red-200">{error}</p>
-          <Button 
-            onClick={() => window.location.reload()} 
+          <Button
+            onClick={() => window.location.reload()}
             className="mt-4 bg-white text-red-600 hover:bg-gray-100"
           >
             Try Again
@@ -482,14 +493,14 @@ const HeroSection = () => {
   return (
     <>
       <HeroSlider slides={slides} loading={loading} />
-      
+
       <section className="relative py-10 sm:py-16 lg:py-20 px-4 overflow-hidden bg-gradient-to-br from-gray-50 to-white">
-        {/* Animated Background Elements */}
+        {/* Faster animated background elements */}
         <motion.div
           className="absolute top-10 sm:top-20 right-10 sm:right-20 text-green-600 opacity-20"
           style={{ y: y1 }}
           animate={{ rotate: 360 }}
-          transition={{ duration: 20, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+          transition={{ duration: 10, repeat: Number.POSITIVE_INFINITY, ease: "linear" }} // Reduced from 20
         >
           <Heart className="w-16 sm:w-24 lg:w-32 h-16 sm:h-24 lg:h-32 fill-current" />
         </motion.div>
@@ -498,27 +509,27 @@ const HeroSection = () => {
           className="absolute top-20 sm:top-40 right-20 sm:right-40 text-yellow-400 opacity-30"
           style={{ y: y2 }}
           animate={{ rotate: [0, 360] }}
-          transition={{ duration: 15, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+          transition={{ duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "linear" }} // Reduced from 15
         >
           <div className="w-8 sm:w-12 lg:w-16 h-8 sm:h-12 lg:h-16 bg-yellow-400 transform rotate-45 rounded-lg"></div>
         </motion.div>
 
         <motion.div
           className="absolute bottom-10 sm:bottom-20 left-10 sm:left-20 text-blue-400 opacity-20"
-          animate={{ y: [0, -20, 0], rotate: [0, 10, -10, 0] }}
-          transition={{ duration: 4, repeat: Number.POSITIVE_INFINITY }}
+          animate={{ y: [0, -10, 0], rotate: [0, 5, -5, 0] }} // Reduced movement
+          transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }} // Reduced from 4
         >
           <Sparkles className="w-12 sm:w-18 lg:w-24 h-12 sm:h-18 lg:h-24" />
         </motion.div>
 
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 lg:gap-16 items-center relative z-10">
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: "easeOut" }}
+            transition={{ duration: 0.15, ease: "easeOut" }} // Reduced from 1
             className="space-y-6 lg:space-y-8 order-2 lg:order-1"
           >
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, duration: 0.1 }}>
               <div className="inline-flex items-center bg-gradient-to-r from-yellow-100 to-green-100 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium text-gray-700 mb-4 sm:mb-6">
                 <Sparkles className="w-3 sm:w-4 h-3 sm:h-4 mr-1 sm:mr-2 text-yellow-600" />
                 {loading ? 'Loading...' : `Transforming Lives Since 2025 • ${totalStats.livesImpacted.toLocaleString()}+ Lives Impacted`}
@@ -527,15 +538,15 @@ const HeroSection = () => {
 
             <motion.h1
               className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-gray-900 leading-tight"
-              initial={{ opacity: 0, y: 50 }}
+              initial={{ opacity: 0, y: 25 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
+              transition={{ delay: 0.08, duration: 0.15 }}
             >
               Give Support To{" "}
               <motion.span
                 className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-yellow-500"
                 animate={{ backgroundPosition: ["0%", "100%", "0%"] }}
-                transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY }}
+                transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }} // Reduced from 3
               >
                 Make Change
               </motion.span>{" "}
@@ -544,22 +555,22 @@ const HeroSection = () => {
 
             <motion.p
               className="text-base sm:text-lg lg:text-xl text-gray-600 leading-relaxed"
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
+              transition={{ delay: 0.1, duration: 0.12 }}
             >
               {featuredCampaign?.about_campaign || featuredCampaign?.overview ||
-               "Dwaparyug Foundation is India's most trusted humanitarian nonprofit organization. We serve underprivileged communities across multiple locations, providing essential services and programs that create lasting positive change."}
+                "Dwaparyug Foundation is India's most trusted humanitarian nonprofit organization. We serve underprivileged communities across multiple locations, providing essential services and programs that create lasting positive change."}
             </motion.p>
 
             <motion.div
               className="flex flex-col sm:flex-row gap-3 sm:gap-4"
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.9 }}
+              transition={{ delay: 0.12, duration: 0.12 }}
             >
               <Button
-                className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black px-6 sm:px-8 lg:px-10 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer"
+                className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black px-6 sm:px-8 lg:px-10 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-150 cursor-pointer"
                 {...scaleOnHover}
                 asChild
               >
@@ -571,7 +582,7 @@ const HeroSection = () => {
               </Button>
               <Button
                 variant="outline"
-                className="border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white px-6 sm:px-8 lg:px-10 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold transition-all duration-300 cursor-pointer bg-transparent"
+                className="border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white px-6 sm:px-8 lg:px-10 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold transition-all duration-150 cursor-pointer bg-transparent"
                 {...scaleOnHover}
                 asChild
               >
@@ -587,7 +598,7 @@ const HeroSection = () => {
                 className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-8 pt-6"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 1.1 }}
+                transition={{ delay: 0.15, duration: 0.15 }}
               >
                 <div className="text-center">
                   <div className="text-2xl sm:text-3xl font-bold text-gray-900">
@@ -612,32 +623,28 @@ const HeroSection = () => {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, x: 100 }}
+            initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
+            transition={{ duration: 0.15, ease: "easeOut" }} // Reduced from 1
             className="relative order-1 lg:order-2"
           >
             <motion.div
               className="absolute -inset-2 sm:-inset-4 bg-gradient-to-r from-green-400 to-yellow-400 rounded-xl sm:rounded-2xl opacity-20 blur-xl"
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY }}
+              animate={{ scale: [1, 1.02, 1] }} // Reduced scale change
+              transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }} // Reduced from 3
             />
             <Image
-              src={featuredCampaign?.image || "/images/placeholder-campaign.jpg"}
+              src={optimizeCloudinaryUrl(featuredCampaign?.image || "", 700, 600)}
               alt={featuredCampaign?.title || "Campaign Impact"}
               width={700}
               height={600}
               className="rounded-xl sm:rounded-2xl shadow-2xl relative z-10 w-full h-auto"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = '/images/placeholder-campaign.jpg';
-              }}
             />
             <motion.div
               className="absolute -bottom-3 -right-3 sm:-bottom-6 sm:-right-6 bg-white p-3 sm:p-6 rounded-lg sm:rounded-xl shadow-xl"
-              initial={{ opacity: 0, scale: 0 }}
+              initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 1.2, type: "spring" }}
+              transition={{ delay: 0.15, duration: 0.15, type: "spring", stiffness: 300 }} // Faster spring
             >
               <div className="flex items-center space-x-2 sm:space-x-3">
                 <div className="w-8 sm:w-12 h-8 sm:h-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -656,28 +663,28 @@ const HeroSection = () => {
         {featuredCampaign && !loading && (
           <motion.div
             className="max-w-7xl mx-auto mt-12 sm:mt-16 lg:mt-20"
-            initial={{ opacity: 0, y: 100 }}
+            initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.15 }} // Reduced from 0.8
             viewport={{ once: true }}
           >
             <div className="grid lg:grid-cols-2 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl">
               <motion.div
                 className="bg-gradient-to-br from-yellow-400 to-yellow-500 p-6 sm:p-8 lg:p-10 relative overflow-hidden"
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.3 }}
+                whileHover={{ scale: 1.01 }} // Reduced from 1.02
+                transition={{ duration: 0.15 }}
               >
                 <motion.div
                   className="absolute top-0 right-0 w-20 sm:w-24 lg:w-32 h-20 sm:h-24 lg:h-32 bg-white/10 rounded-full -mr-10 sm:-mr-12 lg:-mr-16 -mt-10 sm:-mt-12 lg:-mt-16"
                   animate={{ rotate: 360 }}
-                  transition={{ duration: 20, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                  transition={{ duration: 10, repeat: Number.POSITIVE_INFINITY, ease: "linear" }} // Reduced from 20
                 />
                 <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-black mb-4 sm:mb-6">Current Campaign Progress</h3>
                 <motion.div
                   className="text-4xl sm:text-5xl lg:text-6xl font-bold text-black mb-3 sm:mb-4"
-                  initial={{ scale: 0 }}
+                  initial={{ scale: 0.8 }}
                   whileInView={{ scale: 1 }}
-                  transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+                  transition={{ duration: 0.15, type: "spring", stiffness: 300 }} // Faster spring
                 >
                   {progressPercentage.toFixed(1)}%
                 </motion.div>
@@ -686,12 +693,12 @@ const HeroSection = () => {
                     className="bg-black h-3 sm:h-4 rounded-full relative"
                     initial={{ width: 0 }}
                     whileInView={{ width: `${Math.min(progressPercentage, 100)}%` }}
-                    transition={{ duration: 2, delay: 0.5 }}
+                    transition={{ duration: 1, delay: 0.1 }} // Reduced from 2 and 0.5
                   >
                     <motion.div
                       className="absolute right-0 top-0 w-5 sm:w-6 h-5 sm:h-6 bg-black rounded-full -mt-1 -mr-1"
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+                      animate={{ scale: [1, 1.1, 1] }} // Reduced scale change
+                      transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY }} // Reduced from 2
                     />
                   </motion.div>
                 </div>
@@ -702,7 +709,7 @@ const HeroSection = () => {
                       className="text-lg sm:text-xl lg:text-2xl font-bold text-black"
                       initial={{ opacity: 0 }}
                       whileInView={{ opacity: 1 }}
-                      transition={{ delay: 0.7 }}
+                      transition={{ delay: 0.15, duration: 0.1 }} // Reduced delay and duration
                     >
                       {formatCurrency(Number(featuredCampaign.total_raised) || 0)}
                     </motion.div>
@@ -713,7 +720,7 @@ const HeroSection = () => {
                       className="text-lg sm:text-xl lg:text-2xl font-bold text-black"
                       initial={{ opacity: 0 }}
                       whileInView={{ opacity: 1 }}
-                      transition={{ delay: 0.9 }}
+                      transition={{ delay: 0.2, duration: 0.1 }} // Reduced delay and duration
                     >
                       {formatCurrency(featuredCampaign.donation_goal)}
                     </motion.div>
@@ -722,13 +729,13 @@ const HeroSection = () => {
               </motion.div>
               <motion.div
                 className="bg-gradient-to-br from-green-600 to-green-700 p-6 sm:p-8 lg:p-10 text-white relative overflow-hidden"
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.3 }}
+                whileHover={{ scale: 1.01 }} // Reduced from 1.02
+                transition={{ duration: 0.15 }}
               >
                 <motion.div
                   className="absolute bottom-0 left-0 w-16 sm:w-20 lg:w-24 h-16 sm:h-20 lg:h-24 bg-white/10 rounded-full -ml-8 sm:-ml-10 lg:-ml-12 -mb-8 sm:-mb-10 lg:-mb-12"
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY }}
+                  animate={{ scale: [1, 1.05, 1] }} // Reduced scale change
+                  transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }} // Reduced from 3
                 />
                 <div className="inline-block bg-green-500 px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-semibold mb-4 sm:mb-6">
                   {featuredCampaign.category_name ? `🌟 ${featuredCampaign.category_name}` : '🎯 Featured Campaign'}
@@ -737,19 +744,19 @@ const HeroSection = () => {
                   {featuredCampaign.title}
                 </h3>
                 <p className="text-green-100 text-sm sm:text-base lg:text-lg leading-relaxed">
-                  {featuredCampaign.overview || featuredCampaign.about_campaign || featuredCampaign.details || 
-                   'Join us in making a positive impact. Your contribution directly supports this important cause and helps create meaningful change in the community.'}
+                  {featuredCampaign.overview || featuredCampaign.about_campaign || featuredCampaign.details ||
+                    'Join us in making a positive impact. Your contribution directly supports this important cause and helps create meaningful change in the community.'}
                 </p>
                 <motion.div
                   className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4"
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -10 }}
                   whileInView={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 }}
+                  transition={{ delay: 0.1, duration: 0.12 }} // Reduced delay and duration
                 >
                   <div className="flex items-center text-xs sm:text-sm">
                     <Clock className="w-3 sm:w-4 h-3 sm:h-4 mr-1 sm:mr-2" />
                     <span>
-                      {getDaysRemaining(featuredCampaign.end_date) > 0 
+                      {getDaysRemaining(featuredCampaign.end_date) > 0
                         ? `${getDaysRemaining(featuredCampaign.end_date)} days remaining`
                         : 'Campaign ended'
                       }
@@ -768,13 +775,13 @@ const HeroSection = () => {
                 </motion.div>
                 <motion.div
                   className="mt-6"
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7 }}
+                  transition={{ delay: 0.15, duration: 0.12 }} // Reduced delay and duration
                 >
                   <Link
                     href={`/causes/${featuredCampaign.id}`}
-                    className="inline-flex items-center text-white hover:text-green-200 font-semibold transition-colors duration-300"
+                    className="inline-flex items-center text-white hover:text-green-200 font-semibold transition-colors duration-150"
                   >
                     <span>Learn More About This Campaign</span>
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -789,9 +796,9 @@ const HeroSection = () => {
         {loading && (
           <motion.div
             className="max-w-7xl mx-auto mt-12 sm:mt-16 lg:mt-20"
-            initial={{ opacity: 0, y: 100 }}
+            initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.15 }} // Reduced from 0.8
           >
             <div className="grid lg:grid-cols-2 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl">
               <div className="bg-gradient-to-br from-gray-300 to-gray-400 p-6 sm:p-8 lg:p-10 animate-pulse">

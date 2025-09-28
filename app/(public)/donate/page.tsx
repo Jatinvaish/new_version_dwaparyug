@@ -316,7 +316,7 @@ const PaymentStep = memo(({
               size="sm"
               onClick={() => {
                 setSelectedTip(null)
-                setCustomTipValue("")
+                setCustomTipValue("0")
               }}
               className="w-full text-xs text-gray-500"
             >
@@ -695,7 +695,7 @@ const SuccessStep = memo(({
 }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-  
+
   const impactMessages = [
     "You just changed someone's life forever",
     "Your kindness will echo through generations",
@@ -766,13 +766,13 @@ const SuccessStep = memo(({
           <motion.div
             key={particle.id}
             initial={{ y: -20, x: `${particle.x}vw`, opacity: 1, rotate: 0 }}
-            animate={{ 
-              y: '110vh', 
+            animate={{
+              y: '110vh',
               rotate: 360,
               opacity: [1, 1, 0]
             }}
-            transition={{ 
-              duration: particle.duration, 
+            transition={{
+              duration: particle.duration,
               delay: particle.delay,
               ease: "easeOut"
             }}
@@ -790,7 +790,7 @@ const SuccessStep = memo(({
           className="max-w-2xl w-full"
         >
           {/* Main Success Icon with Pulse Effect */}
-          <motion.div 
+          <motion.div
             className="text-center mb-8 relative"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -798,16 +798,16 @@ const SuccessStep = memo(({
           >
             <div className="relative inline-block">
               <motion.div
-                animate={{ 
+                animate={{
                   scale: [1, 1.2, 1],
-                  
+
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
                 className="w-32 h-32 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto  "
               >
                 <CheckCircle className="w-16 h-16 text-white" />
               </motion.div>
-              
+
               {/* Floating Icons Around Main Icon */}
               {[Heart, Star, Gift, Crown].map((Icon, index) => (
                 <motion.div
@@ -846,7 +846,7 @@ const SuccessStep = memo(({
             <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent mb-4">
               You're a Hero!
             </h1>
-            
+
             <motion.div
               className="text-xl md:text-2xl text-gray-700 font-medium min-h-[2.5rem] flex items-center justify-center"
               key={currentMessageIndex}
@@ -898,7 +898,7 @@ const SuccessStep = memo(({
               <Trophy className="w-8 h-8 text-yellow-500 mr-3" />
               <h3 className="text-2xl font-bold text-gray-800">Your Incredible Impact</h3>
             </div>
-            
+
             <div className="space-y-4">
               <div className="flex justify-between items-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl">
                 <span className="text-lg text-gray-700 flex items-center">
@@ -907,7 +907,7 @@ const SuccessStep = memo(({
                 </span>
                 <span className="text-2xl font-bold text-green-600">₹{totalDonationAmount.toLocaleString()}</span>
               </div>
-              
+
               {tipAmount > 0 && (
                 <div className="flex justify-between items-center p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl">
                   <span className="text-lg text-gray-700 flex items-center">
@@ -917,7 +917,7 @@ const SuccessStep = memo(({
                   <span className="text-xl font-bold text-purple-600">₹{tipAmount.toLocaleString()}</span>
                 </div>
               )}
-              
+
               <div className="border-t-2 border-dashed border-gray-200 pt-4">
                 <div className="flex justify-between items-center p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl">
                   <span className="text-xl font-bold text-gray-800 flex items-center">
@@ -941,9 +941,9 @@ const SuccessStep = memo(({
           >
             <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl p-6 text-white  ">
               <p className="text-lg leading-relaxed">
-                <strong>You didn't just donate money today.</strong><br/>
-                You gave hope to someone who needed it most. You became part of their story of survival, growth, and dreams coming true. 
-                <br/><br/>
+                <strong>You didn't just donate money today.</strong><br />
+                You gave hope to someone who needed it most. You became part of their story of survival, growth, and dreams coming true.
+                <br /><br />
                 <span className="text-yellow-200 font-semibold">Somewhere, someone is smiling because of you.</span>
               </p>
             </div>
@@ -963,7 +963,7 @@ const SuccessStep = memo(({
               <Heart className="w-6 h-6 mr-2" />
               Spread More Love
             </motion.button>
-            
+
             <motion.button
               onClick={() => router?.push('/')}
               className="bg-white text-gray-700 px-8 py-4 rounded-2xl font-semibold text-lg transition-all duration-300 border-2 border-gray-200"
@@ -1067,7 +1067,7 @@ export default function MultiStepDonationForm() {
   // Calculate tip amount
   const calculateTipAmount = useCallback(() => {
     let tipValue = 0
-    if (selectedTip === 'custom' && customTipValue) {
+    if (selectedTip === 'custom' && customTipValue) { 
       const value = parseFloat(customTipValue)
       if (!isNaN(value) && value > 0) {
         tipValue = Math.min(value, totalDonationAmount)
@@ -1077,8 +1077,8 @@ export default function MultiStepDonationForm() {
     }
     return Math.floor(tipValue)
   }, [selectedTip, customTipValue, totalDonationAmount])
-
   const tipAmount = useMemo(() => calculateTipAmount(), [calculateTipAmount])
+  console.log("🚀 ~ MultiStepDonationForm ~ tipAmount:", tipAmount)
   const grandTotal = useMemo(() => totalDonationAmount + tipAmount, [totalDonationAmount, tipAmount])
   const itemsByCampaign = useMemo(() => getItemsByCampaign(), [getItemsByCampaign])
 
@@ -1181,10 +1181,10 @@ export default function MultiStepDonationForm() {
     if (!validateStep(3)) return
 
     // Check if Razorpay is loaded
-    if (!isRazorpayLoaded || typeof (window as any).Razorpay === 'undefined') {
-      setErrors({ payment: 'Payment system is loading. Please wait a moment and try again.' })
-      return
-    }
+    // if (!isRazorpayLoaded || typeof (window as any).Razorpay === 'undefined') {
+    //   setErrors({ payment: 'Payment system is loading. Please wait a moment and try again.' })
+    //   return
+    // }
 
     setIsSubmitting(true)
     setErrors({}) // Clear previous errors

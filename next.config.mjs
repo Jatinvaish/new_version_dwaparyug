@@ -7,7 +7,11 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,
+    domains: [
+      "res.cloudinary.com",  // for Cloudinary
+      "img.youtube.com",     // for YouTube thumbnails
+    ],
+    formats: ["image/avif", "image/webp"],
   },
   webpack: (config, { isServer }) => {
     if (isServer) {
@@ -18,10 +22,9 @@ const nextConfig = {
       }
     }
 
-    // Handle PDFKit
     config.resolve.alias = {
       ...config.resolve.alias,
-      'pdfkit': 'pdfkit/js/pdfkit.standalone.js',
+      "pdfkit": "pdfkit/js/pdfkit.standalone.js",
     }
 
     return config

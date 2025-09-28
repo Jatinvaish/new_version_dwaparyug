@@ -54,7 +54,6 @@ const adminLinks: AdminLink[] = [
     subLinks: [
       { name: "All Batches", href: "/admin/batches", icon: ListChecks },
       { name: "Add Batches", href: "/admin/batches/add", icon: PlusCircle },
-      { name: "Categories", href: "/admin/categories", icon: Boxes },
     ],
   },
   { name: "Users & Roles", href: "/admin/users", icon: Users },

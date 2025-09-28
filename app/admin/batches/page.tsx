@@ -1,412 +1,569 @@
+// File: app/admin/batches/page.tsx
 "use client"
 
-import { useState } from "react"
+import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Edit, Trash2, Search, Package } from "lucide-react"
-import { format } from "date-fns"
+import { Card, CardContent } from "@/components/ui/card"
+import { Eye, Edit, Plus, Printer } from "lucide-react"
+import { PaginationInfo, Column, DataTable } from "@/components/common/data-table"
+import { toast } from "@/components/ui/use-toast"
+import { BatchProgressDialog } from "./batch-progress-dialog"
+import { StickerPrintDialog } from "./sticker-print-dialog"
+import { CreateBatchDialog } from "./create-batch-dialog"
 
-interface Product {
-  id: number
-  name: string
-  price: number
-  stock: number
-  units: string
-  image: string
+// Helper functions
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
 }
 
-interface Campaign {
-  id: number
-  title: string
+const formatCurrency = (amount: number) => {
+  return `₹${amount?.toLocaleString() || '0'}`
 }
 
+// Types
 interface Batch {
   id: number
-  name: string
-  campaignId: number
-  assignedProducts: { productId: number; quantity: number }[]
-  status: "Pending" | "In Progress" | "Completed"
-  distributionTeam: string
-  createdAt: Date
+  campaign_id: number
+  campaign_title: string
+  campaign_image: string
+  batch_name: string
+  batch_description?: string
+  planned_distribution_date: string
+  actual_distribution_date?: string
+  status: 'planning' | 'prepared' | 'in_progress' | 'completed' | 'cancelled'
+  total_value: number
+  total_items: number
+  planned_beneficiaries: number
+  actual_beneficiaries: number
+  allocated_items: number
+  prepared_items: number
+  distributed_items: number
+  progress_percentage: number
+  created_at: string
+  updated_at: string
 }
 
-const allProducts: Product[] = [
-  {
-    id: 1,
-    name: "Diwali Sweet Box",
-    price: 500,
-    stock: 100,
-    units: "boxes",
-    image: "/placeholder.svg?height=50&width=50&text=Sweet+Box",
-  },
-  {
-    id: 2,
-    name: "Winter Blanket",
-    price: 800,
-    stock: 200,
-    units: "units",
-    image: "/placeholder.svg?height=50&width=50&text=Blanket",
-  },
-  {
-    id: 3,
-    name: "School Kit",
-    price: 1200,
-    stock: 50,
-    units: "kits",
-    image: "/placeholder.svg?height=50&width=50&text=School+Kit",
-  },
-  {
-    id: 4,
-    name: "Medical Aid Pack",
-    price: 700,
-    stock: 150,
-    units: "packs",
-    image: "/placeholder.svg?height=50&width=50&text=Medical+Aid",
-  },
-  {
-    id: 5,
-    name: "Hygiene Kit",
-    price: 300,
-    stock: 300,
-    units: "kits",
-    image: "/placeholder.svg?height=50&width=50&text=Hygiene+Kit",
-  },
-]
-
-const allCampaigns: Campaign[] = [
-  { id: 1, title: "Winter Relief Drive 2024" },
-  { id: 2, title: "Educate a Child Program" },
-  { id: 3, title: "Diwali Joy Distribution 2024" },
-  { id: 4, title: "Rural Healthcare Access" },
-  { id: 5, title: "Women Empowerment Through Skill Training" },
-]
-
-const initialBatches: Batch[] = [
-  {
-    id: 1,
-    name: "Winter Relief Batch 001",
-    campaignId: 1,
-    assignedProducts: [
-      { productId: 2, quantity: 50 },
-      { productId: 1, quantity: 20 },
-    ],
-    status: "In Progress",
-    distributionTeam: "Team Alpha",
-    createdAt: new Date("2024-01-10"),
-  },
-  {
-    id: 2,
-    name: "School Kit Batch 001",
-    campaignId: 2,
-    assignedProducts: [{ productId: 3, quantity: 30 }],
-    status: "Pending",
-    distributionTeam: "Team Beta",
-    createdAt: new Date("2024-01-15"),
-  },
-  {
-    id: 3,
-    name: "Diwali Sweets Batch 001",
-    campaignId: 3,
-    assignedProducts: [{ productId: 1, quantity: 80 }],
-    status: "Completed",
-    distributionTeam: "Team Gamma",
-    createdAt: new Date("2023-11-01"),
-  },
-]
+interface BatchStatistics {
+  totalBatches: number
+  planningBatches: number
+  preparedBatches: number
+  inProgressBatches: number
+  completedBatches: number
+  totalValue: number
+  totalItems: number
+  totalBeneficiariesServed: number
+}
 
 export default function BatchesPage() {
-  const [batches, setBatches] = useState<Batch[]>(initialBatches)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [currentBatch, setCurrentBatch] = useState<Batch | null>(null)
+  const [batches, setBatches] = useState<Batch[]>([])
+  const [statistics, setStatistics] = useState<BatchStatistics | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Dialog states
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [progressDialogOpen, setProgressDialogOpen] = useState(false)
+  const [printDialogOpen, setPrintDialogOpen] = useState(false)
+  const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null)
+
+  // API-driven states
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterStatus, setFilterStatus] = useState("All")
-  const [filterCampaign, setFilterCampaign] = useState("All")
-
-  const [formName, setFormName] = useState("")
-  const [formCampaignId, setFormCampaignId] = useState<number | string>("")
-  const [formAssignedProducts, setFormAssignedProducts] = useState<{ productId: number; quantity: number }[]>([])
-  const [formStatus, setFormStatus] = useState<Batch["status"]>("Pending")
-  const [formDistributionTeam, setFormDistributionTeam] = useState("")
-
-  const resetForm = () => {
-    setCurrentBatch(null)
-    setFormName("")
-    setFormCampaignId("")
-    setFormAssignedProducts([])
-    setFormStatus("Pending")
-    setFormDistributionTeam("")
-  }
-
-  const handleEdit = (batch: Batch) => {
-    setCurrentBatch(batch)
-    setFormName(batch.name)
-    setFormCampaignId(batch.campaignId)
-    setFormAssignedProducts(batch.assignedProducts)
-    setFormStatus(batch.status)
-    setFormDistributionTeam(batch.distributionTeam)
-    setIsDialogOpen(true)
-  }
-
-  const handleDelete = (id: number) => {
-    if (window.confirm("Are you sure you want to delete this batch?")) {
-      setBatches(batches.filter((b) => b.id !== id))
-    }
-  }
-
-  const handleSave = () => {
-    if (!formName || !formCampaignId || formAssignedProducts.length === 0 || !formDistributionTeam) {
-      alert("Please fill in all required fields and assign at least one product.")
-      return
-    }
-
-    const newBatch: Batch = {
-      id: currentBatch ? currentBatch.id : batches.length + 1,
-      name: formName,
-      campaignId: Number(formCampaignId),
-      assignedProducts: formAssignedProducts,
-      status: formStatus,
-      distributionTeam: formDistributionTeam,
-      createdAt: currentBatch ? currentBatch.createdAt : new Date(),
-    }
-
-    if (currentBatch) {
-      setBatches(batches.map((b) => (b.id === newBatch.id ? newBatch : b)))
-    } else {
-      setBatches([...batches, newBatch])
-    }
-    setIsDialogOpen(false)
-    resetForm()
-  }
-
-  const handleProductQuantityChange = (productId: number, quantity: number) => {
-    setFormAssignedProducts((prev) => {
-      const existingIndex = prev.findIndex((p) => p.productId === productId)
-      if (existingIndex > -1) {
-        const updated = [...prev]
-        if (quantity > 0) {
-          updated[existingIndex].quantity = quantity
-        } else {
-          updated.splice(existingIndex, 1) // Remove if quantity is 0
-        }
-        return updated
-      } else if (quantity > 0) {
-        return [...prev, { productId, quantity }]
-      }
-      return prev
-    })
-  }
-
-  const filteredBatches = batches.filter((batch) => {
-    const matchesSearch =
-      batch.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      batch.distributionTeam.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      allCampaigns
-        .find((c) => c.id === batch.campaignId)
-        ?.title.toLowerCase()
-        .includes(searchTerm.toLowerCase())
-    const matchesStatus = filterStatus === "All" || batch.status === filterStatus
-    const matchesCampaign = filterCampaign === "All" || batch.campaignId === Number(filterCampaign)
-    return matchesSearch && matchesStatus && matchesCampaign
+  const [filters, setFilters] = useState<Record<string, string>>({})
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
   })
+  const [sortField, setSortField] = useState<string>("created_at")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "Completed":
+  // Fetch batches
+  const fetchBatches = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const params = new URLSearchParams({
+        page: pagination.page.toString(),
+        pageSize: pagination.pageSize.toString(),
+      })
+
+      if (searchTerm) params.append('search', searchTerm)
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== 'all') {
+          params.append(key, value)
+        }
+      })
+
+      if (sortField) {
+        params.append('sortBy', sortField)
+        params.append('sortOrder', sortDirection)
+      }
+
+      const response = await fetch(`/api/batches?${params}`)
+      if (!response.ok) throw new Error('Failed to fetch batches')
+
+      const data = await response.json()
+      setBatches(data.batches || [])
+      setPagination(data.pagination || {
+        page: 1,
+        pageSize: 10,
+        total: 0,
+        totalPages: 0,
+        hasNext: false,
+        hasPrev: false
+      })
+      setStatistics(data.statistics || null)
+    } catch (error) {
+      console.error('Error fetching batches:', error)
+      setError('Failed to load batches')
+      toast({
+        title: "Error",
+        description: "Failed to fetch batches. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [pagination.page, pagination.pageSize, searchTerm, filters, sortField, sortDirection])
+
+  useEffect(() => {
+    fetchBatches()
+  }, [pagination.page, pagination.pageSize, searchTerm, filters, sortField, sortDirection])
+
+  // Badge variant helpers
+  const getBatchStatusBadgeVariant = useCallback((status: string): "default" | "secondary" | "outline" | "destructive" => {
+    switch (status.toLowerCase()) {
+      case "completed":
         return "default"
-      case "In Progress":
+      case "in_progress":
         return "secondary"
-      case "Pending":
+      case "prepared":
         return "outline"
+      case "planning":
+        return "outline"
+      case "cancelled":
+        return "destructive"
       default:
         return "outline"
     }
-  }
+  }, [])
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Batches</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="mr-2 h-4 w-4" /> Create Batch
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{currentBatch ? "Edit Batch" : "Create New Batch"}</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Batch Name</Label>
-                <Input id="name" value={formName} onChange={(e) => setFormName(e.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="campaign">Link to Campaign</Label>
-                <Select value={String(formCampaignId)} onValueChange={setFormCampaignId} required>
-                  <SelectTrigger id="campaign">
-                    <SelectValue placeholder="Select campaign" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allCampaigns.map((campaign) => (
-                      <SelectItem key={campaign.id} value={String(campaign.id)}>
-                        {campaign.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="distributionTeam">Distribution Team</Label>
-                <Input
-                  id="distributionTeam"
-                  value={formDistributionTeam}
-                  onChange={(e) => setFormDistributionTeam(e.target.value)}
-                  required
+  const getProgressColor = useCallback((percentage: number) => {
+    if (percentage >= 100) return "text-green-600"
+    if (percentage >= 50) return "text-blue-600"
+    if (percentage >= 25) return "text-orange-600"
+    return "text-gray-600"
+  }, [])
+
+  // Event handlers
+  const handleSearchChange = useCallback((search: string) => {
+    setSearchTerm(search)
+    setPagination(prev => ({ ...prev, page: 1 }))
+  }, [])
+
+  const handleFiltersChange = useCallback((newFilters: Record<string, string>) => {
+    setFilters(newFilters)
+    setPagination(prev => ({ ...prev, page: 1 }))
+  }, [])
+
+  const handleSort = useCallback((column: string, order: 'asc' | 'desc') => {
+    setSortField(column)
+    setSortDirection(order)
+  }, [])
+
+  const handlePageChange = useCallback((page: number) => {
+    setPagination(prev => ({ ...prev, page }))
+  }, [])
+
+  const handlePageSizeChange = useCallback((pageSize: number) => {
+    setPagination(prev => ({ ...prev, pageSize: pageSize, page: 1 }))
+  }, [])
+
+  const handleViewProgress = useCallback((batch: Batch) => {
+    setSelectedBatch(batch)
+    setProgressDialogOpen(true)
+  }, [])
+
+  const handlePrintStickers = useCallback((batch: Batch) => {
+    setSelectedBatch(batch)
+    setPrintDialogOpen(true)
+  }, [])
+
+  const handleCreateBatch = useCallback(() => {
+    setCreateDialogOpen(true)
+  }, [])
+
+  const handleBatchCreated = useCallback((newBatch: any) => {
+    toast({
+      title: "Success",
+      description: `Batch "${newBatch.batch_name}" created with ${newBatch.assignment_summary.items_assigned} items assigned`,
+    })
+    setCreateDialogOpen(false)
+    fetchBatches()
+  }, [fetchBatches])
+
+  const handleProgressUpdated = useCallback(() => {
+    fetchBatches()
+  }, [fetchBatches])
+
+  // Check if batch can have stickers printed
+  const canPrintStickers = useCallback((batch: Batch) => {
+    return batch.status === 'prepared' || batch.status === 'in_progress' || batch.status === 'completed'
+  }, [])
+
+  // Table columns
+  const columns: Column<Batch>[] = useMemo(() => [
+    {
+      key: 'id',
+      header: 'Batch Id',
+      sortable: true,
+      searchable: true,
+      width: '200px',
+      render: (value, row) => (
+        <div className="max-w-[180px]">
+          <div className="font-semibold truncate cursor-pointer hover:text-blue-600" 
+               onClick={() => handleViewProgress(row)}>
+            {value}
+          </div>
+          <div className="text-sm text-muted-foreground truncate">
+            {row.batch_name}
+          </div>
+        </div>
+      )
+    },
+     {
+      key: 'batch_name',
+      header: 'Batch Name',
+      sortable: true,
+      searchable: true,
+      width: '200px',
+      render: (value, row) => (
+        <div className="max-w-[180px]">
+          <div className="font-semibold truncate cursor-pointer hover:text-blue-600" 
+               onClick={() => handleViewProgress(row)}>
+            {value}
+          </div>
+          <div className="text-sm text-muted-foreground truncate">
+            {row.campaign_title}
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      sortable: true,
+      filterable: true,
+      width: '120px',
+      filterOptions: [
+        { label: 'Planning', value: 'planning' },
+        { label: 'Prepared', value: 'prepared' },
+        { label: 'In Progress', value: 'in_progress' },
+        { label: 'Completed', value: 'completed' },
+        { label: 'Cancelled', value: 'cancelled' }
+      ],
+      render: (value) => (
+        <Badge variant={getBatchStatusBadgeVariant(value)}>
+          {value.charAt(0).toUpperCase() + value.slice(1).replace('_', ' ')}
+        </Badge>
+      )
+    },
+    {
+      key: 'total_items',
+      header: 'Items',
+      sortable: true,
+      width: '100px',
+      render: (value, row) => (
+        <div className="text-center">
+          <div className="font-semibold">{value}</div>
+          <div className="text-xs text-muted-foreground">
+            {row.distributed_items}/{value} done
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'progress_percentage',
+      header: 'Progress',
+      sortable: true,
+      width: '120px',
+      render: (value) => (
+        <div className="space-y-1">
+          <div className={`font-semibold ${getProgressColor(value)}`}>
+            {value}%
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${Math.min(value, 100)}%` }}
+            />
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'total_value',
+      header: 'Value',
+      sortable: true,
+      width: '120px',
+      render: (value) => (
+        <div className="font-semibold text-green-600">
+          {formatCurrency(value)}
+        </div>
+      )
+    },
+    {
+      key: 'planned_distribution_date',
+      header: 'Planned Date',
+      sortable: true,
+      width: '120px',
+      render: (value) => formatDate(value)
+    },
+    {
+      key: 'created_at',
+      header: 'Created',
+      sortable: true,
+      width: '120px',
+      render: (value) => formatDate(value)
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      sortable: false,
+      width: '150px',
+      render: (_, row) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handlePrintStickers(row)}
+            disabled={!canPrintStickers(row)}
+            title={canPrintStickers(row) ? "Print Stickers" : "Batch must be prepared to print stickers"}
+          >
+            <Printer className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleViewProgress(row)}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    }
+  ], [getBatchStatusBadgeVariant, getProgressColor, handleViewProgress, handlePrintStickers, canPrintStickers])
+
+  // Mobile card component
+  const renderMobileCard = useCallback((batch: Batch, index: number) => (
+    <Card key={batch.id} className="mb-4">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-base truncate cursor-pointer hover:text-blue-600"
+                onClick={() => handleViewProgress(batch)}>
+              {batch.batch_name}
+            </h3>
+            <p className="text-sm text-muted-foreground truncate">
+              {batch.campaign_title}
+            </p>
+          </div>
+          <div className="text-right shrink-0 ml-2">
+            <Badge variant={getBatchStatusBadgeVariant(batch.status)} className="mb-2">
+              {batch.status.charAt(0).toUpperCase() + batch.status.slice(1).replace('_', ' ')}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+          <div>
+            <span className="text-muted-foreground">Items:</span>
+            <p className="font-medium">{batch.total_items}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Value:</span>
+            <p className="font-medium text-green-600">{formatCurrency(batch.total_value)}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Progress:</span>
+            <div className="flex items-center space-x-2">
+              <p className="font-medium">{batch.progress_percentage}%</p>
+              <div className="flex-1 bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full"
+                  style={{ width: `${Math.min(batch.progress_percentage, 100)}%` }}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select value={formStatus} onValueChange={(value) => setFormStatus(value as Batch["status"])} required>
-                  <SelectTrigger id="status">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Assign Products & Quantities</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {allProducts.map((product) => (
-                    <Card key={product.id} className="p-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Package className="h-5 w-5 text-muted-foreground" />
-                        <span>{product.name}</span>
-                      </div>
-                      <Input
-                        type="number"
-                        min="0"
-                        placeholder="Qty"
-                        className="w-24"
-                        value={formAssignedProducts.find((p) => p.productId === product.id)?.quantity || ""}
-                        onChange={(e) => handleProductQuantityChange(product.id, Number.parseInt(e.target.value))}
-                      />
-                    </Card>
-                  ))}
-                </div>
-              </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave}>Save Batch</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search batches by name or team..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={filterCampaign} onValueChange={setFilterCampaign}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Filter by Campaign" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Campaigns</SelectItem>
-                {allCampaigns.map((campaign) => (
-                  <SelectItem key={campaign.id} value={String(campaign.id)}>
-                    {campaign.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Filter by Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Statuses</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-                <SelectItem value="In Progress">In Progress</SelectItem>
-                <SelectItem value="Completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Batch Name</TableHead>
-                <TableHead>Campaign</TableHead>
-                <TableHead>Products</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Team</TableHead>
-                <TableHead>Created At</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredBatches.map((batch) => (
-                <TableRow key={batch.id}>
-                  <TableCell className="font-medium">{batch.name}</TableCell>
-                  <TableCell>{allCampaigns.find((c) => c.id === batch.campaignId)?.title}</TableCell>
-                  <TableCell>
-                    {batch.assignedProducts.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {batch.assignedProducts.map((ap) => {
-                          const product = allProducts.find((p) => p.id === ap.productId)
-                          return product ? (
-                            <Badge key={product.id} variant="secondary" className="text-xs">
-                              {product.name} (x{ap.quantity})
-                            </Badge>
-                          ) : null
-                        })}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">No products</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadgeVariant(batch.status)}>{batch.status}</Badge>
-                  </TableCell>
-                  <TableCell>{batch.distributionTeam}</TableCell>
-                  <TableCell>{format(batch.createdAt, "PPP")}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(batch)}>
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">Edit</span>
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(batch.id)}>
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                      <span className="sr-only">Delete</span>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+          <div>
+            <span className="text-muted-foreground">Planned:</span>
+            <p className="font-medium">{formatDate(batch.planned_distribution_date)}</p>
+          </div>
+        </div>
+
+        {batch.batch_description && (
+          <div className="mb-4 p-3 bg-muted rounded-md">
+            <p className="text-sm">{batch.batch_description}</p>
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePrintStickers(batch)}
+            disabled={!canPrintStickers(batch)}
+            className="flex-1"
+          >
+            <Printer className="h-4 w-4 mr-2" />
+            Print Stickers
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleViewProgress(batch)}
+            className="flex-1"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            View Progress
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  ), [getBatchStatusBadgeVariant, handleViewProgress, handlePrintStickers, canPrintStickers])
+
+  // Statistics summary
+  const StatisticsSummary = useCallback(() => {
+    if (!statistics) return null
+
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-blue-600">
+              {statistics.totalBatches}
+            </div>
+            <div className="text-sm text-muted-foreground">Total Batches</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-green-600">
+              {statistics.completedBatches}
+            </div>
+            <div className="text-sm text-muted-foreground">Completed</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-orange-600">
+              {statistics.inProgressBatches}
+            </div>
+            <div className="text-sm text-muted-foreground">In Progress</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-purple-600">
+              {formatCurrency(statistics.totalValue)}
+            </div>
+            <div className="text-sm text-muted-foreground">Total Value</div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }, [statistics])
+
+  return (
+    <div className="min-h-screen">
+      <div className="mx-auto space-y-6">
+        <StatisticsSummary />
+
+        <DataTable<Batch>
+          // Data
+          data={batches}
+          columns={columns}
+          loading={loading}
+          error={error}
+          pagination={pagination}
+
+          // Header
+          title="Distribution Batches"
+          description="Manage and track batch distribution progress with sticker printing"
+
+          // Add functionality
+          onAdd={handleCreateBatch}
+          addButtonLabel="Create Batch"
+          showAddButton={true}
+
+          // Search (API-driven)
+          showSearch={true}
+          searchPlaceholder="Search by batch name or campaign..."
+          searchTerm={searchTerm}
+          onSearchChange={handleSearchChange}
+
+          // Filters (API-driven)
+          showFilters={true}
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+
+          // Sorting (API-driven)
+          sortBy={sortField}
+          sortOrder={sortDirection}
+          onSort={handleSort}
+
+          // Pagination (API-driven)
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+
+          // Actions
+          onEdit={handleViewProgress}
+          emptyMessage="No batches found"
+
+          // Configuration
+          striped={true}
+          stickyHeader={true}
+
+          // Mobile
+          showMobileCards={true}
+          mobileCardComponent={renderMobileCard}
+
+          // Column visibility
+          showColumnVisibility={true}
+        />
+
+        {/* Dialogs */}
+        <CreateBatchDialog
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          onSuccess={handleBatchCreated}
+        />
+
+        <BatchProgressDialog
+          open={progressDialogOpen}
+          onOpenChange={setProgressDialogOpen}
+          batch={selectedBatch}
+          onProgressUpdated={handleProgressUpdated}
+        />
+
+        <StickerPrintDialog
+          open={printDialogOpen}
+          onOpenChange={setPrintDialogOpen}
+          batch={selectedBatch}
+        />
+      </div>
     </div>
   )
 }
