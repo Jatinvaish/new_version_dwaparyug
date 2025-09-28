@@ -335,12 +335,13 @@ export async function POST(request: NextRequest) {
 
             const insertPersonalizationQuery = `
               INSERT INTO personalization_options (
-                donation_item_id, donor_name, donor_country, custom_image, 
+                donation_id, donation_item_id, donor_name, donor_country, custom_image, 
                 is_image_available, custom_message, donation_purpose, special_instructions
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             `
 
             const personalizationParams = [
+              donationId,
               donationItemId,
               formData.donorName || null,
               formData.donorCountry || null,
