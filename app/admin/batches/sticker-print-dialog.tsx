@@ -399,13 +399,13 @@ export function StickerPrintDialog({ open, onOpenChange, batch }: StickerPrintDi
       .sticker-number { 
         background: #000; 
         color: white; 
-        width: ${format === '12' ? '18px' : format === '8' ? '22px' : '28px'}; 
-        height: ${format === '12' ? '18px' : format === '8' ? '22px' : '28px'}; 
+        width: ${format === '12' ? '22px' : format === '8' ? '26px' : '32px'}; 
+        height: ${format === '12' ? '22px' : format === '8' ? '26px' : '32px'}; 
         border-radius: 2px; 
         display: flex; 
         align-items: center; 
         justify-content: center; 
-        font-size: ${format === '12' ? '10px' : format === '8' ? '12px' : '16px'}; 
+        font-size: ${format === '12' ? '12px' : format === '8' ? '14px' : '18px'}; 
         font-weight: bold;
         position: absolute;
         left: 0;
@@ -420,8 +420,8 @@ export function StickerPrintDialog({ open, onOpenChange, batch }: StickerPrintDi
       }
       
       .foundation-logo {
-        max-width: ${format === '12' ? '40px' : format === '8' ? '50px' : '60px'};
-        max-height: ${format === '12' ? '40px' : format === '8' ? '50px' : '60px'};
+        max-width: ${format === '12' ? '45px' : format === '8' ? '55px' : '65px'};
+        max-height: ${format === '12' ? '45px' : format === '8' ? '55px' : '65px'};
         width: auto;
         height: auto;
         object-fit: contain;
@@ -429,7 +429,7 @@ export function StickerPrintDialog({ open, onOpenChange, batch }: StickerPrintDi
       }
       
       .foundation-logo-fallback {
-        font-size: ${format === '12' ? '32px' : format === '8' ? '40px' : '48px'};
+        font-size: ${format === '12' ? '36px' : format === '8' ? '44px' : '52px'};
         color: #f59e0b;
         display: block;
         text-align: center;
@@ -448,16 +448,17 @@ export function StickerPrintDialog({ open, onOpenChange, batch }: StickerPrintDi
       }
       
       .custom-image {
-        max-width: ${format === '12' ? '70px' : format === '8' ? '70px' : '90px'};
-        max-height: ${format === '12' ? '70px' : format === '8' ? '70px' : '90px'};
+        max-width: ${format === '12' ? '75px' : format === '8' ? '75px' : '95px'};
+        max-height: ${format === '12' ? '75px' : format === '8' ? '75px' : '95px'};
         border-radius: 3px;
         object-fit: cover;
         margin-bottom: ${format === '12' ? '3px' : format === '8' ? '4px' : '6px'};
       }
       
       .message-below-image {
-        font-size: ${format === '12' ? '8px' : format === '8' ? '10px' : '12px'};
-        color: #555;
+        font-size: ${format === '12' ? '10px' : format === '8' ? '12px' : '14px'};
+        color: #333;
+        font-weight: 600;
         font-style: italic;
         text-align: center;
         line-height: 1.2;
@@ -468,8 +469,9 @@ export function StickerPrintDialog({ open, onOpenChange, batch }: StickerPrintDi
       }
       
       .message-content {
-        font-size: ${format === '12' ? '10px' : format === '8' ? '12px' : '16px'};
-        color: #333;
+        font-size: ${format === '12' ? '12px' : format === '8' ? '14px' : '18px'};
+        color: #111;
+        font-weight: bold;
         font-style: italic;
         text-align: center;
         line-height: 1.3;
@@ -482,8 +484,8 @@ export function StickerPrintDialog({ open, onOpenChange, batch }: StickerPrintDi
       }
       
       .donor-name { 
-        font-size: ${format === '12' ? '14px' : format === '8' ? '16px' : '20px'}; 
-        font-weight: bold; 
+        font-size: ${format === '12' ? '16px' : format === '8' ? '18px' : '22px'}; 
+        font-weight: 900; 
         color: #000; 
         margin: ${format === '12' ? '6px 0' : format === '8' ? '8px 0' : '10px 0'};
         line-height: 1.2;
@@ -503,23 +505,25 @@ export function StickerPrintDialog({ open, onOpenChange, batch }: StickerPrintDi
       }
       
       .foundation-name { 
-        font-size: ${format === '12' ? '9px' : format === '8' ? '11px' : '14px'}; 
-        font-weight: 600; 
-        color: #333; 
+        font-size: ${format === '12' ? '11px' : format === '8' ? '13px' : '16px'}; 
+        font-weight: 700; 
+        color: #111; 
         margin-bottom: ${format === '12' ? '2px' : format === '8' ? '3px' : '4px'}; 
         line-height: 1.2;
       }
       
       .website { 
-        font-size: ${format === '12' ? '8px' : format === '8' ? '10px' : '12px'}; 
-        color: #555; 
+        font-size: ${format === '12' ? '10px' : format === '8' ? '12px' : '14px'}; 
+        color: #333; 
+        font-weight: 600;
         margin-bottom: ${format === '12' ? '2px' : format === '8' ? '3px' : '4px'}; 
         line-height: 1.2;
       }
       
       .transparency { 
-        font-size: ${format === '12' ? '7px' : format === '8' ? '9px' : '11px'}; 
-        color: #555; 
+        font-size: ${format === '12' ? '9px' : format === '8' ? '11px' : '13px'}; 
+        color: #333; 
+        font-weight: 600;
         font-style: italic; 
         line-height: 1.2;
       }
