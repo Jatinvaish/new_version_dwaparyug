@@ -8,6 +8,7 @@ import { CountUpAnimation } from './counter-up';
 import { Button } from '@/components/ui/button';
 import Image from "next/image"
 import Link from "next/link"
+import { renderMarkdownContent } from '@/lib/helper-function';
 
 // Types
 interface Campaign {
@@ -338,6 +339,7 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
             </div>
           )}
         </motion.div>
+
       </AnimatePresence>
 
       {slides.length > 1 && (
@@ -559,38 +561,50 @@ const HeroSection = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.12 }}
             >
-              {featuredCampaign?.about_campaign || featuredCampaign?.overview ||
-                "Dwaparyug Foundation is India's most trusted humanitarian nonprofit organization. We serve underprivileged communities across multiple locations, providing essential services and programs that create lasting positive change."}
+              {/* 
+              <div className="prose prose-sm max-w-none sm:prose-base lg:prose-lg">
+                {featuredCampaign?.about_campaign && featuredCampaign?.about_campaign ? (renderMarkdownContent(featuredCampaign?.about_campaign)) : null}
+              </div> */}
             </motion.p>
 
             <motion.div
-              className="flex flex-col sm:flex-row gap-3 sm:gap-4"
+              className="space-y-4"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.12, duration: 0.12 }}
             >
-              <Button
-                className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black px-6 sm:px-8 lg:px-10 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-150 cursor-pointer"
-                {...scaleOnHover}
-                asChild
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <Button
+                  className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black px-6 sm:px-8 lg:px-10 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-150 cursor-pointer"
+                  {...scaleOnHover}
+                  asChild
+                >
+                  <Link href="/causes">
+                    <Gift className="w-4 sm:w-5 h-4 sm:h-5 mr-2 sm:mr-3" />
+                    Start Donating Now
+                    <ArrowRight className="w-4 sm:w-5 h-4 sm:h-5 ml-2 sm:ml-3" />
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white px-6 sm:px-8 lg:px-10 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold transition-all duration-150 cursor-pointer bg-transparent"
+                  {...scaleOnHover}
+                  asChild
+                >
+                  <Link href="/volunteer">
+                    <HandHeart className="w-4 sm:w-5 h-4 sm:h-5 mr-2 sm:mr-3" />
+                    Become a Volunteer
+                  </Link>
+                </Button>
+              </div>
+              <motion.p
+                className="text-lg lg:text-base text-gray-600 "
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2, duration: 0.12 }}
               >
-                <Link href="/causes">
-                  <Gift className="w-4 sm:w-5 h-4 sm:h-5 mr-2 sm:mr-3" />
-                  Start Donating Now
-                  <ArrowRight className="w-4 sm:w-5 h-4 sm:h-5 ml-2 sm:ml-3" />
-                </Link>
-              </Button>
-              <Button
-                variant="outline"
-                className="border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white px-6 sm:px-8 lg:px-10 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold transition-all duration-150 cursor-pointer bg-transparent"
-                {...scaleOnHover}
-                asChild
-              >
-                <Link href="/volunteer">
-                  <HandHeart className="w-4 sm:w-5 h-4 sm:h-5 mr-2 sm:mr-3" />
-                  Become a Volunteer
-                </Link>
-              </Button>
+                💝 You can donate - start from <span className="text-green-600 font-bold">₹65</span>
+              </motion.p>
             </motion.div>
 
             {!loading && (

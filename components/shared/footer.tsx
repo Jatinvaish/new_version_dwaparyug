@@ -5,7 +5,8 @@ import logo from "@/public/images/logo/logo-footer.png";
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Heart, MapPin, Phone, Mail, Send, Facebook, Instagram, Twitter, Linkedin, Sparkles, Star } from "lucide-react"
+import { Heart, MapPin, Phone, Mail, Send, Facebook, Instagram, Twitter, Linkedin, Sparkles, Star, ArrowRight } from "lucide-react"
+import Link from "next/link";
 
 export function Footer() {
   const [email, setEmail] = useState("")
@@ -60,6 +61,17 @@ export function Footer() {
               </div>
             </div>
             <p className="text-slate-300 text-base leading-relaxed">On His Path Of Dharma</p>
+
+            <Button
+              className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black px-6 sm:px-8 lg:px-10 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-150 cursor-pointer"
+              asChild
+            >
+              <Link href="/donate">
+                <Heart className="w-4 h-4 mr-2 fill-current" />
+                Donate Now
+                <ArrowRight className="w-4 sm:w-5 h-4 sm:h-5 ml-2 sm:ml-3" />
+              </Link>
+            </Button>
             <div className="text-yellow-400 text-sm font-medium">dwaparyugfoundation@gmail.com</div>
             <div className="text-sm text-slate-400">
               <div className="font-medium text-slate-300 text-base">Hours:</div>

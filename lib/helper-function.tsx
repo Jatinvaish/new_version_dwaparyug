@@ -266,3 +266,44 @@ export interface LocalImage {
   url: string;
   isExisting: boolean;
 }
+
+export const renderMarkdownContent = (content: string) => {
+  return content.split('\n').map((line, index) => {
+    if (line.startsWith('# ')) {
+      return <h1 key={index} className="text-2xl font-bold text-gray-900 mb-4 mt-6 first:mt-0">{line.slice(2)}</h1>
+    }
+    if (line.startsWith('## ')) {
+      return <h2 key={index} className="text-xl font-bold text-gray-900 mb-3 mt-5">{line.slice(3)}</h2>
+    }
+    if (line.startsWith('### ')) {
+      return <h3 key={index} className="text-lg font-bold text-gray-900 mb-2 mt-4">{line.slice(4)}</h3>
+    }
+
+    if (line.includes('**') && line.trim() !== '') {
+      const parts = line.split('**')
+      return (
+        <p key={index} className="mb-2 text-gray-600">
+          {parts.map((part, i) => i % 2 === 1 ? <strong key={i} className="font-semibold text-gray-900">{part}</strong> : part)}
+        </p>
+      )
+    }
+
+    if (line.startsWith('- ')) {
+      return <li key={index} className="mb-1 text-gray-600 ml-4 list-disc">{line.slice(2)}</li>
+    }
+
+    if (line.trim() === '---') {
+      return <hr key={index} className="my-6 border-gray-200" />
+    }
+
+    if (line.trim() === '') {
+      return <div key={index} className="mb-2" />
+    }
+
+    if (line.startsWith('*') && line.endsWith('*') && line.length > 2) {
+      return <p key={index} className="mb-2 text-gray-500 italic text-sm">{line.slice(1, -1)}</p>
+    }
+
+    return <p key={index} className="mb-3 text-gray-600 leading-relaxed">{line}</p>
+  })
+}

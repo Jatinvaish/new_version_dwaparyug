@@ -63,7 +63,7 @@ const CauseSection = () => {
         <CampaignList
           title="" // Don't show title since we have our custom header
           showHeader={false}
-          showCategoryFilter={false}
+          showCategoryFilter={true}
           showSearch={false}
           showPagination={false} // Don't show pagination for festival section
           showViewToggle={false} // Don't show view toggle, keep it as grid
