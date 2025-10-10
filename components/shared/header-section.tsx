@@ -1,7 +1,7 @@
 "use client";
 import { scaleOnHover } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import { Sparkles, Facebook, Instagram, Twitter, Linkedin, Heart, ArrowRight, X, Menu, UserCircle, Home, Target, Calendar, MoreHorizontal } from 'lucide-react'
+import { Sparkles, Facebook, Instagram, Twitter, Linkedin, Heart, ArrowRight, X, Menu, UserCircle, Home, Target, Calendar, MoreHorizontal, Contact, GiftIcon } from 'lucide-react'
 import React, { useState } from 'react'
 import { Button } from '../ui/button'
 import Link from "next/link";
@@ -23,11 +23,11 @@ const MobileBottomNav = () => {
   const pathname = usePathname();
   const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
-  
+
   const navItems = [
     { id: 'home', label: 'Home', icon: Home, href: '/' },
-    { id: 'causes', label: 'Causes', icon: Target, href: '/causes' },
-    { id: 'monthly', label: 'Monthly', icon: Calendar, href: '/donate' },
+    { id: 'campaigns ', label: 'Campaigns ', icon: GiftIcon, href: '/causes' },
+    { id: 'contact', label: 'Contact', icon: Contact, href: '/contact-us' },
   ];
 
   const menuItems = [
@@ -48,21 +48,19 @@ const MobileBottomNav = () => {
               <button
                 key={item.id}
                 onClick={() => router.push(item.href)}
-                className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-                  isActive ? 'text-green-600' : 'text-gray-600'
-                }`}
+                className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${isActive ? 'text-green-600' : 'text-gray-600'
+                  }`}
               >
                 <Icon className="w-5 h-5 mb-1" />
                 <span className="text-xs font-medium">{item.label}</span>
               </button>
             );
           })}
-          
+
           <button
             onClick={() => setShowMenu(!showMenu)}
-            className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-              showMenu ? 'text-green-600' : 'text-gray-600'
-            }`}
+            className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${showMenu ? 'text-green-600' : 'text-gray-600'
+              }`}
           >
             <MoreHorizontal className="w-5 h-5 mb-1" />
             <span className="text-xs font-medium">Menu</span>
@@ -158,7 +156,6 @@ const HeaderSection = () => {
   return (
     <>
       <section className='top-0 sticky z-50'>
-        {/* Hide top bar on mobile */}
         <motion.div
           className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-2 sm:py-3 px-2 sm:px-4 relative overflow-hidden hidden md:block"
           initial={{ y: -50 }}
@@ -336,9 +333,9 @@ const HeaderSection = () => {
                   </Link>
                 </Button>
               </motion.div>
-               
             </div>
           </div>
+
 
         </motion.nav>
       </section>
