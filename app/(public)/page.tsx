@@ -17,11 +17,10 @@ export default function HomePage() {
       <HeroSection />
       <CauseSection />
       <ImpactSection />
-      <Beomecolanture /> 
+      <Beomecolanture />
       <CustomHomeSectionDonation />
       <FestivalEventsSection />
       <TestimonialsSection />
-      <TeamSection />
       <Faqsection />
     </section>
   )
