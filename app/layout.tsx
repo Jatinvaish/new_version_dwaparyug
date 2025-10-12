@@ -14,29 +14,63 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.dwaparyug.org"),
   title: {
-    default: "Dwaparyug NGO - Foundation",
+    default: "Dwaparyug Foundation – India’s Most Trusted NGO",
     template: "%s | Dwaparyug Foundation",
   },
   description:
-    "NGO Welfare Society dedicated to social causes and community development",
+    "Dwaparyug Foundation is a non-profit NGO in India dedicated to education, health, women hygiene, and food relief for underprivileged communities. Join us in creating a better future through donations, volunteering, and social development programs.",
   keywords: [
-    "India's most trusted NGO",
-    "India's Best NGO",
-    "Dwaparyug",
-    "underprivileged communities",
-    "food distribution drive",
-    "emergency food relief",
-    "women hygiene programs",
-    "volunteer opportunities in Delhi",
-    "NGO welfare society India",
-    "transparent donation platform",
-    "relief campaigns India",
-    "social development NGO"
+    "Dwaparyug Foundation",
+    "Dwaparyug NGO",
+    "non profit organization India",
+    "best NGO in Delhi",
+    "trusted NGO for donations",
+    "education NGO India",
+    "NGO for child education",
+    "women hygiene awareness programs",
+    "food distribution NGO India",
+    "free health camps Delhi",
+    "rural development NGO",
+    "volunteer opportunities Delhi",
+    "donate online to NGO India",
+    "emergency relief campaigns",
+    "community development NGO",
+    "medical camp NGO India",
+    "charity platform India",
+    "hunger relief NGO Delhi",
+    "sustainable development NGO",
+    "youth volunteering India"
   ],
-  generator: "AJPR WORLD",
-  alternates: {
-    canonical: "https://www.dwaparyug.org/",
+  openGraph: {
+    title: "Dwaparyug Foundation – Empowering Lives Through Education, Health & Hope",
+    description:
+      "Join Dwaparyug Foundation in empowering underprivileged communities across India through education, health awareness, food drives, and women hygiene programs.",
+    url: "https://www.dwaparyug.org",
+    siteName: "Dwaparyug Foundation",
+    images: [
+      {
+        url: "https://www.dwaparyug.org/og-image.jpg", // 👈 Replace with your actual OG image
+        width: 1200,
+        height: 630,
+        alt: "Dwaparyug Foundation – NGO in India",
+      },
+    ],
+    locale: "en_IN",
+    type: "website",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Dwaparyug Foundation – India’s Most Trusted NGO",
+    description:
+      "Support education, health, and community welfare with Dwaparyug Foundation. Donate or volunteer to make a difference today!",
+    images: ["https://www.dwaparyug.org/og-image.jpg"], // 👈 same image as OG
+    creator: "@dwaparyug",
+  },
+  alternates: {
+    canonical: "https://www.dwaparyug.org",
+  },
+  authors: [{ name: "Dwaparyug Foundation", url: "https://www.dwaparyug.org" }],
+  generator: "AJPR WORLD",
 };
 
 export default function RootLayout({
