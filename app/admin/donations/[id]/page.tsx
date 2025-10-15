@@ -340,23 +340,6 @@ export default function CompactDonationDetailsPage() {
                   </div>
                 </div>
 
-                {/* Campaign Progress */}
-                <div>
-                  <h4 className="font-semibold mb-3 text-sm">Campaign Progress</h4>
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium">{donation.campaign.title}</div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full"
-                        style={{ width: `${Math.min(donation.campaign.progress_percentage, 100)}%` }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>{donation.campaign.progress_percentage.toFixed(1)}%</span>
-                      <span>{formatCurrency(donation.campaign.total_raised)}</span>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               {/* Messages */}
@@ -615,7 +598,7 @@ export default function CompactDonationDetailsPage() {
                   <span>Status:</span>
                   {getPaymentStatusBadge(donation.payment_status)}
                 </div>
-                <div><span className="text-muted-foreground">ID:</span> {donation.razorpay_payment_id?.slice(-8) || 'N/A'}</div>
+                <div><span className="text-muted-foreground">ID:</span> {donation.razorpay_payment_id  || 'N/A'}</div>
                 <div><span className="text-muted-foreground">Currency:</span> {donation.payment_currency}</div>
                 <div><span className="text-muted-foreground">Date:</span> {formatDate(donation.payment_created_at)}</div>
               </div>
