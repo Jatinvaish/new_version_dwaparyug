@@ -65,7 +65,6 @@ export function FestivalEventsSection() {
           viewport={{ once: true }}
         >
           <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-3">Create Your Own Festival Campaign</h3>
             <p className="text-gray-600 mb-4 max-w-xl mx-auto text-sm">
               Want to organize a festival celebration for your community? We can help you create a custom campaign for
               any festival or special occasion.

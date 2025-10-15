@@ -14,12 +14,24 @@ import {
   X,
   ChevronDown,
   ChevronUp,
+  LogOut,
+  User,
 } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
+import { signOut, useSession } from "next-auth/react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface AdminLink {
   name: string
@@ -47,7 +59,7 @@ const adminLinks: AdminLink[] = [
     ],
   },
   { name: "Donations", href: "/admin/donations", icon: DollarSign },
-    {
+  {
     name: "Batches",
     href: "/admin/batches",
     icon: Package,
@@ -61,11 +73,26 @@ const adminLinks: AdminLink[] = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const { data: session } = useSession()
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({})
 
   const toggleSubmenu = (name: string) => {
     setOpenSubmenus((prev) => ({ ...prev, [name]: !prev[name] }))
+  }
+
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: "/auth/login" })
+  }
+
+  const getInitials = (name?: string | null) => {
+    if (!name) return "U"
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
   }
 
   const renderLinks = (links: AdminLink[]) => {
@@ -144,35 +171,76 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       <div className="flex flex-1 flex-col">
         {/* Header */}
-        <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background pl-0 px-4 md:px-6">
-          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetTrigger asChild>
-              <div>
-                <Button variant="ghost" size="icon" className="font-xl md:hidden">
-                  {isSheetOpen ? <X className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
-                  <span className="sr-only">Toggle menu</span>
+        <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-4 border-b bg-background pl-0 px-4 md:px-6">
+          <div className="flex items-center gap-4">
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+              <SheetTrigger asChild>
+                <div>
+                  <Button variant="ghost" size="icon" className="font-xl md:hidden">
+                    {isSheetOpen ? <X className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
+                    <span className="sr-only">Toggle menu</span>
+                  </Button>
+                </div>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 p-4">
+                {/* Logo inside mobile sheet */}
+                <div className="flex items-center gap-2 pb-4 border-b">
+                  <Link href="/admin" className="flex items-center gap-2 font-semibold" onClick={() => setIsSheetOpen(false)}>
+                    <Package className="h-6 w-6" />
+                    <span>Dwaparyug </span>
+                  </Link>
+                </div>
+                <nav className="grid gap-2">
+                  {renderLinks(adminLinks)}
+                </nav>
+              </SheetContent>
+            </Sheet>
+            <h1 className="text-base font-semibold md:text-lg">Admin</h1>
+          </div>
+
+          {/* Profile and Logout Buttons */}
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || "User"} />
+                    <AvatarFallback>{getInitials(session?.user?.name)}</AvatarFallback>
+                  </Avatar>
                 </Button>
-              </div>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-4">
-              {/* Logo inside mobile sheet */}
-              <div className="  flex items-center gap-2 pb-4 border-b">
-                <Link href="/admin" className="flex items-center gap-2 font-semibold" onClick={() => setIsSheetOpen(false)}>
-                  <Package className="h-6 w-6" />
-                  <span>Dwaparyug </span>
-                </Link>
-              </div>
-              <nav className="grid gap-2">
-                {renderLinks(adminLinks)}
-              </nav>
-            </SheetContent>
-          </Sheet>
-          <h1 className="text-base font-semibold md:text-lg">Admin</h1>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{session?.user?.name || "User"}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{session?.user?.email}</p>
+                    {session?.user?.role && (
+                      <p className="text-xs leading-none text-muted-foreground mt-1">
+                        Role: {session.user.role}
+                      </p>
+                    )}
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {/* <DropdownMenuItem asChild>
+                  <Link href="/admin/profile" className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem> */}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </header>
 
         {/* Main Content */}
         <main className="flex-1 p-3 md:p-6 space-y-4">{children}</main>
       </div>
-    </div >
+    </div>
   )
 }

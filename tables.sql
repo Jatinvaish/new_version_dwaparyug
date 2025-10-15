@@ -629,3 +629,11 @@ CREATE INDEX idx_otp_verifications_expires_at ON otp_verifications(expires_at);
 ALTER TABLE users
 ADD CONSTRAINT users_mobile_no_key UNIQUE (mobile_no);
 
+
+
+ALTER TABLE campaigns
+ADD COLUMN  code VARCHAR(50);
+
+ 
+ALTER TABLE campaigns
+ ADD COLUMN  is_featured SMALLINT DEFAULT 0;

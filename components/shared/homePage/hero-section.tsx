@@ -182,6 +182,11 @@ const instantFade = {
 
 const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolean }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  // Minimum swipe distance (in px)
+  const minSwipeDistance = 50;
 
   useEffect(() => {
     if (slides.length > 1 && !loading) {
@@ -192,12 +197,60 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
     }
   }, [currentSlide, slides.length, loading]);
 
+  const goToNext = () => {
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
+  };
+
+  const goToPrev = () => {
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe) {
+      goToNext();
+    }
+    if (isRightSwipe) {
+      goToPrev();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      goToPrev();
+    } else if (e.key === 'ArrowRight') {
+      goToNext();
+    }
+  };
+
   if (slides.length === 0) {
     return null;
   }
 
   return (
-    <div className="relative w-full h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
+    <div 
+      className="relative w-full h-[500px] overflow-hidden touch-pan-y"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      style={{ touchAction: 'pan-y' }}
+    >
       <AnimatePresence mode="wait">
         <motion.div
           key={currentSlide}
@@ -206,13 +259,15 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
         >
 
           <div className="absolute inset-0">
-            <Link href={slides[currentSlide].ctaLink} className="cursor-pointer">
+            <Link href={slides[currentSlide].ctaLink} className="cursor-pointer block w-full h-full">
               <Image
                 src={optimizeCloudinaryUrl(slides[currentSlide].image, 1920, 1080)}
                 alt={slides[currentSlide].title}
                 fill
                 className="object-cover cursor-pointer"
                 priority
+                sizes="100vw"
+                style={{ objectFit: 'cover', objectPosition: 'center' }}
               />
             </Link>
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />

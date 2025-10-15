@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
       LEFT JOIN users u2 ON c.updated_by = u2.id
       WHERE 1=1 ${whereClause}
     `;
-    
+
     const countParams = params.slice(0, -2); // Remove limit and offset for count
 
     // Execute queries
@@ -129,6 +129,8 @@ export async function POST(request: NextRequest) {
       urgency,
       location,
       organizer,
+      code,
+      is_featured,
       verified = false,
       total_beneficiary = 0,
       end_date,
@@ -151,13 +153,15 @@ export async function POST(request: NextRequest) {
       INSERT INTO campaigns (
         title, category_id, festival_type, overview, details, about_campaign,
         donation_goal, image, images_array, status, priority, urgency,
-        location, organizer, verified, total_beneficiary, end_date,beneficiaries, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+        location, organizer, verified, total_beneficiary, end_date,beneficiaries, code, is_featured, created_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19,$20, $21)
       RETURNING *
     `, [
       title, category_id, festival_type, overview, details, about_campaign,
       donation_goal, image, images_array, status, priority, urgency,
-      location, organizer, verified, total_beneficiary, end_date, beneficiaries, created_by
+      location, organizer, verified, total_beneficiary, end_date, beneficiaries,
+      code,
+      is_featured, created_by
     ]);
 
     const campaign = campaignResult.rows[0];

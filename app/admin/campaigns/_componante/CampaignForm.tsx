@@ -26,12 +26,9 @@ import type { Campaign, CampaignCategory, IndependentProduct, Product } from "@/
 import { festivalTypes } from "@/lib/utils";
 import { uploadImages, fileToBase64, createPreviewUrl, RichTextEditor, LocalImage } from "@/lib/helper-function";
 
-// Image upload function for API (only called on form submit)
-
-// Helper function to convert File to base64
-
 const campaignFormSchema = z.object({
   id: z.number().optional(),
+  code: z.string().optional(),
   title: z.string().min(3, "Title must be at least 3 characters long."),
   category_id: z.coerce.number().min(1, "Category is required."),
   festival_type: z.string().optional(),
@@ -40,7 +37,8 @@ const campaignFormSchema = z.object({
   donation_goal: z.coerce.number().min(1, "Donation goal must be at least ₹1."),
   beneficiaries: z.coerce.number().min(1, "Beneficiaries must be at least 1."),
   total_raised: z.number().optional(),
-  status: z.enum(["Active", "Inactive", "Completed", "Draft"]),
+  status: z.enum(["Active", "Inactive",]),
+  is_featured: z.boolean().optional(),
   image: z.string().min(1, "Banner image is required."),
   images_array: z.array(z.string()).optional(),
   assignedProducts: z
@@ -81,15 +79,11 @@ const campaignFormSchema = z.object({
 
 type CampaignFormValues = z.infer<typeof campaignFormSchema>;
 
-
 interface CampaignFormProps {
   campaign?: Campaign | null;
   onSave: (campaign: Campaign) => void;
   onCancel: () => void;
 }
-
-// Local image storage interfaces
-
 
 export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFormProps) {
   const [categories, setCategories] = useState<CampaignCategory[]>([]);
@@ -98,7 +92,6 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
   const [isLoadingUnits, setIsLoadingUnits] = useState(true);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
-  // Local image storage
   const [bannerImage, setBannerImage] = useState<LocalImage | null>(null);
   const [additionalImages, setAdditionalImages] = useState<LocalImage[]>([]);
 
@@ -112,6 +105,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
   } = useForm<CampaignFormValues>({
     resolver: zodResolver(campaignFormSchema),
     defaultValues: {
+      code: "",
       title: "",
       category_id: 0,
       festival_type: "",
@@ -127,7 +121,8 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
       images_array: [],
       assignedProducts: [],
       priority: "medium",
-      status: "Draft",
+      status: "Active",
+      is_featured: false,
       about_campaign: "",
       location: "",
       organizer: "Dwaparyug Foundation",
@@ -165,7 +160,6 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
     name: "assignedProducts",
   });
 
-  // Fetch categories, units, and independent products from API
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -181,7 +175,6 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
 
         if (productsResponse.ok) {
           const productsData = await productsResponse.json();
-          console.log("🚀 ~ fetchData ~ productsData:", productsData)
           setIndependentProducts(productsData?.products);
         }
       } catch (error) {
@@ -195,21 +188,13 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
     fetchData();
   }, []);
 
-  // Fixed useEffect for populating form data when editing
   useEffect(() => {
-    // Only populate form when:
-    // 1. We have campaign data to populate
-    // 2. Categories are loaded (for category_id select)
-    // 3. Independent products are loaded (for product selects)
     if (campaign && !isLoadingCategories && !isLoadingProducts) {
-      // Prepare the data with proper type conversions
       const formData = {
         ...campaign,
-        // Ensure numbers are properly converted
         category_id: Number(campaign.category_id) || 0,
         donation_goal: Number(campaign.donation_goal) || 0,
-        beneficiaries: Number(campaign.beneficiaries) || 0, // Map from total_beneficiary
-        // Ensure date is properly converted
+        beneficiaries: Number(campaign.beneficiaries) || 0,
         end_date: campaign.end_date
           ? new Date(campaign.end_date)
           : (() => {
@@ -217,20 +202,18 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
             date.setFullYear(date.getFullYear() + 3);
             return date;
           })(),
-        // Ensure defaults for required fields
         priority: (campaign.priority as any) || "medium",
-        status: (campaign.status as any) || "Draft",
+        status: (campaign.status as any) || "Active",
+        is_featured: Boolean(campaign.is_featured),
         about_campaign: campaign.about_campaign || "",
         location: campaign.location || "",
         organizer: campaign.organizer || "Dwaparyug Foundation",
         verified: Boolean(campaign.verified),
         urgency: (campaign.urgency as any) || "medium",
-        // Ensure arrays are properly set
         faq_questions: campaign.faq_questions || [],
         videoLinks: (campaign.videoLinks || []).map((url: string) => ({ url })),
         image: campaign.image || "",
         images_array: campaign.images_array || [],
-        // Fix assignedProducts data structure
         assignedProducts: (campaign.assignedProducts || []).map((product: any) => ({
           id: product.id,
           indipendent_product_id: Number(product.indipendent_product_id) || Number(product.independent_product_id) || 0,
@@ -241,12 +224,8 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
         })),
       };
 
-      console.log("🚀 ~ Setting form data for update:", formData);
-
-      // Reset the form with the prepared data
       reset(formData);
 
-      // Set existing images
       if (campaign.image) {
         setBannerImage({
           url: campaign.image,
@@ -263,35 +242,25 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
         );
       }
     }
-  }, [campaign, reset, isLoadingCategories, isLoadingProducts]); // Added loading states as dependencies
-
-  // Additionally, add this useEffect to debug the form values:
+  }, [campaign, reset, isLoadingCategories, isLoadingProducts]);
 
   const onSubmit = async (data: CampaignFormValues) => {
     try {
-      console.log('Submitting form data:', data);
-
-      // Prepare images for upload
       let bannerImageUrl = data.image;
       let allImageUrls: string[] = [];
 
-      // Handle banner image upload
       if (bannerImage) {
         if (bannerImage.file) {
-          // New file upload
           const uploadedUrls = await uploadImages([bannerImage.file]);
           bannerImageUrl = uploadedUrls[0];
         } else if (bannerImage.base64) {
-          // Base64 upload
           const uploadedUrls = await uploadImages([bannerImage.base64]);
           bannerImageUrl = uploadedUrls[0];
         } else if (bannerImage.isExisting) {
-          // Existing image, use as is
           bannerImageUrl = bannerImage.url;
         }
       }
 
-      // Handle additional images upload
       const imagesToUpload: (File | string)[] = [];
       const existingImageUrls: string[] = [];
 
@@ -312,17 +281,16 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
         allImageUrls = existingImageUrls;
       }
 
-      // Prepare final payload
       const payload = {
         ...data,
         image: bannerImageUrl,
         images_array: allImageUrls,
         end_date: data.end_date.toISOString(),
         videoLinks: data.videoLinks?.map(v => v.url) || [],
-        // Ensure proper number conversion for all numeric fields
         category_id: Number(data.category_id),
         donation_goal: Number(data.donation_goal),
         beneficiaries: Number(data.beneficiaries),
+        is_featured: data.is_featured ? 1 : 0,
         assignedProducts: (data.assignedProducts || []).map(product => ({
           ...product,
           indipendent_product_id: Number(product.indipendent_product_id),
@@ -330,11 +298,9 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
           stock: Number(product.stock) || 0,
           sequence: Number(product.sequence) || 1,
         })),
-        created_by: 1, // Replace with actual user ID from session/auth
-        updated_by: 1, // Replace with actual user ID from session/auth
+        created_by: 1,
+        updated_by: 1,
       };
-
-      console.log('Final payload:', payload);
 
       const url = campaign ? `/api/campaigns/${campaign.id}` : '/api/campaigns';
       const method = campaign ? 'PUT' : 'POST';
@@ -362,7 +328,6 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
 
   const category_id = useWatch({ control, name: "category_id" });
 
-  // Handle banner image selection (local storage)
   const handleBannerImageSelection = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -384,7 +349,6 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
     }
   };
 
-  // Handle multiple images selection (local storage)
   const handleMultipleImagesSelection = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -431,15 +395,12 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
     setValue("images_array", updatedImages.map(img => img.url));
   };
 
-  // Clean up object URLs on component unmount
   useEffect(() => {
     return () => {
-      // Clean up banner image URL
       if (bannerImage?.url && !bannerImage.isExisting) {
         URL.revokeObjectURL(bannerImage.url);
       }
 
-      // Clean up additional image URLs
       additionalImages.forEach(img => {
         if (img.url && !img.isExisting) {
           URL.revokeObjectURL(img.url);
@@ -449,7 +410,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
   }, []);
 
   const selectedCategory = categories.find(cat => cat.id === category_id);
-  console.log(`errors`, errors)
+
   return (
     <Card>
       <form onSubmit={handleSubmit(onSubmit)} className="p-4">
@@ -475,10 +436,24 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
             </div>
           )}
 
-          <div className="space-y-1">
-            <Label htmlFor="title" className="text-sm">Title</Label>
-            <Input id="title" {...register("title")} className="h-8" />
-            {errors.title && <p className="text-xs text-red-500">{errors.title.message}</p>}
+          <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="code" className="text-sm">Code</Label>
+              <Input 
+                id="code" 
+                {...register("code")} 
+                placeholder="e.g., C001" 
+                className="h-8"
+                // disabled={!!campaign}
+              />
+              {errors.code && <p className="text-xs text-red-500">{errors.code.message}</p>}
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="title" className="text-sm">Title</Label>
+              <Input id="title" {...register("title")} className="h-8" />
+              {errors.title && <p className="text-xs text-red-500">{errors.title.message}</p>}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
@@ -544,10 +519,8 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Draft">Draft</SelectItem>
                       <SelectItem value="Active">Active</SelectItem>
                       <SelectItem value="Inactive">Inactive</SelectItem>
-                      <SelectItem value="Completed">Completed</SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -615,25 +588,48 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
             </div>
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="verified" className="text-sm">Verified Campaign</Label>
-            <div className="flex items-center space-x-2 pt-1">
-              <Controller
-                control={control}
-                name="verified"
-                render={({ field }) => (
-                  <Checkbox
-                    id="verified"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                )}
-              />
-              <Label htmlFor="verified" className="text-xs font-normal">
-                Mark this campaign as verified
-              </Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="verified" className="text-sm">Verified Campaign</Label>
+              <div className="flex items-center space-x-2 pt-1">
+                <Controller
+                  control={control}
+                  name="verified"
+                  render={({ field }) => (
+                    <Checkbox
+                      id="verified"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
+                />
+                <Label htmlFor="verified" className="text-xs font-normal">
+                  Mark this campaign as verified
+                </Label>
+              </div>
+              {errors.verified && <p className="text-xs text-red-500">{errors.verified.message}</p>}
             </div>
-            {errors.verified && <p className="text-xs text-red-500">{errors.verified.message}</p>}
+
+            <div className="space-y-1">
+              <Label htmlFor="is_featured" className="text-sm">Featured Campaign</Label>
+              <div className="flex items-center space-x-2 pt-1">
+                <Controller
+                  control={control}
+                  name="is_featured"
+                  render={({ field }) => (
+                    <Checkbox
+                      id="is_featured"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
+                />
+                <Label htmlFor="is_featured" className="text-xs font-normal">
+                  Mark this campaign as featured
+                </Label>
+              </div>
+              {errors.is_featured && <p className="text-xs text-red-500">{errors.is_featured.message}</p>}
+            </div>
           </div>
 
           <div className="space-y-1">
