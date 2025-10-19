@@ -8,17 +8,31 @@ cloudinary.config({
 
 export default cloudinary;
 
+// Optimized upload with aggressive transformations for Indian users
 export async function uploadImage(fileBuffer: Buffer, fileName: string): Promise<string> {
   return new Promise((resolve, reject) => {
     cloudinary.uploader.upload_stream(
       {
         resource_type: 'image',
         public_id: fileName,
+        // Optimized transformations for performance
         transformation: [
           { width: 1200, height: 800, crop: 'limit' },
-          { quality: 'auto' },
-          { format: 'auto' }
-        ]
+          { quality: 'auto:good' }, // Better compression
+          { fetch_format: 'auto' }, // Auto WebP/AVIF
+          { dpr: 'auto' }, // Auto device pixel ratio
+          { flags: 'progressive' }, // Progressive JPEG loading
+        ],
+        // Enable responsive images
+        responsive_breakpoints: [
+          {
+            bytes_step: 20000,
+            min_width: 200,
+            max_width: 1200,
+            max_images: 5,
+            create_derived: true
+          }
+        ],
       },
       (error, result) => {
         if (error) {
@@ -31,25 +45,71 @@ export async function uploadImage(fileBuffer: Buffer, fileName: string): Promise
   });
 }
 
+// Get optimized image URL with transformations
+export function getOptimizedImageUrl(
+  publicId: string, 
+  options: {
+    width?: number;
+    height?: number;
+    quality?: 'auto' | 'auto:good' | 'auto:best' | 'auto:eco' | 'auto:low';
+    crop?: string;
+    gravity?: string;
+  } = {}
+): string {
+  const {
+    width = 'auto',
+    height,
+    quality = 'auto:good',
+    crop = 'limit',
+    gravity = 'auto'
+  } = options;
+
+  const transformations = [
+    'f_auto', // Auto format (WebP/AVIF)
+    `q_${quality}`, // Quality
+    'dpr_auto', // Auto DPR
+    width !== 'auto' ? `w_${width}` : 'w_auto',
+    height ? `h_${height}` : null,
+    `c_${crop}`,
+    `g_${gravity}`,
+    'fl_progressive', // Progressive loading
+  ].filter(Boolean).join(',');
+
+  return `https://res.cloudinary.com/${process.env.CLOUDINARY_NAME}/image/upload/${transformations}/${publicId}`;
+}
+
+// Generate responsive image srcset
+export function generateResponsiveSrcSet(publicId: string): {
+  src: string;
+  srcSet: string;
+  sizes: string;
+} {
+  const widths = [320, 640, 768, 1024, 1280, 1536];
+  const srcSet = widths
+    .map(w => `${getOptimizedImageUrl(publicId, { width: w })} ${w}w`)
+    .join(', ');
+
+  return {
+    src: getOptimizedImageUrl(publicId, { width: 1024 }),
+    srcSet,
+    sizes: '(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 1200px'
+  };
+}
+
 export async function uploadMultipleImages(files: { buffer: Buffer; fileName: string }[]): Promise<string[]> {
   const uploadPromises = files.map(file => uploadImage(file.buffer, file.fileName));
   return Promise.all(uploadPromises);
 }
 
-// Add this function for deleting images
 export async function deleteImage(imageUrl: string): Promise<void> {
   try {
-    // Extract public_id from Cloudinary URL
-    // URL format: https://res.cloudinary.com/cloud-name/image/upload/v1234567890/public_id.ext
     const urlParts = imageUrl.split('/');
     const fileNameWithExtension = urlParts[urlParts.length - 1];
     const publicId = fileNameWithExtension.split('.')[0];
     
-    // If the URL contains version info (v1234567890), we need to handle it
     let cleanPublicId = publicId;
     const versionIndex = urlParts.findIndex(part => part.startsWith('v'));
     if (versionIndex !== -1 && versionIndex < urlParts.length - 1) {
-      // Rebuild public_id from the parts after version
       cleanPublicId = urlParts.slice(versionIndex + 1).join('/').replace(/\.[^/.]+$/, '');
     }
     
@@ -68,7 +128,6 @@ export async function deleteImage(imageUrl: string): Promise<void> {
   }
 }
 
-// Helper function to extract public ID from Cloudinary URL (alternative method)
 export function extractPublicId(cloudinaryUrl: string): string {
   try {
     const regex = /\/v\d+\/(.+)\./;
@@ -80,10 +139,9 @@ export function extractPublicId(cloudinaryUrl: string): string {
   }
 }
 
-// Batch delete function (useful for cleanup operations)
 export async function deleteMultipleImages(imageUrls: string[]): Promise<{
-  successful: string[],
-  failed: string[]
+  successful: string[];
+  failed: string[];
 }> {
   const successful: string[] = [];
   const failed: string[] = [];
@@ -100,7 +158,6 @@ export async function deleteMultipleImages(imageUrls: string[]): Promise<{
   
   return { successful, failed };
 }
-
 
 export const processImageUpload = async (imageData: any, fileName?: string): Promise<string> => {
   if (imageData instanceof File) {

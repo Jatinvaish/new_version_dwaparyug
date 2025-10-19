@@ -759,16 +759,6 @@ Powered by Your Platform Name - Making giving meaningful and transparent.`
                       </div>
                     </div>
 
-                    {/* About Campaign */}
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900 mb-3 sm:text-2xl sm:mb-4">
-                        About This Campaign
-                      </h2>
-                      <div className="prose prose-sm max-w-none sm:prose-base lg:prose-lg">
-                        {campaign && campaign?.about_campaign ? (renderMarkdownContent(campaign?.about_campaign)) : null}
-                      </div>
-                    </div>
-
                     {/* Products Section */}
                     {campaign.assignedProducts && campaign.assignedProducts.length > 0 && (
                       <section className="py-8 px-3 bg-gray-50 sm:py-12 sm:px-4 lg:py-16">
@@ -890,6 +880,16 @@ Powered by Your Platform Name - Making giving meaningful and transparent.`
                         </div>
                       </section>
                     )}
+
+                    {/* About Campaign */}
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900 mb-3 sm:text-2xl sm:mb-4">
+                        About This Campaign
+                      </h2>
+                      <div className="prose prose-sm max-w-none sm:prose-base lg:prose-lg">
+                        {campaign && campaign?.about_campaign ? (renderMarkdownContent(campaign?.about_campaign)) : null}
+                      </div>
+                    </div>
 
                     {/* FAQ Section */}
                     {campaign.faq_questions && campaign.faq_questions.length > 0 && (
