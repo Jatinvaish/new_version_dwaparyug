@@ -15,6 +15,18 @@ export interface CartItem {
   maxQty?: number
   stock?: number
   description?: string
+   personalization?: {
+    donationDate: string
+    donorName: string
+    donorCountry: string
+    mobileNumber: string
+    donatedOnBehalfOf?: string
+    customImage?: string
+    customMessage?: string
+    donationPurpose?: string
+    specialInstructions?: string
+    isAnonymous: boolean
+  }
 }
 
 export interface DonationFormData {

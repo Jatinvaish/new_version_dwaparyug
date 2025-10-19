@@ -40,6 +40,8 @@ const productSchema = z.object({
   increment_count: z.coerce.number().min(1, "Increment count must be at least 1").default(1),
   is_flexible_increment_count: z.boolean().default(true),
   allows_personalization: z.boolean().default(true),
+  min_tat: z.coerce.number().min(0, "Minimum TAT must be at least 0").optional(),
+  max_tat: z.coerce.number().min(0, "Maximum TAT must be at least 0").optional(),
   status: z.enum(["Active", "Inactive"]).default("Active"),
   created_by: z.coerce.number().optional(),
   updated_by: z.coerce.number().optional(),
@@ -125,6 +127,8 @@ export default function ProductForm({ productId, mode, onSuccess, onCancel }: Pr
         increment_count: product.increment_count || 1,
         is_flexible_increment_count: product.is_flexible_increment_count ?? true,
         allows_personalization: product.allows_personalization ?? true,
+        min_tat: product.min_tat || 1,
+        max_tat: product.max_tat || 1,
         status: product.status || "Active",
         created_by: product.created_by || undefined,
         updated_by: product.updated_by || undefined,
@@ -258,7 +262,6 @@ export default function ProductForm({ productId, mode, onSuccess, onCancel }: Pr
   }
 
   return (
-
     <div className="p-4 pt-0 ">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
@@ -480,6 +483,55 @@ export default function ProductForm({ productId, mode, onSuccess, onCancel }: Pr
             />
           </div>
 
+          {/* Turn Around Time (TAT) - Domestic */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Turn Around Time  </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="min_tat"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Minimum TAT (days)</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="number"
+                        min="0"
+                        disabled={isReadOnly}
+                        placeholder="0"
+                      />
+                    </FormControl>
+                    <FormDescription>Minimum turnaround time in days</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="max_tat"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Maximum TAT (days)</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="number"
+                        min="0"
+                        disabled={isReadOnly}
+                        placeholder="No limit"
+                      />
+                    </FormControl>
+                    <FormDescription>Maximum turnaround time in days</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          
           {/* Feature Toggles */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField

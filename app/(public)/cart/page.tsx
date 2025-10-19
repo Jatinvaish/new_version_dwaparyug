@@ -21,7 +21,8 @@ import {
   ShoppingBag,
   X,
   Package,
-  Zap
+  Zap,
+  Edit2
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -29,13 +30,12 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useDonationCart, useDonationForm } from "@/hooks/useDonationHooks"
+import ProductPersonalizationModal from "@/components/ProductPersonalizationModal"
 
 export default function CartPage() {
   const router = useRouter()
   const {
     cartItems,
-    customDonationAmount,
-    setCustomDonationAmount,
     updateQuantity,
     removeFromCart,
     clearCart,
@@ -45,10 +45,11 @@ export default function CartPage() {
 
   const { updateFormData } = useDonationForm()
 
-  const [customDonationAmountInput, setCustomDonationAmountInput] = useState(customDonationAmount.toString())
   const [selectedTip, setSelectedTip] = useState<number | 'custom' | null>(5)
   const [customTipValue, setCustomTipValue] = useState("")
   const [isClearing, setIsClearing] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<any>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   const { subtotal, totalItems, uniqueCampaigns, totalDonationAmount } = getCartTotals()
 
@@ -69,13 +70,6 @@ export default function CartPage() {
   const tipAmount = getTipAmount()
   const grandTotal = totalDonationAmount + tipAmount
 
-  // Handle custom donation amount changes
-  const handleCustomDonationChange = (value: string) => {
-    setCustomDonationAmountInput(value)
-    const numValue = parseFloat(value) || 0
-    setCustomDonationAmount(numValue)
-  }
-
   const handleQuantityChange = (productId: number, campaignId: number, newQuantity: number) => {
     if (newQuantity <= 0) {
       handleRemoveItem(productId, campaignId)
@@ -90,29 +84,46 @@ export default function CartPage() {
 
   const handleClearCart = async () => {
     setIsClearing(true)
-    await new Promise(resolve => setTimeout(resolve, 300)) // Small delay for UX
+    await new Promise(resolve => setTimeout(resolve, 300))
     clearCart()
-    setCustomDonationAmountInput("")
     setSelectedTip(5)
     setCustomTipValue("")
     setIsClearing(false)
   }
 
+  const handleEditProduct = (item: any, campaignId: number) => {
+    setEditingProduct({
+      ...item,
+      id: item.productId, 
+      productId: item.productId,
+      campaignId,
+      campaignTitle: Object.entries(getItemsByCampaign()).find(
+        ([cId]) => cId === campaignId.toString()
+      )?.[1]?.campaignTitle || ""
+    })
+    setIsEditModalOpen(true)
+  }
+  const handleSaveProductEdit = (updatedProduct: any) => {
+    // Update quantity if changed
+    if (updatedProduct.quantity !== editingProduct.quantity) {
+      updateQuantity(editingProduct.productId, editingProduct.campaignId, updatedProduct.quantity)
+    }
+    setIsEditModalOpen(false)
+    setEditingProduct(null)
+  }
+
   const handleProceedToDonate = () => {
-    // Save cart data and custom amount to form data
     updateFormData({
-      customAmount: customDonationAmount > 0 ? customDonationAmount : undefined,
       tipAmount: tipAmount,
       tipPercentage: typeof selectedTip === 'number' ? selectedTip : undefined
     })
 
-    // Navigate to multi-step donation form
     router.push('/donate')
   }
 
   const itemsByCampaign = getItemsByCampaign()
 
-  if (totalItems === 0 && customDonationAmount === 0) {
+  if (totalItems === 0) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-4xl mx-auto py-4 sm:py-8 px-2 sm:px-4">
@@ -131,7 +142,7 @@ export default function CartPage() {
             <div className="mb-6">
               <ShoppingBag className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-4" />
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Your cart is empty</h2>
-              <p className="text-sm sm:text-base text-gray-600 px-4">Add some products or make a direct donation to get started.</p>
+              <p className="text-sm sm:text-base text-gray-600 px-4">Add some products to get started.</p>
             </div>
 
             <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 justify-center px-4">
@@ -140,14 +151,6 @@ export default function CartPage() {
                   Browse Campaigns
                 </Button>
               </Link>
-              <Button
-                variant="outline"
-                onClick={() => router.push('/donate')}
-                className="w-full sm:w-auto"
-              >
-                <Heart className="w-4 h-4 mr-2" />
-                Make Direct Donation
-              </Button>
             </div>
           </motion.div>
         </div>
@@ -187,88 +190,6 @@ export default function CartPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-3 sm:space-y-6">
 
-            {/* Direct Donation Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <Card>
-                <CardHeader className="pb-3 sm:pb-6">
-                  <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <div className="flex items-center">
-                      <Heart className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-red-500" />
-                      <span className="text-base sm:text-lg">Direct Donation</span>
-                    </div>
-                    {customDonationAmount > 0 && (
-                      <Badge className="bg-red-50 text-red-700 text-xs sm:text-sm self-start sm:self-auto">
-                        ₹{customDonationAmount.toLocaleString()}
-                      </Badge>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-3 sm:space-y-4">
-                    <p className="text-xs sm:text-sm text-gray-600">
-                      Make a direct donation to support campaigns of your choice. This amount will be distributed across active campaigns.
-                    </p>
-
-                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                      <div className="relative flex-1">
-                        <span className="absolute left-3 top-2.5 sm:top-2 text-gray-500 text-sm">₹</span>
-                        <Input
-                          type="number"
-                          placeholder="Enter donation amount"
-                          value={customDonationAmountInput}
-                          onChange={(e) => handleCustomDonationChange(e.target.value)}
-                          className="pl-8 text-sm sm:text-base h-10 sm:h-9"
-                          min="1"
-                        />
-                      </div>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleCustomDonationChange("")}
-                        disabled={!customDonationAmountInput}
-                        className="w-full sm:w-auto h-10 sm:h-9 text-sm"
-                      >
-                        Clear
-                      </Button>
-                    </div>
-
-                    {/* Quick Amount Buttons */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {[500, 1000, 2500, 5000].map((amount) => (
-                        <Button
-                          key={amount}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCustomDonationChange(amount.toString())}
-                          className={`text-xs h-8 ${customDonationAmountInput === amount.toString() ? 'border-blue-500 bg-blue-50' : ''}`}
-                        >
-                          ₹{amount.toLocaleString()}
-                        </Button>
-                      ))}
-                    </div>
-
-                    {customDonationAmount > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        className="bg-green-50 border border-green-200 rounded-lg p-3"
-                      >
-                        <div className="flex items-center">
-                          <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
-                          <span className="text-xs sm:text-sm text-green-700 font-medium">
-                            Direct donation of ₹{customDonationAmount.toLocaleString()} added
-                          </span>
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
             {/* Product Items by Campaign */}
             <AnimatePresence>
               {Object.entries(itemsByCampaign).map(([campaignId, campaign], index) => (
@@ -305,7 +226,7 @@ export default function CartPage() {
                         <motion.div
                           key={`${item.productId}-${item.campaignId}`}
                           layout
-                          className="bg-gray-50 rounded-lg  "
+                          className="bg-gray-50 rounded-lg"
                         >
                           {/* Mobile Layout */}
                           <div className="sm:hidden">
@@ -342,6 +263,15 @@ export default function CartPage() {
                                         {item.description}
                                       </p>
                                     )}
+                                    <Button
+                                      variant="link"
+                                      size="sm"
+                                      onClick={() => handleEditProduct(item, parseInt(campaignId))}
+                                      className="h-auto p-0 text-xs text-blue-600 mt-2"
+                                    >
+                                      <Edit2 className="w-3 h-3 mr-1" />
+                                      Edit details
+                                    </Button>
                                   </div>
                                   {/* Remove button - top right */}
                                   <Button
@@ -417,102 +347,113 @@ export default function CartPage() {
                           </div>
 
                           {/* Desktop Layout */}
-                          <div className="hidden sm:flex items-center space-x-4">
-                            {/* Product Image */}
-                            <div className="flex-shrink-0">
-                              {item.image ? (
-                                <Image
-                                  src={item.image}
-                                  alt={item.name}
-                                  width={60}
-                                  height={60}
-                                  className="rounded-lg object-cover"
-                                />
-                              ) : (
-                                <div className="w-15 h-15 bg-gray-200 rounded-lg flex items-center justify-center">
-                                  <Package className="w-6 h-6 text-gray-400" />
-                                </div>
-                              )}
-                            </div>
+                          <div className="hidden sm:block">
+                            <div className="flex items-center space-x-4">
+                              {/* Product Image */}
+                              <div className="flex-shrink-0">
+                                {item.image ? (
+                                  <Image
+                                    src={item.image}
+                                    alt={item.name}
+                                    width={60}
+                                    height={60}
+                                    className="rounded-lg object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-15 h-15 bg-gray-200 rounded-lg flex items-center justify-center">
+                                    <Package className="w-6 h-6 text-gray-400" />
+                                  </div>
+                                )}
+                              </div>
 
-                            {/* Product Details */}
-                            <div className="flex-grow min-w-0">
-                              <h4 className="font-medium text-gray-900 text-base truncate">{item.name}</h4>
-                              <p className="text-sm text-gray-500">
-                                ₹{item.price.toLocaleString()}{item.unit && ` per ${item.unit}`}
-                              </p>
-                              {item.description && (
-                                <p className="text-xs text-gray-400 truncate mt-1">
-                                  {item.description}
+                              {/* Product Details */}
+                              <div className="flex-grow min-w-0">
+                                <h4 className="font-medium text-gray-900 text-base truncate">{item.name}</h4>
+                                <p className="text-sm text-gray-500">
+                                  ₹{item.price.toLocaleString()}{item.unit && ` per ${item.unit}`}
                                 </p>
-                              )}
+                                {item.description && (
+                                  <p className="text-xs text-gray-400 truncate mt-1">
+                                    {item.description}
+                                  </p>
+                                )}
+                                <Button
+                                  variant="link"
+                                  size="sm"
+                                  onClick={() => handleEditProduct(item, parseInt(campaignId))}
+                                  className="h-auto p-0 text-xs text-blue-600 mt-1"
+                                >
+                                  <Edit2 className="w-3 h-3 mr-1" />
+                                  Edit donation details
+                                </Button>
 
-                              {/* Stock Warning */}
-                              {item.stock && item.quantity >= item.stock * 0.8 && (
-                                <div className="flex items-center mt-1">
-                                  <AlertTriangle className="w-3 h-3 text-orange-500 mr-1 flex-shrink-0" />
-                                  <span className="text-xs text-orange-600">
-                                    Only {item.stock - item.quantity} left
-                                  </span>
-                                </div>
-                              )}
-                            </div>
+                                {/* Stock Warning */}
+                                {item.stock && item.quantity >= item.stock * 0.8 && (
+                                  <div className="flex items-center mt-1">
+                                    <AlertTriangle className="w-3 h-3 text-orange-500 mr-1 flex-shrink-0" />
+                                    <span className="text-xs text-orange-600">
+                                      Only {item.stock - item.quantity} left
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
 
-                            {/* Quantity Controls */}
-                            <div className="flex items-center space-x-2">
+                              {/* Quantity Controls */}
+                              <div className="flex items-center space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleQuantityChange(item.productId, item.campaignId, item.quantity - 1)}
+                                  className="h-8 w-8 p-0"
+                                  disabled={item.quantity <= 1}
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </Button>
+
+                                <Input
+                                  type="number"
+                                  value={item.quantity}
+                                  onChange={(e) => {
+                                    const newQuantity = parseInt(e.target.value) || 1
+                                    handleQuantityChange(item.productId, item.campaignId, newQuantity)
+                                  }}
+                                  className="w-16 h-8 text-center text-sm"
+                                  min="1"
+                                  max={item.maxQty || item.stock || 999}
+                                />
+
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleQuantityChange(item.productId, item.campaignId, item.quantity + 1)}
+                                  className="h-8 w-8 p-0"
+                                  //@ts-ignore
+                                  disabled={
+                                    (item.maxQty && item.quantity >= item.maxQty) ||
+                                    (item.stock && item.quantity >= item.stock)
+                                  }
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </Button>
+                              </div>
+
+                              {/* Item Total */}
+                              <div className="text-right min-w-0">
+                                <p className="font-semibold text-gray-900">
+                                  ₹{(item.price * item.quantity).toLocaleString()}
+                                </p>
+                              </div>
+
+                              {/* Remove Button */}
                               <Button
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
-                                onClick={() => handleQuantityChange(item.productId, item.campaignId, item.quantity - 1)}
-                                className="h-8 w-8 p-0"
-                                disabled={item.quantity <= 1}
+                                onClick={() => handleRemoveItem(item.productId, item.campaignId)}
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
                               >
-                                <Minus className="w-3 h-3" />
-                              </Button>
-
-                              <Input
-                                type="number"
-                                value={item.quantity}
-                                onChange={(e) => {
-                                  const newQuantity = parseInt(e.target.value) || 1
-                                  handleQuantityChange(item.productId, item.campaignId, newQuantity)
-                                }}
-                                className="w-16 h-8 text-center text-sm"
-                                min="1"
-                                max={item.maxQty || item.stock || 999}
-                              />
-
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleQuantityChange(item.productId, item.campaignId, item.quantity + 1)}
-                                className="h-8 w-8 p-0"
-                                //@ts-ignore
-                                disabled={
-                                  (item.maxQty && item.quantity >= item.maxQty) ||
-                                  (item.stock && item.quantity >= item.stock)
-                                }
-                              >
-                                <Plus className="w-3 h-3" />
+                                <X className="w-4 h-4" />
                               </Button>
                             </div>
-
-                            {/* Item Total */}
-                            <div className="text-right min-w-0">
-                              <p className="font-semibold text-gray-900">
-                                ₹{(item.price * item.quantity).toLocaleString()}
-                              </p>
-                            </div>
-
-                            {/* Remove Button */}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveItem(item.productId, item.campaignId)}
-                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
                           </div>
                         </motion.div>
                       ))}
@@ -523,7 +464,7 @@ export default function CartPage() {
             </AnimatePresence>
 
             {/* Clear Cart Button */}
-            {(totalItems > 0 || customDonationAmount > 0) && (
+            {totalItems > 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -564,13 +505,6 @@ export default function CartPage() {
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Products Total</span>
                         <span className="font-medium">₹{subtotal.toLocaleString()}</span>
-                      </div>
-                    )}
-
-                    {customDonationAmount > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Direct Donation</span>
-                        <span className="font-medium">₹{customDonationAmount.toLocaleString()}</span>
                       </div>
                     )}
 
@@ -734,6 +668,20 @@ export default function CartPage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Product Modal */}
+      {editingProduct && (
+        <ProductPersonalizationModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false)
+            setEditingProduct(null)
+          }}
+          product={editingProduct}
+          onAddToCart={handleSaveProductEdit}
+          isEdit={true}
+        />
+      )}
     </div>
   )
 }

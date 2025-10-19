@@ -2,7 +2,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SelectQuery } from '@/lib/database'
 
-
 // GET - Get donation detail by ID
 export async function GET(
   request: NextRequest,
@@ -63,7 +62,7 @@ export async function GET(
 
     const donation = donationResult[0]
 
-    // Get donation items if it's a product-based donation
+    // Get donation items with personalization if it's a product-based donation
     let donationItems: any = []
     if (donation.donation_type === 'product_based') {
       const itemsQuery = `
@@ -83,28 +82,26 @@ export async function GET(
           ip.allows_personalization,
           ip.status as product_status,
           cpu.name as unit_name,
-          cpu.abbreviation as unit_abbreviation
+          cpu.abbreviation as unit_abbreviation,
+          po.id as personalization_id,
+          po.donor_name,
+          po.donor_country,
+          po.custom_image,
+          po.is_image_available,
+          po.custom_message,
+          po.donation_purpose,
+          po.special_instructions
         FROM donation_items di
         LEFT JOIN campaign_products cp ON cp.id = di.campaign_product_id
         LEFT JOIN indipendent_products ip ON cp.indipendent_product_id = ip.id
         LEFT JOIN campaign_product_units cpu ON ip.unit_id = cpu.id
+        LEFT JOIN personalization_options po ON po.donation_item_id = di.id
         WHERE di.donation_id = $1
         ORDER BY di.id
       `
       
       donationItems = await SelectQuery(itemsQuery, [donationId])
     }
-
-    // Get personalization options
-    const personalizationQuery = `
-      SELECT * FROM personalization_options 
-      WHERE donation_id = $1 OR donation_item_id IN (
-        SELECT id FROM donation_items WHERE donation_id = $1
-      )
-      ORDER BY id
-    `
-    
-    const personalization = await SelectQuery(personalizationQuery, [donationId])
 
     // Get impact stories if donation has generated impact
     let impactStories: any = []
@@ -207,7 +204,7 @@ export async function GET(
         }
       },
       
-      // Donation items (for product-based donations)
+      // Donation items (for product-based donations) with personalization
       items: donationItems.map((item: any) => ({
         id: item.id,
         campaign_product_id: item.campaign_product_id,
@@ -215,6 +212,7 @@ export async function GET(
         price_per_unit: parseFloat(item.price_per_unit),
         total_price: parseFloat(item.total_price),
         fulfillment_status: item.fulfillment_status,
+        donation_date: item.donation_date, // Product donation date
         product: {
           independent_product_id: item.independent_product_id,
           name: item.product_name,
@@ -234,23 +232,18 @@ export async function GET(
             abbreviation: item.unit_abbreviation
           }
         },
+        personalization: item.personalization_id ? {
+          id: item.personalization_id,
+          donor_name: item.donor_name,
+          donor_country: item.donor_country,
+          custom_image: item.custom_image,
+          is_image_available: item.is_image_available,
+          custom_message: item.custom_message,
+          donation_purpose: item.donation_purpose,
+          special_instructions: item.special_instructions
+        } : null,
         created_at: item.created_at,
         updated_at: item.updated_at
-      })),
-      
-      // Personalization options
-      personalization: personalization.map((p: any) => ({
-        id: p.id,
-        donation_id: p.donation_id,
-        donation_item_id: p.donation_item_id,
-        donor_name: p.donor_name,
-        donor_country: p.donor_country,
-        custom_image: p.custom_image,
-        is_image_available: p.is_image_available,
-        custom_message: p.custom_message,
-        donation_purpose: p.donation_purpose,
-        special_instructions: p.special_instructions,
-        created_at: p.created_at
       })),
       
       // Impact stories
@@ -302,7 +295,231 @@ export async function GET(
   }
 }
 
-// GET all donations for a user
+// PUT - Update donation item and personalization
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const donationItemId = parseInt(params.id)
+    
+    if (isNaN(donationItemId)) {
+      return NextResponse.json(
+        { error: 'Invalid donation item ID' },
+        { status: 400 }
+      )
+    }
+
+    const body = await request.json()
+    const {
+      quantity,
+      donation_date,
+      personalization
+    } = body
+
+    // Validate required fields
+    if (!quantity || quantity <= 0) {
+      return NextResponse.json(
+        { error: 'Valid quantity is required' },
+        { status: 400 }
+      )
+    }
+
+    // Get current donation item details
+    const currentItemQuery = `
+      SELECT di.*, cp.price as campaign_product_price
+      FROM donation_items di
+      LEFT JOIN campaign_products cp ON cp.id = di.campaign_product_id
+      WHERE di.id = $1
+    `
+    const currentItemResult = await SelectQuery(currentItemQuery, [donationItemId])
+    
+    if (currentItemResult.length === 0) {
+      return NextResponse.json(
+        { error: 'Donation item not found' },
+        { status: 404 }
+      )
+    }
+
+    const currentItem = currentItemResult[0]
+    const pricePerUnit = parseFloat(currentItem.campaign_product_price || currentItem.price_per_unit)
+    const totalPrice = quantity * pricePerUnit
+
+    // Update donation item
+    const updateItemQuery = `
+      UPDATE donation_items
+      SET 
+        quantity = $1,
+        total_price = $2,
+        donation_date = $3,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $4
+      RETURNING *
+    `
+    
+    const updateItemParams = [
+      quantity,
+      totalPrice,
+      donation_date || currentItem.donation_date,
+      donationItemId
+    ]
+
+    await SelectQuery(updateItemQuery, updateItemParams)
+
+    // Update personalization if provided
+    if (personalization) {
+      // Check if personalization exists
+      const checkPersonalizationQuery = `
+        SELECT id FROM personalization_options
+        WHERE donation_item_id = $1
+      `
+      const personalizationResult = await SelectQuery(checkPersonalizationQuery, [donationItemId])
+
+      if (personalizationResult.length > 0) {
+        // Update existing personalization
+        const personalizationId = personalizationResult[0].id
+        const updateFields: string[] = []
+        const updateValues: any[] = []
+        let paramIndex = 1
+
+        if (personalization.donor_name !== undefined) {
+          updateFields.push(`donor_name = ${paramIndex++}`)
+          updateValues.push(personalization.donor_name)
+        }
+        if (personalization.donor_country !== undefined) {
+          updateFields.push(`donor_country = ${paramIndex++}`)
+          updateValues.push(personalization.donor_country)
+        }
+        if (personalization.custom_message !== undefined) {
+          updateFields.push(`custom_message = ${paramIndex++}`)
+          updateValues.push(personalization.custom_message)
+        }
+        if (personalization.donation_purpose !== undefined) {
+          updateFields.push(`donation_purpose = ${paramIndex++}`)
+          updateValues.push(personalization.donation_purpose)
+        }
+        if (personalization.special_instructions !== undefined) {
+          updateFields.push(`special_instructions = ${paramIndex++}`)
+          updateValues.push(personalization.special_instructions)
+        }
+        if (personalization.custom_image !== undefined) {
+          updateFields.push(`custom_image = ${paramIndex++}`)
+          updateValues.push(personalization.custom_image)
+          updateFields.push(`is_image_available = ${paramIndex++}`)
+          updateValues.push(!!personalization.custom_image)
+        }
+
+        if (updateFields.length > 0) {
+          updateValues.push(personalizationId)
+          const updatePersonalizationQuery = `
+            UPDATE personalization_options
+            SET ${updateFields.join(', ')}
+            WHERE id = ${paramIndex}
+          `
+          await SelectQuery(updatePersonalizationQuery, updateValues)
+        }
+      } else {
+        // Create new personalization
+        const insertPersonalizationQuery = `
+          INSERT INTO personalization_options (
+            donation_item_id,
+            donor_name,
+            donor_country,
+            custom_message,
+            donation_purpose,
+            special_instructions,
+            custom_image,
+            is_image_available
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `
+        
+        await SelectQuery(insertPersonalizationQuery, [
+          donationItemId,
+          personalization.donor_name || null,
+          personalization.donor_country || null,
+          personalization.custom_message || null,
+          personalization.donation_purpose || null,
+          personalization.special_instructions || null,
+          personalization.custom_image || null,
+          !!personalization.custom_image
+        ])
+      }
+    }
+
+    // Fetch and return updated data
+    const updatedItemQuery = `
+      SELECT 
+        di.*,
+        cp.description as campaign_product_description,
+        ip.name as product_name,
+        ip.description as product_description,
+        ip.image as product_image,
+        cpu.name as unit_name,
+        cpu.abbreviation as unit_abbreviation,
+        po.id as personalization_id,
+        po.donor_name,
+        po.donor_country,
+        po.custom_image,
+        po.is_image_available,
+        po.custom_message,
+        po.donation_purpose,
+        po.special_instructions
+      FROM donation_items di
+      LEFT JOIN campaign_products cp ON cp.id = di.campaign_product_id
+      LEFT JOIN indipendent_products ip ON cp.indipendent_product_id = ip.id
+      LEFT JOIN campaign_product_units cpu ON ip.unit_id = cpu.id
+      LEFT JOIN personalization_options po ON po.donation_item_id = di.id
+      WHERE di.id = $1
+    `
+    
+    const updatedItemResult = await SelectQuery(updatedItemQuery, [donationItemId])
+    const updatedItem = updatedItemResult[0]
+
+    return NextResponse.json({
+      success: true,
+      message: 'Donation item updated successfully',
+      item: {
+        id: updatedItem.id,
+        quantity: updatedItem.quantity,
+        price_per_unit: parseFloat(updatedItem.price_per_unit),
+        total_price: parseFloat(updatedItem.total_price),
+        donation_date: updatedItem.donation_date,
+        product: {
+          name: updatedItem.product_name,
+          description: updatedItem.product_description,
+          image: updatedItem.product_image,
+          unit: {
+            name: updatedItem.unit_name,
+            abbreviation: updatedItem.unit_abbreviation
+          }
+        },
+        personalization: updatedItem.personalization_id ? {
+          id: updatedItem.personalization_id,
+          donor_name: updatedItem.donor_name,
+          donor_country: updatedItem.donor_country,
+          custom_message: updatedItem.custom_message,
+          donation_purpose: updatedItem.donation_purpose,
+          special_instructions: updatedItem.special_instructions,
+          custom_image: updatedItem.custom_image,
+          is_image_available: updatedItem.is_image_available
+        } : null
+      }
+    }, { status: 200 })
+
+  } catch (error) {
+    console.error('Error updating donation item:', error)
+    
+    return NextResponse.json(
+      { 
+        error: 'Failed to update donation item', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      },
+      { status: 500 }
+    )
+  }
+}
+
+// POST - Get all donations for a user
 export async function POST(request: NextRequest) {
   try {
     const { userId, page = 1, limit = 10, status } = await request.json()
@@ -315,13 +532,13 @@ export async function POST(request: NextRequest) {
     
     if (userId) {
       paramCount++
-      whereClause += ` AND d.user_id = $${paramCount}`
+      whereClause += ` AND d.user_id = ${paramCount}`
       queryParams.push(userId)
     }
     
     if (status) {
       paramCount++
-      whereClause += ` AND dpr.status = $${paramCount}`
+      whereClause += ` AND dpr.status = ${paramCount}`
       queryParams.push(status)
     }
     
@@ -343,7 +560,7 @@ export async function POST(request: NextRequest) {
       ${whereClause}
       GROUP BY d.id, c.title, c.image, dpr.status, dpr.created_at
       ORDER BY d.created_at DESC
-      LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
+      LIMIT ${paramCount + 1} OFFSET ${paramCount + 2}
     `
     
     const donations = await SelectQuery(donationsQuery, queryParams)

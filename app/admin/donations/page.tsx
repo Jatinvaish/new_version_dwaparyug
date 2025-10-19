@@ -205,7 +205,8 @@ export default function DonationsPage() {
 
   // Define table columns with useMemo to prevent recreation
   const columns: Column<Donation>[] = useMemo(() => [
-    {
+ 
+     {
       key: 'donor_name',
       header: 'Donor',
       sortable: true,
@@ -215,7 +216,7 @@ export default function DonationsPage() {
         <div className="max-w-[180px]">
           <div className="font-semibold truncate">{row.donor_name || 'Anonymous'}</div>
           <div className="text-sm text-muted-foreground truncate">
-            {row.donor_email}
+            {row.razorpay_payment_id}
           </div>
         </div>
       )
@@ -274,22 +275,7 @@ export default function DonationsPage() {
         </div>
       )
     },
-    {
-      key: 'is_public',
-      header: 'Visibility',
-      sortable: true,
-      filterable: true,
-      width: '100px',
-      filterOptions: [
-        { label: 'Public', value: 'true' },
-        { label: 'Private', value: 'false' }
-      ],
-      render: (value) => (
-        <Badge variant={value ? "default" : "outline"}>
-          {value ? 'Public' : 'Private'}
-        </Badge>
-      )
-    },
+    
     {
       key: 'impact_generated',
       header: 'Impact',

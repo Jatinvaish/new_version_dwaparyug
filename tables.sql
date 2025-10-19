@@ -637,3 +637,15 @@ ADD COLUMN  code VARCHAR(50);
  
 ALTER TABLE campaigns
  ADD COLUMN  is_featured SMALLINT DEFAULT 0;
+
+
+ALTER TABLE donation_items
+ADD COLUMN donation_date TIMESTAMP WITH TIME ZONE  ;
+
+
+
+ALTER TABLE indipendent_products
+ADD COLUMN min_tat INT DEFAULT 1,
+ADD COLUMN max_tat INT DEFAULT 1 ;
+
+
