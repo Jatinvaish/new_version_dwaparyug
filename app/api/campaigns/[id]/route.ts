@@ -73,6 +73,7 @@ export async function GET(
   }
 }
 
+
 // PUT update campaign
 export async function PUT(
   request: NextRequest,
@@ -96,6 +97,7 @@ export async function PUT(
       donation_goal,
       beneficiaries,
       image,
+      mobile_banner_image,
       images_array = [],
       status,
       priority,
@@ -118,16 +120,15 @@ export async function PUT(
       UPDATE campaigns SET
         title = $1, category_id = $2, festival_type = $3, overview = $4,
         details = $5, about_campaign = $6, donation_goal = $7, image = $8,
-        images_array = $9, status = $10, priority = $11, urgency = $12,
-        location = $13, organizer = $14, verified = $15, total_beneficiary = $16,
-        end_date = $17, updated_by = $18, beneficiaries =$19,
-        code =$20,
-        is_featured =$21, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $22
+        mobile_banner_image = $9, images_array = $10, status = $11, priority = $12, urgency = $13,
+        location = $14, organizer = $15, verified = $16, total_beneficiary = $17,
+        end_date = $18, updated_by = $19, beneficiaries = $20,
+        code = $21, is_featured = $22, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $23
       RETURNING *
     `, [
       title, category_id, festival_type, overview, details, about_campaign,
-      donation_goal, image, images_array, status, priority, urgency,
+      donation_goal, image, mobile_banner_image, images_array, status, priority, urgency,
       location, organizer, verified, total_beneficiary, end_date, updated_by, beneficiaries, code,
       is_featured, campaignId
     ]);
@@ -152,7 +153,7 @@ export async function PUT(
         await InsertQuery(`
           INSERT INTO campaign_products (
             campaign_id, indipendent_product_id, description, price, stock, sequence, created_by
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7 )
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
         `, [
           campaignId, product.indipendent_product_id, product.description || '', product.price,
           product.stock || 0, productIndex, updated_by

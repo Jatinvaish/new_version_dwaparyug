@@ -32,7 +32,7 @@ export interface Campaign {
   updated_at?: string;
   created_by_name?: string;
   updated_by_name?: string;
-  
+  mobile_banner_image?:string;
   // Related data
   assignedProducts?: Product[];
   faq_questions?: FAQ[];

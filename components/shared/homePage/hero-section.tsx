@@ -2,7 +2,7 @@
 
 import { scaleOnHover } from '@/lib/utils';
 import { useScroll, useTransform, motion, AnimatePresence } from 'framer-motion';
-import { Heart, Sparkles, Gift, ArrowRight, HandHeart, CheckCircle, Clock, Users } from 'lucide-react';
+import { Heart, Sparkles, Gift, ArrowRight, HandHeart, CheckCircle, Clock, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { useState, useEffect } from 'react'
 import { CountUpAnimation } from './counter-up';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ interface Campaign {
   total_raised?: any;
   total_progress_percentage?: number;
   image: string;
+  mobile_banner_image?: string;
   images_array?: string[];
   status: 'Draft' | 'Active' | 'Completed' | 'Inactive';
   priority: 'low' | 'medium' | 'high' | 'critical';
@@ -48,6 +49,7 @@ interface CampaignFilters {
   selectedCategory?: number | null;
   searchTerm?: string;
   page?: number;
+  is_featured?: number;
   pageSize?: number;
 }
 
@@ -66,6 +68,7 @@ interface SliderData {
   subtitle: string;
   description: string;
   image: string;
+  mobileImage?: string;
   ctaText: string;
   ctaLink: string;
   bgGradient: string;
@@ -79,6 +82,7 @@ const apiService = {
       if (filters.page) params.append('page', filters.page.toString());
       if (filters.pageSize) params.append('pageSize', filters.pageSize.toString());
       if (filters.selectedCategory) params.append('category_id', filters.selectedCategory.toString());
+      params.append('is_featured', '1');
       if (filters.searchTerm) params.append('search', filters.searchTerm);
 
       const response = await fetch(`/api/campaigns?${params.toString()}`);
@@ -159,6 +163,7 @@ const transformCampaignsToSlides = (campaigns: Campaign[]): SliderData[] => {
     subtitle: campaign.category_name || 'Making a Difference',
     description: campaign.overview || campaign.about_campaign || campaign.details || 'Join us in making a positive impact in the community.',
     image: campaign.image || (campaign.images_array && campaign.images_array[0]) || '/images/placeholder-campaign.jpg',
+    mobileImage: campaign.mobile_banner_image || campaign.image || (campaign.images_array && campaign.images_array[0]) || '/images/placeholder-campaign.jpg',
     ctaText: getCategoryCtaText(campaign.category_name),
     ctaLink: `/causes/${campaign.id}`,
     bgGradient: getCategoryGradient(campaign.category_name)
@@ -184,9 +189,20 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
   const [currentSlide, setCurrentSlide] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (slides.length > 1 && !loading) {
@@ -216,11 +232,11 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
 
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    
+
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
-    
+
     if (isLeftSwipe) {
       goToNext();
     }
@@ -242,7 +258,7 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
   }
 
   return (
-    <div 
+    <div
       className="relative w-full h-[500px] overflow-hidden touch-pan-y"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
@@ -257,14 +273,24 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
           {...instantFade}
           className="absolute inset-0"
         >
-
           <div className="absolute inset-0">
             <Link href={slides[currentSlide].ctaLink} className="cursor-pointer block w-full h-full">
+              {/* Desktop Image */}
               <Image
                 src={optimizeCloudinaryUrl(slides[currentSlide].image, 1920, 1080)}
                 alt={slides[currentSlide].title}
                 fill
-                className="object-cover cursor-pointer"
+                className="object-cover cursor-pointer hidden md:block"
+                priority
+                sizes="100vw"
+                style={{ objectFit: 'cover', objectPosition: 'center' }}
+              />
+              {/* Mobile Image */}
+              <Image
+                src={optimizeCloudinaryUrl(slides[currentSlide].mobileImage || slides[currentSlide].image, 768, 1024)}
+                alt={slides[currentSlide].title}
+                fill
+                className="object-cover cursor-pointer md:hidden"
                 priority
                 sizes="100vw"
                 style={{ objectFit: 'cover', objectPosition: 'center' }}
@@ -286,6 +312,28 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
           )}
         </motion.div>
       </AnimatePresence>
+
+      {/* Navigation Arrows */}
+      {slides.length > 1 && (
+        <>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={goToPrev}
+            className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-white/80 hover:bg-white z-20 rounded-full"
+          >
+            <ChevronLeft className="h-5 w-5 text-gray-800" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={goToNext}
+            className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-white/80 hover:bg-white z-20 rounded-full"
+          >
+            <ChevronRight className="h-5 w-5 text-gray-800" />
+          </Button>
+        </>
+      )}
 
       {/* Dotted indicators below the image */}
       {slides.length > 1 && (
@@ -365,7 +413,7 @@ const HeroSection = () => {
 
         const { campaigns: fetchedCampaigns } = await apiService.fetchCampaigns({
           page: 1,
-          pageSize: 20
+          pageSize: 20,
         });
 
         setCampaigns(fetchedCampaigns);

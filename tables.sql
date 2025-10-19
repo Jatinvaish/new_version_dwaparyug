@@ -649,3 +649,7 @@ ADD COLUMN min_tat INT DEFAULT 1,
 ADD COLUMN max_tat INT DEFAULT 1 ;
 
 
+
+ALTER TABLE campaigns
+ADD COLUMN mobile_banner_image  TEXT ;
+
