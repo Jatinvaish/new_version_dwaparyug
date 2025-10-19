@@ -40,6 +40,7 @@ const campaignFormSchema = z.object({
   status: z.enum(["Active", "Inactive",]),
   is_featured: z.boolean().optional(),
   image: z.string().min(1, "Banner image is required."),
+  mobile_banner_image: z.string().min(1, "Mobile banner image is required."),
   images_array: z.array(z.string()).optional(),
   assignedProducts: z
     .array(
@@ -93,6 +94,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
   const [bannerImage, setBannerImage] = useState<LocalImage | null>(null);
+  const [mobileBannerImage, setMobileBannerImage] = useState<LocalImage | null>(null);
   const [additionalImages, setAdditionalImages] = useState<LocalImage[]>([]);
 
   const {
@@ -118,6 +120,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
         return date;
       })(),
       image: "",
+      mobile_banner_image: "",
       images_array: [],
       assignedProducts: [],
       priority: "medium",
@@ -213,6 +216,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
         faq_questions: campaign.faq_questions || [],
         videoLinks: (campaign.videoLinks || []).map((url: string) => ({ url })),
         image: campaign.image || "",
+        mobile_banner_image: campaign?.mobile_banner_image || "",
         images_array: campaign.images_array || [],
         assignedProducts: (campaign.assignedProducts || []).map((product: any) => ({
           id: product.id,
@@ -233,6 +237,13 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
         });
       }
 
+      if (campaign.mobile_banner_image) {
+        setMobileBannerImage({
+          url: campaign.mobile_banner_image,
+          isExisting: true
+        });
+      }
+
       if (campaign.images_array && campaign.images_array.length > 0) {
         setAdditionalImages(
           campaign.images_array.map(url => ({
@@ -247,6 +258,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
   const onSubmit = async (data: CampaignFormValues) => {
     try {
       let bannerImageUrl = data.image;
+      let mobileBannerImageUrl = data.mobile_banner_image;
       let allImageUrls: string[] = [];
 
       if (bannerImage) {
@@ -258,6 +270,18 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
           bannerImageUrl = uploadedUrls[0];
         } else if (bannerImage.isExisting) {
           bannerImageUrl = bannerImage.url;
+        }
+      }
+
+      if (mobileBannerImage) {
+        if (mobileBannerImage.file) {
+          const uploadedUrls = await uploadImages([mobileBannerImage.file]);
+          mobileBannerImageUrl = uploadedUrls[0];
+        } else if (mobileBannerImage.base64) {
+          const uploadedUrls = await uploadImages([mobileBannerImage.base64]);
+          mobileBannerImageUrl = uploadedUrls[0];
+        } else if (mobileBannerImage.isExisting) {
+          mobileBannerImageUrl = mobileBannerImage.url;
         }
       }
 
@@ -284,6 +308,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
       const payload = {
         ...data,
         image: bannerImageUrl,
+        mobile_banner_image: mobileBannerImageUrl,
         images_array: allImageUrls,
         end_date: data.end_date.toISOString(),
         videoLinks: data.videoLinks?.map(v => v.url) || [],
@@ -349,6 +374,27 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
     }
   };
 
+  const handleMobileBannerImageSelection = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const base64 = await fileToBase64(file);
+      const previewUrl = createPreviewUrl(file);
+
+      setMobileBannerImage({
+        file,
+        base64,
+        url: previewUrl,
+        isExisting: false
+      });
+      setValue("mobile_banner_image", "temp_mobile_banner_image", { shouldValidate: true });
+    } catch (error) {
+      console.error('Error processing mobile banner image:', error);
+      alert('Error processing image. Please try again.');
+    }
+  };
+
   const handleMultipleImagesSelection = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -384,6 +430,14 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
     setValue("image", "");
   };
 
+  const removeMobileBannerImage = () => {
+    if (mobileBannerImage?.url && !mobileBannerImage.isExisting) {
+      URL.revokeObjectURL(mobileBannerImage.url);
+    }
+    setMobileBannerImage(null);
+    setValue("mobile_banner_image", "");
+  };
+
   const removeAdditionalImage = (index: number) => {
     const imageToRemove = additionalImages[index];
     if (imageToRemove?.url && !imageToRemove.isExisting) {
@@ -399,6 +453,10 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
     return () => {
       if (bannerImage?.url && !bannerImage.isExisting) {
         URL.revokeObjectURL(bannerImage.url);
+      }
+
+      if (mobileBannerImage?.url && !mobileBannerImage.isExisting) {
+        URL.revokeObjectURL(mobileBannerImage.url);
       }
 
       additionalImages.forEach(img => {
@@ -444,7 +502,6 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                 {...register("code")} 
                 placeholder="e.g., C001" 
                 className="h-8"
-                // disabled={!!campaign}
               />
               {errors.code && <p className="text-xs text-red-500">{errors.code.message}</p>}
             </div>
@@ -823,6 +880,47 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
               </div>
             )}
             {errors.image && <p className="text-xs text-red-500">{errors.image.message}</p>}
+          </div>
+
+          {/* Mobile Banner Image Upload Section */}
+          <div className="space-y-1">
+            <Label htmlFor="mobileBannerImage" className="text-sm">Mobile Banner Image (Mandatory)</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="mobileBannerImage"
+                type="file"
+                onChange={handleMobileBannerImageSelection}
+                accept="image/*"
+                className="h-8 text-sm"
+              />
+              <span className="text-xs text-gray-500">Upload on save</span>
+            </div>
+            {mobileBannerImage && (
+              <div className="relative w-32 h-20 mt-1">
+                <Image
+                  src={mobileBannerImage.url}
+                  alt="Mobile Banner Preview"
+                  fill
+                  style={{ objectFit: 'cover' }}
+                  className="rounded-md"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-1 -right-1 h-4 w-4 rounded-full"
+                  onClick={removeMobileBannerImage}
+                >
+                  <X className="h-2 w-2" />
+                </Button>
+                {!mobileBannerImage.isExisting && (
+                  <div className="absolute bottom-0 left-0 px-1 py-0.5 bg-blue-500 text-white text-xs rounded">
+                    New
+                  </div>
+                )}
+              </div>
+            )}
+            {errors.mobile_banner_image && <p className="text-xs text-red-500">{errors.mobile_banner_image.message}</p>}
           </div>
 
           {/* Multiple Images Upload Section */}

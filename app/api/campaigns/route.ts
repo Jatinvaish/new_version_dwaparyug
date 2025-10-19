@@ -12,6 +12,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || '';
     const sortBy = searchParams.get('sortBy') || 'c.created_at';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
+    const is_featured = searchParams.get('is_featured');
+
     const offset = (page - 1) * pageSize;
 
     let whereClause = '';
@@ -29,6 +31,13 @@ export async function GET(request: NextRequest) {
     if (category_id) {
       whereClause += ` AND c.category_id = $${paramIndex}`;
       params.push(parseInt(category_id));
+      paramIndex++;
+    }
+
+    // Filter by is_featured
+    if (is_featured !== null && is_featured !== undefined) {
+      whereClause += ` AND c.is_featured = $${paramIndex}`;
+      params.push(parseInt(is_featured));
       paramIndex++;
     }
 
@@ -65,7 +74,7 @@ export async function GET(request: NextRequest) {
 
     // Count query for pagination
     const countQuery = `
-      SELECT COUNT(*) as total
+      SELECT COUNT(c.id) as total
       FROM campaigns c
       LEFT JOIN campaign_categories cc ON c.category_id = cc.id
       LEFT JOIN users u1 ON c.created_by = u1.id
@@ -103,8 +112,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
-
 // POST create new campaign
 export async function POST(request: NextRequest) {
   const client = await getClient();
@@ -123,6 +130,7 @@ export async function POST(request: NextRequest) {
       donation_goal,
       beneficiaries,
       image,
+      mobile_banner_image,
       images_array = [],
       status = 'Draft',
       priority = 'medium',
@@ -141,7 +149,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!title || !category_id || !overview || !details || !donation_goal || !image || !end_date) {
+    if (!title || !category_id || !overview || !details || !donation_goal || !image || !mobile_banner_image || !end_date) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -152,16 +160,15 @@ export async function POST(request: NextRequest) {
     const campaignResult = await InsertQuery(`
       INSERT INTO campaigns (
         title, category_id, festival_type, overview, details, about_campaign,
-        donation_goal, image, images_array, status, priority, urgency,
-        location, organizer, verified, total_beneficiary, end_date,beneficiaries, code, is_featured, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19,$20, $21)
+        donation_goal, image, mobile_banner_image, images_array, status, priority, urgency,
+        location, organizer, verified, total_beneficiary, end_date, beneficiaries, code, is_featured, created_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
       RETURNING *
     `, [
       title, category_id, festival_type, overview, details, about_campaign,
-      donation_goal, image, images_array, status, priority, urgency,
+      donation_goal, image, mobile_banner_image, images_array, status, priority, urgency,
       location, organizer, verified, total_beneficiary, end_date, beneficiaries,
-      code,
-      is_featured, created_by
+      code, is_featured, created_by
     ]);
 
     const campaign = campaignResult.rows[0];
@@ -174,7 +181,7 @@ export async function POST(request: NextRequest) {
         await InsertQuery(`
           INSERT INTO campaign_products (
             campaign_id, indipendent_product_id, description, price, stock, sequence, created_by
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7 )
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
         `, [
           campaign.id, product.indipendent_product_id, product.description || '', product.price,
           product.stock || 0, productIndex, created_by
@@ -220,3 +227,4 @@ export async function POST(request: NextRequest) {
     client.release();
   }
 }
+
