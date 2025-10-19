@@ -181,6 +181,8 @@ export async function POST(request: NextRequest) {
         increment_count: formData.get('increment_count') ? parseInt(formData.get('increment_count') as string) : 1,
         is_flexible_increment_count: formData.get('is_flexible_increment_count') === 'true',
         allows_personalization: formData.get('allows_personalization') === 'true',
+        min_tat: formData.get('min_tat') ? parseInt(formData.get('min_tat') as string) : null,
+        max_tat: formData.get('max_tat') ? parseInt(formData.get('max_tat') as string) : null,
         status: formData.get('status') as string || 'Active',
         created_by: formData.get('created_by') ? parseInt(formData.get('created_by') as string) : null,
       };
@@ -216,9 +218,9 @@ export async function POST(request: NextRequest) {
       INSERT INTO indipendent_products (
         name, description, price, unit_id, image, min_qty, max_qty,
         increment_count, is_flexible_increment_count, allows_personalization,
-        status, created_by, updated_by
+        min_tat, max_tat, status, created_by, updated_by
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $14
       ) RETURNING *
     `;
     
@@ -233,6 +235,8 @@ export async function POST(request: NextRequest) {
       body.increment_count || 1,
       body.is_flexible_increment_count !== false,
       body.allows_personalization !== false,
+      body.min_tat || null,
+      body.max_tat || null,
       body.status || 'Active',
       body.created_by || null
     ];
@@ -308,6 +312,8 @@ export async function PUT(request: NextRequest) {
         increment_count: formData.get('increment_count') ? parseInt(formData.get('increment_count') as string) : 1,
         is_flexible_increment_count: formData.get('is_flexible_increment_count') === 'true',
         allows_personalization: formData.get('allows_personalization') === 'true',
+        min_tat: formData.get('min_tat') ? parseInt(formData.get('min_tat') as string) : null,
+        max_tat: formData.get('max_tat') ? parseInt(formData.get('max_tat') as string) : null,
         status: formData.get('status') as string,
         updated_by: formData.get('updated_by') ? parseInt(formData.get('updated_by') as string) : null,
       };
@@ -406,6 +412,18 @@ export async function PUT(request: NextRequest) {
     if (body.allows_personalization !== undefined) {
       updateFields.push(`allows_personalization = $${paramIndex}`);
       params.push(body.allows_personalization);
+      paramIndex++;
+    }
+    
+    if (body.min_tat !== undefined) {
+      updateFields.push(`min_tat = $${paramIndex}`);
+      params.push(body.min_tat);
+      paramIndex++;
+    }
+    
+    if (body.max_tat !== undefined) {
+      updateFields.push(`max_tat = $${paramIndex}`);
+      params.push(body.max_tat);
       paramIndex++;
     }
     

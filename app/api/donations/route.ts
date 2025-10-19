@@ -11,25 +11,25 @@ const razorpay = new Razorpay({
 function normalizeMobileNumber(mobile: string): string {
   // Remove all non-digit characters
   const digitsOnly = mobile.replace(/\D/g, '');
-  
+
   // Extract last 10 digits
   if (digitsOnly.length >= 10) {
     return digitsOnly.slice(-10);
   }
-  
+
   return digitsOnly; // Return as is if less than 10 digits
 }
 
 // Function to find or create user based on mobile number
 async function findOrCreateUser(formData: any): Promise<number> {
   const { donorName, mobileNumber, donorCountry } = formData;
-  
+
   if (!mobileNumber || !donorName) {
     throw new Error('Mobile number and name are required');
   }
 
   const normalizedMobile = normalizeMobileNumber(mobileNumber);
-  
+
   if (normalizedMobile.length !== 10) {
     throw new Error('Invalid mobile number format');
   }
@@ -43,9 +43,9 @@ async function findOrCreateUser(formData: any): Promise<number> {
       ORDER BY created_at DESC
       LIMIT 1
     `;
-    
+
     const existingUsers = await SelectQuery(findUserQuery, [normalizedMobile]);
-    
+
     if (existingUsers.length > 0) {
       console.log(`Found existing user with ID: ${existingUsers[0].id} for mobile: ${normalizedMobile}`);
       return existingUsers[0].id;
@@ -53,15 +53,15 @@ async function findOrCreateUser(formData: any): Promise<number> {
 
     // If user doesn't exist, create a new one
     console.log(`Creating new user for mobile: ${normalizedMobile}`);
-    
+
     // Split donor name into first and last name
     const nameParts = donorName.trim().split(' ');
     const firstName = nameParts[0] || 'Anonymous';
     const lastName = nameParts.slice(1).join(' ') || 'Donor';
-    
+
     // Generate a dummy email since it's required
     const dummyEmail = `donor_${normalizedMobile}@temp.dwaparyug.org`;
-    
+
     // Create new user
     const createUserQuery = `
       INSERT INTO users (
@@ -78,11 +78,11 @@ async function findOrCreateUser(formData: any): Promise<number> {
         $1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
       ) RETURNING id
     `;
-    
+
     // Use a default role_id (assuming 3 is for regular users/donors)
     const defaultRoleId = 3;
     const dummyPassword = '$2b$10$D.if7JHKhz0OReIHOaPenOL63aN6g2BrRwAtFPACFQ/Gucq56z1IS'; // This should be hashed in production
-    
+
     const createUserParams = [
       firstName,
       lastName,
@@ -94,14 +94,14 @@ async function findOrCreateUser(formData: any): Promise<number> {
     ];
 
     const newUserResult = await SelectQuery(createUserQuery, createUserParams);
-    
+
     if (newUserResult.length === 0) {
       throw new Error('Failed to create new user');
     }
 
     const newUserId = newUserResult[0].id;
     console.log(`Created new user with ID: ${newUserId} for mobile: ${normalizedMobile}`);
-    
+
     return newUserId;
 
   } catch (error) {
@@ -113,14 +113,14 @@ async function findOrCreateUser(formData: any): Promise<number> {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { 
-      cartItems, 
-      customDonationId, 
-      formData, 
-      totalAmount, 
-      donationAmount, 
-      tipAmount, 
-      mobileNumber 
+    const {
+      cartItems,
+      customDonationId,
+      formData,
+      totalAmount,
+      donationAmount,
+      tipAmount,
+      mobileNumber
     } = body
 
     console.log("🚀 ~ POST ~ formData:", formData)
@@ -133,7 +133,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!formData || !formData.mobileNumber || !formData.donorName) {
+    // ✅ FIX: Extract donor info from cart items personalization if formData is empty
+    let donorInfo = formData || {};
+
+    if ((!donorInfo.mobileNumber || !donorInfo.donorName) && cartItems && cartItems.length > 0) {
+      // Get donor info from first cart item's personalization
+      const firstItemWithPersonalization = cartItems.find((item: any) => item.personalization);
+
+      if (firstItemWithPersonalization && firstItemWithPersonalization.personalization) {
+        donorInfo = {
+          ...donorInfo,
+          donorName: firstItemWithPersonalization.personalization.donorName || donorInfo.donorName,
+          mobileNumber: firstItemWithPersonalization.personalization.mobileNumber || donorInfo.mobileNumber,
+          donorCountry: firstItemWithPersonalization.personalization.donorCountry || donorInfo.donorCountry || 'IN',
+          donatedOnBehalfOf: firstItemWithPersonalization.personalization.donatedOnBehalfOf || donorInfo.donatedOnBehalfOf,
+          customMessage: firstItemWithPersonalization.personalization.customMessage || donorInfo.customMessage,
+          donationPurpose: firstItemWithPersonalization.personalization.donationPurpose || donorInfo.donationPurpose,
+          isAnonymous: firstItemWithPersonalization.personalization.isAnonymous ?? donorInfo.isAnonymous
+        };
+      }
+    }
+
+    // Now validate with the merged donor info
+    if (!donorInfo || !donorInfo.mobileNumber || !donorInfo.donorName) {
       return NextResponse.json(
         { error: 'Mobile number and donor name are required' },
         { status: 400 }
@@ -150,11 +172,11 @@ export async function POST(request: NextRequest) {
     // Find or create user based on mobile number
     let userId: number;
     try {
-      userId = await findOrCreateUser(formData);
+      userId = await findOrCreateUser(donorInfo); // Use donorInfo instead of formData
     } catch (error) {
       console.error('User management error:', error);
       return NextResponse.json(
-        { 
+        {
           error: 'Failed to process user information',
           details: error instanceof Error ? error.message : 'Unknown error'
         },
@@ -162,10 +184,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Determine donation type
+    // Rest of your code remains the same...
     const donationType = cartItems && cartItems.length > 0 ? 'product_based' : 'direct'
-
-    // Get campaign ID (for direct donations, use the first available campaign or a default one)
     let campaignId = cartItems && cartItems.length > 0 ? cartItems[0].campaignId : null
 
     if (!campaignId || campaignId <= 0 && Number(customDonationId) > 0) {
@@ -173,7 +193,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (!campaignId) {
-      // For direct donations, get an active campaign or create a default one
       const defaultCampaignQuery = `
         SELECT id FROM campaigns 
         WHERE status = 'Active'  
@@ -193,7 +212,7 @@ export async function POST(request: NextRequest) {
 
     // Create Razorpay order
     const orderOptions = {
-      amount: Math.round(totalAmount * 100), // Amount in paise
+      amount: Math.round(totalAmount * 100),
       currency: 'INR',
       receipt: `donation_${Date.now()}`,
       notes: {
@@ -202,14 +221,13 @@ export async function POST(request: NextRequest) {
         user_id: userId.toString(),
         tip_amount: tipAmount.toString(),
         donation_amount: donationAmount.toString(),
-        mobile_number: normalizeMobileNumber(formData.mobileNumber)
+        mobile_number: normalizeMobileNumber(donorInfo.mobileNumber) // Use donorInfo
       }
     }
 
     const razorpayOrder = await razorpay.orders.create(orderOptions)
     console.log("🚀 ~ POST ~ Created Razorpay order for userId:", userId)
 
-    // Insert payment request into database
     const insertPaymentRequestQuery = `
       INSERT INTO donation_payment_requests (
         campaign_id, user_id, razorpay_order_id, amount, currency, 
@@ -231,7 +249,7 @@ export async function POST(request: NextRequest) {
     const paymentRequestResult = await SelectQuery(insertPaymentRequestQuery, paymentRequestParams)
     const paymentRequestId = paymentRequestResult[0].id
 
-    // Store temporary data for processing after payment success
+    // Store merged donor info in temp data
     const tempDataQuery = `
       INSERT INTO donation_temp_data (
         payment_request_id, cart_items, form_data, created_at
@@ -241,7 +259,7 @@ export async function POST(request: NextRequest) {
     await SelectQuery(tempDataQuery, [
       paymentRequestId,
       JSON.stringify(cartItems || []),
-      JSON.stringify(formData || {})
+      JSON.stringify(donorInfo) // Store merged donor info
     ])
 
     return NextResponse.json({
@@ -250,7 +268,7 @@ export async function POST(request: NextRequest) {
       amount: totalAmount,
       currency: razorpayOrder.currency,
       paymentRequestId: paymentRequestId,
-      userId: userId, // Return the user ID for reference
+      userId: userId,
       key: process.env.RAZORPAY_KEY_ID
     }, { status: 200 })
 
@@ -271,12 +289,12 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
+
     // Pagination parameters
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '10');
     const offset = (page - 1) * pageSize;
-    
+
     // Search and filter parameters
     const search = searchParams.get('search'); // Search in donor name, campaign title
     const campaignId = searchParams.get('campaign_id');
@@ -286,91 +304,91 @@ export async function GET(request: NextRequest) {
     const maxAmount = searchParams.get('max_amount');
     const isPublic = searchParams.get('is_public');
     const impactGenerated = searchParams.get('impact_generated');
-    
+
     // Date filters
     const startDate = searchParams.get('start_date');
     const endDate = searchParams.get('end_date');
-    
+
     // Sorting parameters
     const sortBy = searchParams.get('sortBy') || 'donation_date';
     const sortOrder = searchParams.get('sortOrder') || 'DESC';
-    
+
     // Build WHERE clause
     let whereClause = '';
     const params: any[] = [];
     let paramIndex = 1;
-    
+
     // Global search across donor name and campaign title
     if (search) {
       whereClause += ` AND (u.full_name ILIKE $${paramIndex} OR c.title ILIKE $${paramIndex})`;
       params.push(`%${search}%`);
       paramIndex++;
     }
-    
+
     // Specific field filters
     if (campaignId) {
       whereClause += ` AND d.campaign_id = $${paramIndex}`;
       params.push(parseInt(campaignId));
       paramIndex++;
     }
-    
+
     if (userId) {
       whereClause += ` AND d.user_id = $${paramIndex}`;
       params.push(parseInt(userId));
       paramIndex++;
     }
-    
+
     if (donationType) {
       whereClause += ` AND d.donation_type = $${paramIndex}`;
       params.push(donationType);
       paramIndex++;
     }
-    
+
     if (minAmount) {
       whereClause += ` AND d.donation_amount >= $${paramIndex}`;
       params.push(parseFloat(minAmount));
       paramIndex++;
     }
-    
+
     if (maxAmount) {
       whereClause += ` AND d.donation_amount <= $${paramIndex}`;
       params.push(parseFloat(maxAmount));
       paramIndex++;
     }
-    
+
     if (isPublic !== null && isPublic !== '') {
       whereClause += ` AND d.is_public = $${paramIndex}`;
       params.push(isPublic === 'true');
       paramIndex++;
     }
-    
+
     if (impactGenerated !== null && impactGenerated !== '') {
       whereClause += ` AND d.impact_generated = $${paramIndex}`;
       params.push(impactGenerated === 'true');
       paramIndex++;
     }
-    
+
     if (startDate) {
       whereClause += ` AND d.donation_date >= $${paramIndex}`;
       params.push(startDate);
       paramIndex++;
     }
-    
+
     if (endDate) {
       whereClause += ` AND d.donation_date <= $${paramIndex}`;
       params.push(endDate);
       paramIndex++;
     }
-    
+
     // Validate sort column
     const allowedSortColumns = [
-      'id', 'donation_amount', 'tip_amount', 'total_amount', 'donation_date', 
+      'id', 'donation_amount', 'tip_amount', 'total_amount', 'donation_date',
       'donation_type', 'is_public', 'impact_generated', 'beneficiaries_reached',
       'donor_name', 'campaign_title', 'created_at'
     ];
     const validSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'donation_date';
     const validSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
-    
+
     // Main query to get donations with campaign and donor details
     const donationsQuery = `
       SELECT 
@@ -446,9 +464,9 @@ export async function GET(request: NextRequest) {
         d.donation_date DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
-    
+
     params.push(pageSize, offset);
-    
+
     // Count query for pagination
     const countQuery = `
       SELECT COUNT(*) as total
@@ -458,9 +476,9 @@ export async function GET(request: NextRequest) {
       LEFT JOIN campaign_categories cc ON c.category_id = cc.id
       WHERE 1=1 ${whereClause}
     `;
-    
+
     const countParams = params.slice(0, -2); // Remove limit and offset for count
-    
+
     // Summary statistics query
     const statsQuery = `
       SELECT 
@@ -479,18 +497,18 @@ export async function GET(request: NextRequest) {
       LEFT JOIN campaign_categories cc ON c.category_id = cc.id
       WHERE 1=1 ${whereClause}
     `;
-    
+
     // Execute queries
     const [donations, countResult, statsResult] = await Promise.all([
       SelectQuery(donationsQuery, params),
       SelectQuery(countQuery, countParams),
       SelectQuery(statsQuery, countParams)
     ]);
-    
+
     const total = parseInt(countResult[0]?.total || '0');
     const totalPages = Math.ceil(total / pageSize);
     const stats = statsResult[0] || {};
-    
+
     return NextResponse.json({
       donations,
       pagination: {
@@ -513,13 +531,13 @@ export async function GET(request: NextRequest) {
         totalBeneficiariesReached: parseInt(stats.total_beneficiaries_reached || '0')
       }
     });
-    
+
   } catch (error) {
     console.error('Error fetching donations:', error);
     return NextResponse.json(
-      { 
-        error: 'Failed to fetch donations', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
+      {
+        error: 'Failed to fetch donations',
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );

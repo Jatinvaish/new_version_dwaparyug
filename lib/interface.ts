@@ -19,6 +19,7 @@ export interface Campaign {
   location?: string;
   organizer?: string;
   verified?: boolean;
+  is_featured?: boolean;
   total_beneficiary?: number;
   beneficiaries?: number;
   total_donors_till_now?: number;

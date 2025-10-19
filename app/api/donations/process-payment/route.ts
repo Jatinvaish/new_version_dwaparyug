@@ -1,22 +1,10 @@
 // app/api/donations/process-payment/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { SelectQuery } from '@/lib/database'
+import { InsertQuery, SelectQuery } from '@/lib/database'
 import { processImageUpload } from '@/lib/cloudinary'
 
-interface CartItem {
-  productId: number
-  campaignId: number
-  campaignTitle: string
-  name: string
-  price: number
-  quantity: number
-  unit?: string
-  image?: string
-  maxQty?: number
-  stock?: number
-  description?: string
-}
+
 
 interface DonationFormData {
   donorName?: string
@@ -39,19 +27,19 @@ interface DonationFormData {
 function normalizeMobileNumber(mobileNumber: string): string {
   // Remove all non-digit characters
   const digitsOnly = mobileNumber.replace(/\D/g, '')
-  
+
   // Get last 10 digits
   if (digitsOnly.length >= 10) {
     return digitsOnly.slice(-10)
   }
-  
+
   return digitsOnly
 }
 
 // Helper function to find or create user based on mobile number
 async function findOrCreateUser(formData: DonationFormData): Promise<number> {
   const normalizedMobile = normalizeMobileNumber(formData.mobileNumber)
-  
+
   if (normalizedMobile.length !== 10) {
     throw new Error('Invalid mobile number format')
   }
@@ -64,9 +52,9 @@ async function findOrCreateUser(formData: DonationFormData): Promise<number> {
     ORDER BY id DESC
     LIMIT 1
   `
-  
+
   const existingUsers = await SelectQuery(existingUserQuery, [normalizedMobile])
-  
+
   if (existingUsers.length > 0) {
     // User exists, return their ID
     return existingUsers[0].id
@@ -194,7 +182,7 @@ export async function POST(request: NextRequest) {
     }
 
     const paymentRequest = paymentRequestResult[0]
-    const cartItems: CartItem[] = paymentRequest.cart_items || []
+    const cartItems: any = paymentRequest.cart_items || []
     const formData: DonationFormData = paymentRequest.form_data || {}
 
     // Find or create user based on mobile number
@@ -270,8 +258,8 @@ export async function POST(request: NextRequest) {
           const insertItemQuery = `
             INSERT INTO donation_items (
               donation_id, campaign_product_id, quantity, price_per_unit, total_price,
-              fulfillment_status
-            ) VALUES ($1, $2, $3, $4, $5, $6)
+              fulfillment_status, donation_date
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING id
           `
 
@@ -281,11 +269,13 @@ export async function POST(request: NextRequest) {
             item.quantity,
             item.price,
             item.price * item.quantity,
-            'pending'
+            'pending',
+            item.personalization?.donationDate || new Date().toISOString() // ADD THIS
           ]
 
           const itemResult = await SelectQuery(insertItemQuery, itemParams)
           const donationItemId = itemResult[0].id
+
 
           // Get campaign product details to update stock and get campaign_id
           const productQuery = `
@@ -330,29 +320,28 @@ export async function POST(request: NextRequest) {
           }
 
           // Insert personalization options if needed
-          if (formData.donorName || formData.donorCountry || formData.customMessage ||
+          if (item.personalization && formData.donorName || formData.donorCountry || formData.customMessage ||
             formData.donationPurpose || formData.specialInstructions || imageUrl) {
 
             const insertPersonalizationQuery = `
               INSERT INTO personalization_options (
-                donation_id, donation_item_id, donor_name, donor_country, custom_image, 
+                donation_item_id, donor_name, donor_country, custom_image, 
                 is_image_available, custom_message, donation_purpose, special_instructions
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            `
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+              `
 
             const personalizationParams = [
-              donationId,
               donationItemId,
-              formData.donorName || null,
-              formData.donorCountry || null,
-              formData.customImage || imageUrl,
-              !!(formData.customImage || imageUrl),
-              formData.customMessage || null,
-              formData.donationPurpose || null,
-              formData.specialInstructions || null
+              item.personalization.donorName || null,
+              item.personalization.donorCountry || null,
+              item.personalization.customImage || null,
+              !!item.personalization.customImage,
+              item.personalization.customMessage || null,
+              item.personalization.donationPurpose || null,
+              item.personalization.specialInstructions || null
             ]
 
-            await SelectQuery(insertPersonalizationQuery, personalizationParams)
+            await InsertQuery(insertPersonalizationQuery, personalizationParams)
           }
         }
       } else if (paymentRequest.donation_type === 'direct') {
