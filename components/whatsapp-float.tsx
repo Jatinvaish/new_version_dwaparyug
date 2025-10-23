@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import React from "react";
 
 const WhatsAppFloat = () => {
-  const phoneNumber = "919658745488"; // Format: country code + number (no + sign)
+  const phoneNumber = "919220373037"; // Format: country code + number (no + sign)
   const message = "Hello! I would like to know more about your organization."; // Default message
   
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
