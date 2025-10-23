@@ -18,10 +18,11 @@ export async function uploadImage(fileBuffer: Buffer, fileName: string): Promise
         // Optimized transformations for performance
         transformation: [
           { width: 1200, height: 800, crop: 'limit' },
-          { quality: 'auto:good' }, // Better compression
           { fetch_format: 'auto' }, // Auto WebP/AVIF
           { dpr: 'auto' }, // Auto device pixel ratio
           { flags: 'progressive' }, // Progressive JPEG loading
+          { quality: '100' }, // Use 100 for maximum quality, or remove this line entirely
+
         ],
         // Enable responsive images
         responsive_breakpoints: [
@@ -47,7 +48,7 @@ export async function uploadImage(fileBuffer: Buffer, fileName: string): Promise
 
 // Get optimized image URL with transformations
 export function getOptimizedImageUrl(
-  publicId: string, 
+  publicId: string,
   options: {
     width?: number;
     height?: number;
@@ -59,7 +60,7 @@ export function getOptimizedImageUrl(
   const {
     width = 'auto',
     height,
-    quality = 'auto:good',
+    quality = '100',
     crop = 'limit',
     gravity = 'auto'
   } = options;
@@ -106,15 +107,15 @@ export async function deleteImage(imageUrl: string): Promise<void> {
     const urlParts = imageUrl.split('/');
     const fileNameWithExtension = urlParts[urlParts.length - 1];
     const publicId = fileNameWithExtension.split('.')[0];
-    
+
     let cleanPublicId = publicId;
     const versionIndex = urlParts.findIndex(part => part.startsWith('v'));
     if (versionIndex !== -1 && versionIndex < urlParts.length - 1) {
       cleanPublicId = urlParts.slice(versionIndex + 1).join('/').replace(/\.[^/.]+$/, '');
     }
-    
+
     const result = await cloudinary.uploader.destroy(cleanPublicId);
-    
+
     if (result.result === 'ok') {
       console.log(`Successfully deleted image: ${cleanPublicId}`);
     } else if (result.result === 'not found') {
@@ -145,7 +146,7 @@ export async function deleteMultipleImages(imageUrls: string[]): Promise<{
 }> {
   const successful: string[] = [];
   const failed: string[] = [];
-  
+
   for (const imageUrl of imageUrls) {
     try {
       await deleteImage(imageUrl);
@@ -155,7 +156,7 @@ export async function deleteMultipleImages(imageUrls: string[]): Promise<{
       console.error(`Failed to delete image ${imageUrl}:`, error);
     }
   }
-  
+
   return { successful, failed };
 }
 
@@ -163,18 +164,18 @@ export const processImageUpload = async (imageData: any, fileName?: string): Pro
   if (imageData instanceof File) {
     const bytes = await imageData.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const safeFileName = fileName || 
+    const safeFileName = fileName ||
       `product_${Date.now()}_${imageData.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
     return await uploadImage(buffer, safeFileName);
   } else if (typeof imageData === 'string' && imageData.startsWith('data:image/')) {
     const base64Data = imageData.split(',')[1];
     const buffer = Buffer.from(base64Data, 'base64');
     const extension = imageData.split(';')[0].split('/')[1] || 'jpg';
-    const safeFileName = fileName || 
+    const safeFileName = fileName ||
       `product_${Date.now()}_${Math.random().toString(36).substring(7)}.${extension}`;
     return await uploadImage(buffer, safeFileName);
   } else if (Buffer.isBuffer(imageData)) {
-    const safeFileName = fileName || 
+    const safeFileName = fileName ||
       `product_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
     return await uploadImage(imageData, safeFileName);
   }

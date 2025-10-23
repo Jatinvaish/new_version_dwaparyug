@@ -421,11 +421,11 @@ export const testimonials = [
     location: "Delhi",
   },
   {
-    name: "Aryan",
+    name: "Aryan Gupta",
     role: "Volunteer",
     image: "/images/testimonials/aryan.webp",
     quote:
-      "Every hour I give as a volunteer comes back to me as a lesson in kindness, resilience, and humanity.",
+      "Every hour I spend helping others reminds me how small actions can create big waves of change.",
     rating: 5,
     location: "Delhi",
   },
@@ -438,8 +438,43 @@ export const testimonials = [
     rating: 5,
     location: "Delhi",
   },
-]
-
+  {
+    name: "Aman Yadav",
+    role: "Donor",
+    image: "/images/testimonials/no-profile.png",
+    quote:
+      "When I saw how transparently my donation was used, I knew I wanted to continue supporting every month.",
+    rating: 5,
+    location: "Lucknow",
+  },
+  {
+    name: "Jatin Sharma",
+    role: "Donor",
+    image: "/images/testimonials/no-profile.png",
+    quote:
+      "It feels amazing to know that my small contribution can help educate a child or feed a family. That’s real impact.",
+    rating: 5,
+    location: "Jaipur",
+  },
+  {
+    name: "Sneha Patel",
+    role: "Beneficiary",
+    image: "/images/testimonials/no-profile.png",
+    quote:
+      "Thanks to the campaign’s support, I was able to restart my small business after the floods. I’ll always be grateful.",
+    rating: 5,
+    location: "Gujarat",
+  },
+  {
+    name: "Rahul Verma",
+    role: "Volunteer",
+    image: "/images/testimonials/no-profile.png",
+    quote:
+      "Working with this organization taught me how collective effort can truly uplift lives. It’s been a life-changing experience.",
+    rating: 5,
+    location: "Mumbai",
+  },
+];
 
 
 export const values = [
