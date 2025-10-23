@@ -77,8 +77,8 @@ const CategoryFilter: React.FC<{
           onClick={() => onCategoryChange(null)}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap ${
             !selectedCategory
-              ? 'bg-yellow-400 text-black'
-              : 'bg-white text-gray-700 border border-gray-200'
+              ? 'bg-red-600 text-white'
+              : 'bg-yellow-400 text-black border border-gray-200'
           }`}
         >
           ALL
@@ -89,8 +89,8 @@ const CategoryFilter: React.FC<{
             onClick={() => onCategoryChange(category.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap ${
               selectedCategory === category.id
-                ? 'bg-yellow-400 text-black'
-                : 'bg-white text-gray-700 border border-gray-200'
+                ? 'bg-red-600 text-white'
+                : 'bg-yellow-400 text-black border border-gray-200'
             }`}
           >
             {category.name.toUpperCase()}
@@ -345,7 +345,7 @@ const LoadingSkeleton: React.FC<{ viewMode: 'grid' | 'list'; count?: number }> =
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-4 md:px-0">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:px-0">
       {[...Array(count)].map((_, i) => (
         <div key={i} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
           <div className="h-48 bg-gray-200 animate-pulse" />

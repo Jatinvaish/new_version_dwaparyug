@@ -157,7 +157,7 @@ const HeaderSection = () => {
     <>
       <section className='top-0 sticky z-50'>
         <motion.nav
-          className="bg-white/95 backdrop-blur-md border-b border-gray-200 py-3 sm:py-4 px-4 sticky top-0 z-50"
+          className="bg-white/95 backdrop-blur-md border-b border-gray-200  sticky top-0 z-50"
           initial={{ y: -50 }}
           animate={{ y: 0 }}
           transition={{ duration: 0.15 }}
@@ -174,8 +174,8 @@ const HeaderSection = () => {
                   onClick={() => router.push("/")}
                   src="/images/logo/logo.png"
                   alt="Dwaparyug Logo"
-                  width={160}
-                  height={90}
+                  width={240}
+                  height={120}
                   priority
                 />
               </div>

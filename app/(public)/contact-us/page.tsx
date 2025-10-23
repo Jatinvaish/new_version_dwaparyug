@@ -28,11 +28,12 @@ import {
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { useState } from "react"
-import { Footer } from "@/components/shared/footer"
 import { contactReasons, officeLocations } from "@/lib/utils"
 
-
-export default function ContactPage() {
+type ContactUsProps = {
+  isHomePage?: boolean; // optional prop
+};
+const ContactPage: React.FC<ContactUsProps> = ({ isHomePage = false }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -54,88 +55,93 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
 
 
       {/* Hero Section */}
-      <section className="py-12 sm:py-16 md:py-20 px-3 sm:px-4 bg-gradient-to-br from-blue-50 to-green-50 relative overflow-hidden">
-        <motion.div
-          className="absolute top-10 sm:top-16 md:top-20 right-4 sm:right-12 md:right-20 text-blue-400 opacity-20"
-          animate={{ rotate: [0, 360] }}
-          transition={{ duration: 20, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-        >
-          <MessageSquare className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32" />
-        </motion.div>
-
-        <div className="max-w-7xl mx-auto text-center">
-          <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-            <div className="inline-flex items-center bg-gradient-to-r from-blue-100 to-green-100 px-4 sm:px-6 py-2 sm:py-3 rounded-full text-xs sm:text-sm font-medium text-gray-700 mb-4 sm:mb-6">
-              <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-blue-600" />
-              Get In Touch • We're Here to Help
-            </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-gray-900 mb-4 sm:mb-6 px-2">
-              Contact{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-green-500">
-                Our Team
-              </span>
-            </h1>
-            <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-6 sm:mb-8 px-4">
-              Have questions about our work, want to volunteer, or need support with donations? We'd love to hear from
-              you. Our dedicated team is ready to assist you in making a positive impact.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mt-8 sm:mt-12">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-center"
-              >
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                  <Phone className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Call Us</h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-2">24/7 Support Available</p>
-                <p className="text-sm sm:text-base text-blue-600 font-semibold">+91 99993 03166</p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="text-center"
-              >
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                  <Mail className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Email Us</h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-2">Quick Response Guaranteed</p>
-                <p className="text-sm sm:text-base text-green-600 font-semibold">dwaparyugfoundation@gmail.com</p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="text-center sm:col-span-2 md:col-span-1"
-              >
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                  <MapPin className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Visit Us</h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-2">Location</p>
-                <p className="text-sm sm:text-base text-purple-600 font-semibold">Delhi </p>
-                {/* • Mumbai • Bangalore  */}
-              </motion.div>
-            </div>
+      {!isHomePage &&
+        <section className="py-12 sm:py-16 md:py-20 px-3 sm:px-4 bg-gradient-to-br from-blue-50 to-green-50 relative overflow-hidden">
+          <motion.div
+            className="absolute top-10 sm:top-16 md:top-20 right-4 sm:right-12 md:right-20 text-blue-400 opacity-20"
+            animate={{ rotate: [0, 360] }}
+            transition={{ duration: 20, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+          >
+            <MessageSquare className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32" />
           </motion.div>
-        </div>
-      </section>
+          <div className="max-w-7xl mx-auto text-center">
+            <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+              <div className="inline-flex items-center bg-gradient-to-r from-blue-100 to-green-100 px-4 sm:px-6 py-2 sm:py-3 rounded-full text-xs sm:text-sm font-medium text-gray-700 mb-4 sm:mb-6">
+                <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-blue-600" />
+                Get In Touch • We're Here to Help
+              </div>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-gray-900 mb-4 sm:mb-6 px-2">
+                Contact{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-green-500">
+                  Our Team
+                </span>
+              </h1>
+              <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-6 sm:mb-8 px-4">
+                Have questions about our work, want to volunteer, or need support with donations? We'd love to hear from
+                you. Our dedicated team is ready to assist you in making a positive impact.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mt-8 sm:mt-12">
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-center"
+                >
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                    <Phone className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Call Us</h3>
+                  <p className="text-sm sm:text-base text-gray-600 mb-2">24/7 Support Available</p>
+                  <p className="text-sm sm:text-base text-blue-600 font-semibold">+91 99993 03166</p>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-center"
+                >
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                    <Mail className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Email Us</h3>
+                  <p className="text-sm sm:text-base text-gray-600 mb-2">Quick Response Guaranteed</p>
+                  <p className="text-sm sm:text-base text-green-600 font-semibold">dwaparyugfoundation@gmail.com</p>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="text-center sm:col-span-2 md:col-span-1"
+                >
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                    <MapPin className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Visit Us</h3>
+                  <p className="text-sm sm:text-base text-gray-600 mb-2">Location</p>
+                  <p className="text-sm sm:text-base text-purple-600 font-semibold">Delhi </p>
+                  {/* • Mumbai • Bangalore  */}
+                </motion.div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      }
 
       {/* Contact Form & Info Section */}
-      <section className="py-12 sm:py-16 md:py-20 px-3 sm:px-4">
-        <div className="max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16">
+      <section className="py-12 !pt-10  sm:py-16 md:py-20 px-3 sm:px-4">
+        <h2 className="max-w-7xl mx-auto flex text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-3 sm:mb-4">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-900">
+            Reach out to us. We are here to help you!
+          </span>{" "}
+        </h2>
+        <div className="max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 mt-12">
           {/* Contact Form */}
+
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -241,10 +247,9 @@ export default function ContactPage() {
                     required
                   />
                 </div>
-
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white py-2 sm:py-3 text-sm sm:text-lg font-semibold cursor-pointer"
+                  className="w-full bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white py-2 sm:py-3 text-sm sm:text-lg font-semibold cursor-pointer"
                 >
                   <Send className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   Send Message
@@ -316,3 +321,5 @@ export default function ContactPage() {
     </div>
   )
 }
+
+export default ContactPage;

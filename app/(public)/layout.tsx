@@ -2,8 +2,8 @@ import type React from "react"
 import type { Metadata } from "next"
 import "../globals.css"
 import HeaderSection from "@/components/shared/header-section"
-import { ContactSection } from "@/components/shared/contact-section"
 import { Footer } from "@/components/shared/footer"
+import WhatsAppFloat from "@/components/whatsapp-float"
 
 
 export const metadata: Metadata = {
@@ -22,6 +22,7 @@ export default function RootLayout({
       <HeaderSection />
       {children}
       <Footer />
+      <WhatsAppFloat />
     </section>
   )
 }
