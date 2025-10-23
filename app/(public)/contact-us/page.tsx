@@ -18,21 +18,18 @@ import {
   User,
   Building,
   Globe,
-  Heart,
-  Facebook,
-  Instagram,
-  Twitter,
-  Linkedin,
-  Youtube,
+  Loader2,
+  CheckCircle,
+  XCircle,
 } from "lucide-react"
-import Link from "next/link"
 import { motion } from "framer-motion"
 import { useState } from "react"
 import { contactReasons, officeLocations } from "@/lib/utils"
 
 type ContactUsProps = {
-  isHomePage?: boolean; // optional prop
+  isHomePage?: boolean;
 };
+
 const ContactPage: React.FC<ContactUsProps> = ({ isHomePage = false }) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -43,10 +40,61 @@ const ContactPage: React.FC<ContactUsProps> = ({ isHomePage = false }) => {
     message: "",
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState<{
+    type: 'success' | 'error' | null;
+    message: string;
+  }>({ type: null, message: '' })
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Contact form submitted:", formData)
-    // Handle form submission
+    setIsSubmitting(true)
+    setSubmitStatus({ type: null, message: '' })
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setSubmitStatus({
+          type: 'success',
+          message: data.message || 'Message sent successfully! We will get back to you soon.'
+        })
+        // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          organization: "",
+          reason: "",
+          message: "",
+        })
+      } else {
+        setSubmitStatus({
+          type: 'error',
+          message: data.error || 'Failed to send message. Please try again.'
+        })
+      }
+    } catch (error) {
+      setSubmitStatus({
+        type: 'error',
+        message: 'Network error. Please check your connection and try again.'
+      })
+      console.error('Error submitting form:', error)
+    } finally {
+      setIsSubmitting(false)
+      // Clear status message after 5 seconds
+      setTimeout(() => {
+        setSubmitStatus({ type: null, message: '' })
+      }, 5000)
+    }
   }
 
   const updateFormData = (field: string, value: string) => {
@@ -55,8 +103,6 @@ const ContactPage: React.FC<ContactUsProps> = ({ isHomePage = false }) => {
 
   return (
     <div className="min-h-screen bg-white">
-
-
       {/* Hero Section */}
       {!isHomePage &&
         <section className="py-12 sm:py-16 md:py-20 px-3 sm:px-4 bg-gradient-to-br from-blue-50 to-green-50 relative overflow-hidden">
@@ -124,7 +170,6 @@ const ContactPage: React.FC<ContactUsProps> = ({ isHomePage = false }) => {
                   <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Visit Us</h3>
                   <p className="text-sm sm:text-base text-gray-600 mb-2">Location</p>
                   <p className="text-sm sm:text-base text-purple-600 font-semibold">Delhi </p>
-                  {/* • Mumbai • Bangalore  */}
                 </motion.div>
               </div>
             </motion.div>
@@ -133,15 +178,14 @@ const ContactPage: React.FC<ContactUsProps> = ({ isHomePage = false }) => {
       }
 
       {/* Contact Form & Info Section */}
-      <section className="py-12 !pt-10  sm:py-16 md:py-20 px-3 sm:px-4">
+      <section className="py-12 !pt-10 sm:py-16 md:py-20 px-3 sm:px-4">
         <h2 className="max-w-7xl mx-auto flex text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-3 sm:mb-4">
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-900">
             Reach out to us. We are here to help you!
-          </span>{" "}
+          </span>
         </h2>
         <div className="max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 mt-12">
           {/* Contact Form */}
-
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -156,6 +200,26 @@ const ContactPage: React.FC<ContactUsProps> = ({ isHomePage = false }) => {
                 required.
               </p>
 
+              {/* Status Message */}
+              {submitStatus.type && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`mb-6 p-4 rounded-lg flex items-start ${
+                    submitStatus.type === 'success'
+                      ? 'bg-green-50 text-green-800 border border-green-200'
+                      : 'bg-red-50 text-red-800 border border-red-200'
+                  }`}
+                >
+                  {submitStatus.type === 'success' ? (
+                    <CheckCircle className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <XCircle className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" />
+                  )}
+                  <p className="text-sm">{submitStatus.message}</p>
+                </motion.div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div>
@@ -168,6 +232,7 @@ const ContactPage: React.FC<ContactUsProps> = ({ isHomePage = false }) => {
                       value={formData.name}
                       onChange={(e) => updateFormData("name", e.target.value)}
                       className="mt-1 sm:mt-2 text-sm sm:text-base"
+                      disabled={isSubmitting}
                       required
                     />
                   </div>
@@ -182,6 +247,7 @@ const ContactPage: React.FC<ContactUsProps> = ({ isHomePage = false }) => {
                       value={formData.email}
                       onChange={(e) => updateFormData("email", e.target.value)}
                       className="mt-1 sm:mt-2 text-sm sm:text-base"
+                      disabled={isSubmitting}
                       required
                     />
                   </div>
@@ -198,6 +264,7 @@ const ContactPage: React.FC<ContactUsProps> = ({ isHomePage = false }) => {
                       value={formData.phone}
                       onChange={(e) => updateFormData("phone", e.target.value)}
                       className="mt-1 sm:mt-2 text-sm sm:text-base"
+                      disabled={isSubmitting}
                     />
                   </div>
                   <div>
@@ -210,6 +277,7 @@ const ContactPage: React.FC<ContactUsProps> = ({ isHomePage = false }) => {
                       value={formData.organization}
                       onChange={(e) => updateFormData("organization", e.target.value)}
                       className="mt-1 sm:mt-2 text-sm sm:text-base"
+                      disabled={isSubmitting}
                     />
                   </div>
                 </div>
@@ -219,7 +287,12 @@ const ContactPage: React.FC<ContactUsProps> = ({ isHomePage = false }) => {
                     <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                     Reason for Contact *
                   </Label>
-                  <Select value={formData.reason} onValueChange={(value) => updateFormData("reason", value)} required>
+                  <Select 
+                    value={formData.reason} 
+                    onValueChange={(value) => updateFormData("reason", value)} 
+                    disabled={isSubmitting}
+                    required
+                  >
                     <SelectTrigger className="mt-1 sm:mt-2 text-sm sm:text-base">
                       <SelectValue placeholder="Select a reason" />
                     </SelectTrigger>
@@ -244,15 +317,26 @@ const ContactPage: React.FC<ContactUsProps> = ({ isHomePage = false }) => {
                     className="mt-1 sm:mt-2 text-sm sm:text-base"
                     rows={4}
                     placeholder="Tell us how we can help you..."
+                    disabled={isSubmitting}
                     required
                   />
                 </div>
                 <Button
                   type="submit"
                   className="w-full bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white py-2 sm:py-3 text-sm sm:text-lg font-semibold cursor-pointer"
+                  disabled={isSubmitting}
                 >
-                  <Send className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                  Send Message
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                      Send Message
+                    </>
+                  )}
                 </Button>
               </form>
             </Card>
@@ -316,8 +400,6 @@ const ContactPage: React.FC<ContactUsProps> = ({ isHomePage = false }) => {
           </motion.div>
         </div>
       </section>
-
-
     </div>
   )
 }
