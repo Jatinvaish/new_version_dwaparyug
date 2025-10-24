@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
                 <p><strong>Your message:</strong></p>
                 <p style="background: #f9fafb; padding: 15px; border-left: 4px solid #dc2626; white-space: pre-wrap;">${message}</p>
                 <p>If you have any urgent questions, please feel free to call us at <strong>+91 99993 03166</strong>.</p>
-                <a href="https://yourwebsite.com" class="button">Visit Our Website</a>
+                <a href="https://www.dwaparyug.org/" class="button">Visit Our Website</a>
               </div>
               <div class="footer">
                 <p style="margin: 0; font-weight: bold;">Dwaparyug Foundation</p>
