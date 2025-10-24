@@ -1,19 +1,68 @@
-import { Progress } from '@radix-ui/react-progress'
 import { motion } from 'framer-motion'
-import { HandHeart, ChevronLeft, ChevronRight, Calendar, Users, MapPin, Gift, Heart, ArrowRight, Target } from 'lucide-react'
-import React, { useState } from 'react'
-import { Card, CardContent } from '../ui/card'
-import Image from "next/image"
-import { scaleOnHover, causes, urgencyColors } from '@/lib/utils'
+import { HandHeart, Users, Gift, Heart, ArrowRight, Target } from 'lucide-react'
+import React from 'react'
+import { scaleOnHover, } from '@/lib/utils'
 import { Button } from '../ui/button'
 import Link from "next/link"
 import CampaignList from '@/app/(public)/causes/page'
 
+const impactStats = [
+  {
+    icon: <Gift className="w-8 h-8" />,
+    value: "₹47 Lakh+",
+    label: "Worth Donations"
+  },
+  {
+    icon: <Heart className="w-8 h-8" />,
+    value: "26K +",
+    label: "Lives Impacted"
+  },
+  {
+    icon: <Users className="w-8 h-8" />,
+    value: "3,000+",
+    label: "Unique Donors"
+  },
+  {
+    icon: <Target className="w-8 h-8" />,
+    value: "30+",
+    label: "Successful Campaigns"
+  }
+]
+
 const CauseSection = () => {
-  const [currentCauseIndex, setCurrentCauseIndex] = useState(0)
+
   return (
     <section className="py-12 sm:py-16 lg:py-20 pb-0 px-4 bg-gradient-to-br from-gray-50 to-white">
       <div className="max-w-7xl mx-auto">
+        <motion.div
+          className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-12 sm:mb-16"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
+          {impactStats.map((stat, index) => (
+            <motion.div
+              key={index}
+              className="text-center p-6 rounded-2xl bg-white border border-gray-100"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              viewport={{ once: true }}
+            >
+              <div className="inline-flex items-center justify-center text-blue-600 mb-3">
+                {stat.icon}
+              </div>
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
+                {stat.value}
+              </div>
+              <div className="text-sm text-gray-600">
+                {stat.label}
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+
         <motion.div
           className="text-center mb-6 sm:mb-16 w-full"
           initial={{ opacity: 0, y: 50 }}
@@ -30,25 +79,20 @@ const CauseSection = () => {
               Causes you can support
             </span>{" "}
           </h2>
-          {/* <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto">
-            Choose from our urgent campaigns and see exactly how your donation creates immediate, measurable impact
-            in communities across India.
-          </p> */}
         </motion.div>
 
         <CampaignList
-          title="" // Don't show title since we have our custom header
+          title=""
           showHeader={false}
           showCategoryFilter={true}
           showSearch={false}
-          showPagination={false} // Don't show pagination for festival section
-          showViewToggle={false} // Don't show view toggle, keep it as grid
+          showPagination={false}
+          showViewToggle={false}
           defaultViewMode="grid"
-          maxItems={8} // Show only 8 campaigns in festival section
+          maxItems={8}
           className=" "
           cate
         />
-
 
         <motion.div
           className="text-center mt-8 sm:mt-12"
