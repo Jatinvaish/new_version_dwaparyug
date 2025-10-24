@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image";
-import logo from "@/public/images/logo/logo-footer.png";
+import logo from "@/public/images/logo/logo.png";
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
