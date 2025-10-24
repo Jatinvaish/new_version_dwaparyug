@@ -90,20 +90,6 @@ const apiService = {
   }
 };
 
-// Optimized Cloudinary URL with proper dimensions
-const optimizeCloudinaryUrl = (url: string, isMobile: boolean = false) => {
-  if (!url) return "/images/placeholder-campaign.jpg";
-  if (!url.includes("res.cloudinary.com")) return url;
-
-  // Desktop: 1280x535, Mobile: 768x600
-  const width = isMobile ? 768 : 1280;
-  const height = isMobile ? 600 : 535;
-
-  return url.replace(
-    "/upload/",
-    `/upload/f_auto,q_auto,c_fill,w_${width},h_${height},g_center/`
-  );
-};
 
 const transformCampaignsToSlides = (campaigns: Campaign[]): SliderData[] => {
   return campaigns.map((campaign) => ({
@@ -190,10 +176,10 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
     <section
       className="relative w-full bg-gray-900 overflow-hidden"
       style={{
-        aspectRatio: isMobile ? undefined : '2.39 / 1',
-        height: isMobile ? '65vh' : 'auto',
-        maxHeight: isMobile ? '65vh' : '620px',
-        minHeight: isMobile ? '65vh' : '620px'
+        aspectRatio: isMobile ? '79 / 122' : '2.39 / 1',
+        height: isMobile ? '80vh' : 'auto',
+        maxHeight: isMobile ? '80vh' : '620px',
+        minHeight: isMobile ? '80vh' : '620px'
       }}
 
       onTouchStart={onTouchStart}
@@ -218,15 +204,13 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
             <picture className="w-full h-full">
               <source
                 media="(max-width: 767px)"
-                srcSet={optimizeCloudinaryUrl(
-                  slides[currentSlide].mobileImage || slides[currentSlide].image,
-                  true
-                )}
+                srcSet={
+                  slides[currentSlide].mobileImage || slides[currentSlide].image 
+                 }
               />
               <img
-                src={optimizeCloudinaryUrl(slides[currentSlide].image, false)}
                 alt={slides[currentSlide].title}
-                // className="w-full h-full object-cover object-center"
+                src={ slides[currentSlide].image   }
                 loading={currentSlide === 0 ? "eager" : "lazy"}
                 style={{
                   display: 'block',
@@ -281,8 +265,8 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
               key={index}
               onClick={() => setCurrentSlide(index)}
               className={`transition-all duration-300 ${index === currentSlide
-                  ? 'w-6 md:w-8 h-2 bg-yellow-400 rounded-full shadow-md'
-                  : 'w-2 h-2 bg-white/50 hover:bg-white/70 rounded-full'
+                ? 'w-6 md:w-8 h-2 bg-yellow-400 rounded-full shadow-md'
+                : 'w-2 h-2 bg-white/50 hover:bg-white/70 rounded-full'
                 }`}
               aria-label={`Go to slide ${index + 1}`}
               aria-current={index === currentSlide ? 'true' : 'false'}
