@@ -238,7 +238,7 @@ const HeaderSection = () => {
                   {...scaleOnHover}
                   asChild
                 >
-                  <Link href="/donate">
+                  <Link href="/causes">
                     <Heart className="w-3 sm:w-4 h-3 sm:h-4 mr-1 sm:mr-2 fill-current" />
                     Donate
                     <ArrowRight className="w-3 sm:w-4 h-3 sm:h-4 ml-1 sm:ml-2 hidden sm:inline" />
@@ -252,7 +252,6 @@ const HeaderSection = () => {
         </motion.nav>
       </section>
 
-      {/* Mobile Bottom Navigation */}
       <MobileBottomNav />
     </>
   )

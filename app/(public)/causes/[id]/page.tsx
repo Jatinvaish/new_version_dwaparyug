@@ -101,7 +101,7 @@ interface FAQ {
 export default function CauseDetailsPage() {
   const params = useParams()
   const router = useRouter()
-  const { cartItems, addToCart, removeFromCart, getItemQuantity, getCartTotals } = useDonationCart()
+  const { cartItems, addToCart, removeFromCart, getItemQuantity, getCartTotals, updateQuantity } = useDonationCart()
 
   const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [loading, setLoading] = useState(true)
@@ -441,14 +441,45 @@ Powered by Your Platform Name - Making giving meaningful and transparent.`
     addToCart(productData)
   }
 
+  const handleIncreaseQty = (product: CampaignProduct) => {
+    const currentQty = getItemQuantity(product.id, campaign.id)
+    const maxQty = product.max_qty || product.stock
+
+    if (currentQty < maxQty) {
+      updateQuantity(product.id, campaign.id, currentQty + 1)
+    }
+  }
+
+  const handleDecreaseQty = (productId: number) => {
+    const currentQty = getItemQuantity(productId, campaign.id)
+
+    if (currentQty > 1) {
+      updateQuantity(productId, campaign.id, currentQty - 1)
+    } else {
+      handleRemoveFromCart(productId,)
+    }
+  }
+
   const handleRemoveFromCart = (productId: number) => {
     removeFromCart(productId, campaign.id)
   }
+  const scrollToProducts = () => {
+    const productsSection = document.querySelector('[data-products-section]');
+    if (productsSection) {
+      productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
+  // Update the redirectToDonate function (around line 240)
   const redirectToDonate = () => {
+    if (totalItems <= 0 && campaign.assignedProducts && campaign.assignedProducts.length > 0) {
+      scrollToProducts();
+      return;
+    }
     localStorage.setItem('customDonationId', JSON.stringify(params.id));
-    router.push('/donate')
-  }
+    router.push('/donate');
+  };
+
 
   const redirectToCart = () => {
     router.push('/cart')
@@ -755,7 +786,7 @@ Powered by Your Platform Name - Making giving meaningful and transparent.`
 
                     {/* Products Section */}
                     {campaign.assignedProducts && campaign.assignedProducts.length > 0 && (
-                      <section className="py-8 px-3 bg-gray-50 sm:py-12 sm:px-4 lg:py-16">
+                      <section data-products-section className="py-8 px-3 bg-gray-50 sm:py-12 sm:px-4 lg:py-16">
                         <div className="max-w-7xl mx-auto">
                           <motion.div
                             initial={{ opacity: 0, y: 30 }}
@@ -832,12 +863,12 @@ Powered by Your Platform Name - Making giving meaningful and transparent.`
                                       </div>
                                     </div>
 
-                                    {getItemQuantity(product.id, campaign.id) > 0 && (
+                                    {getItemQuantity(product.id, campaign.id) > 0 ? (
                                       <div className="flex items-center justify-between bg-gray-100 p-2 rounded-lg mb-3 sm:p-3 sm:mb-4">
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          onClick={() => handleRemoveFromCart(product.id)}
+                                          onClick={() => handleDecreaseQty(product.id)}
                                           className="cursor-pointer p-1 sm:p-2"
                                         >
                                           <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -848,24 +879,66 @@ Powered by Your Platform Name - Making giving meaningful and transparent.`
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          onClick={() => handleAddToCart(product)}
+                                          onClick={() => handleIncreaseQty(product)}
                                           className="cursor-pointer p-1 sm:p-2"
                                           disabled={product.stock === 0}
                                         >
                                           <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                                         </Button>
                                       </div>
-                                    )}
-
-                                    <div className="space-y-2 sm:space-y-3">
-                                      <Button
+                                    )
+                                      : <Button
                                         className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold cursor-pointer text-xs p-2.5 sm:text-sm sm:p-3"
                                         onClick={() => handleAddToCart(product)}
                                         disabled={product.stock === 0}
                                       >
-                                        {getItemQuantity(product.id, campaign.id) > 0 ? 'ADD MORE' : 'Donate Now'} | ₹{product.price.toLocaleString()}
+                                        Donate Now | ₹{product.price.toLocaleString()}
                                       </Button>
-                                    </div>
+                                    }
+
+                                    {/* <div className="space-y-2 sm:space-y-3">
+                                      {getItemQuantity(product.id, campaign.id) > 0 ? (
+                                        <>
+                                          <div className="flex items-center justify-between bg-gray-100 p-2 rounded-lg mb-2 sm:p-3">
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => handleRemoveFromCart(product.id)}
+                                              className="cursor-pointer p-1 sm:p-2"
+                                            >
+                                              <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+                                            </Button>
+                                            <span className="font-semibold text-sm sm:text-base">
+                                              Qty: {getItemQuantity(product.id, campaign.id)}
+                                            </span>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => handleAddToCart(product)}
+                                              className="cursor-pointer p-1 sm:p-2"
+                                              disabled={product.stock === 0}
+                                            >
+                                              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                                            </Button>
+                                          </div>
+                                          <Button
+                                            className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold cursor-pointer text-xs p-2.5 sm:text-sm sm:p-3"
+                                            onClick={() => handleAddToCart(product)}
+                                            disabled={product.stock === 0}
+                                          >
+                                            ADD MORE | ₹{product.price.toLocaleString()}
+                                          </Button>
+                                        </>
+                                      ) : (
+                                        <Button
+                                          className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold cursor-pointer text-xs p-2.5 sm:text-sm sm:p-3"
+                                          onClick={() => handleAddToCart(product)}
+                                          disabled={product.stock === 0}
+                                        >
+                                          Donate Now | ₹{product.price.toLocaleString()}
+                                        </Button>
+                                      )}
+                                    </div> */}
                                   </CardContent>
                                 </Card>
                               </motion.div>
