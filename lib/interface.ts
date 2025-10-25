@@ -9,6 +9,7 @@ export interface Campaign {
   details: string;
   about_campaign?: string;
   donation_goal: number;
+  sequence: number;
   total_raised?: any;
   total_progress_percentage?: number;
   image: string;
@@ -32,7 +33,7 @@ export interface Campaign {
   updated_at?: string;
   created_by_name?: string;
   updated_by_name?: string;
-  mobile_banner_image?:string;
+  mobile_banner_image?: string;
   // Related data
   assignedProducts?: Product[];
   faq_questions?: FAQ[];
@@ -128,7 +129,7 @@ export interface Donation {
   beneficiaries_reached: number;
   created_at?: string;
   updated_at?: string;
-  
+
   // Related data
   donor_name?: string;
   donor_email?: string;
@@ -147,7 +148,7 @@ export interface DonationItem {
   fulfillment_status: 'pending' | 'in_batch' | 'distributed' | 'delivered';
   created_at?: string;
   updated_at?: string;
-  
+
   // Related data
   product_name?: string;
   product_description?: string;
@@ -201,7 +202,7 @@ export interface DistributionBatch {
   updated_by?: number;
   created_at?: string;
   updated_at?: string;
-  
+
   // Related data
   items?: BatchItem[];
 }
@@ -359,7 +360,7 @@ export interface IndependentProduct {
   created_by?: number;
   updated_by?: number;
 }
- 
+
 
 export interface CampaignCategory {
   id: number
@@ -380,7 +381,7 @@ export interface Category {
   is_active: boolean;
 }
 
- 
+
 
 export interface PaginationState {
   page: number;
@@ -396,6 +397,10 @@ export interface CampaignFilters {
   searchTerm?: string;
   page?: number;
   pageSize?: number;
+  status?: string
+  sortBy?: string
+  sortOrder?: string
+  is_featured?: number;
 }
 
 export interface CampaignListProps {

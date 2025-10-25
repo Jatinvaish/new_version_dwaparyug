@@ -653,3 +653,8 @@ ADD COLUMN max_tat INT DEFAULT 1 ;
 ALTER TABLE campaigns
 ADD COLUMN mobile_banner_image  TEXT ;
 
+
+ALTER TABLE campaigns
+ADD COLUMN sequence  INT ;
+
+

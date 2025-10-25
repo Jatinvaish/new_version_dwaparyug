@@ -91,6 +91,7 @@ export async function PUT(
       title,
       category_id,
       festival_type,
+      sequence,
       overview,
       details,
       about_campaign,
@@ -123,14 +124,14 @@ export async function PUT(
         mobile_banner_image = $9, images_array = $10, status = $11, priority = $12, urgency = $13,
         location = $14, organizer = $15, verified = $16, total_beneficiary = $17,
         end_date = $18, updated_by = $19, beneficiaries = $20,
-        code = $21, is_featured = $22, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $23
+        code = $21, is_featured = $22,sequence =$23, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $24
       RETURNING *
     `, [
       title, category_id, festival_type, overview, details, about_campaign,
       donation_goal, image, mobile_banner_image, images_array, status, priority, urgency,
       location, organizer, verified, total_beneficiary, end_date, updated_by, beneficiaries, code,
-      is_featured, campaignId
+      is_featured,sequence, campaignId
     ]);
 
     if (campaignResult.rows.length === 0) {

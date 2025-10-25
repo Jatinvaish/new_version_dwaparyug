@@ -1,7 +1,7 @@
 "use client";
 import { scaleOnHover } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import { Sparkles, Facebook, Instagram, Twitter, Linkedin, Heart, ArrowRight, X, Menu, UserCircle, Home, Target, Calendar, MoreHorizontal, Contact, GiftIcon } from 'lucide-react'
+import { Sparkles, Facebook, Instagram, Twitter, Linkedin, Heart, ArrowRight, X, Menu, UserCircle, Home, Target, Calendar, MoreHorizontal, Contact, GiftIcon, ShoppingBag } from 'lucide-react'
 import React, { useState } from 'react'
 import { Button } from '../ui/button'
 import Link from "next/link";
@@ -27,13 +27,14 @@ const MobileBottomNav = () => {
   const navItems = [
     { id: 'home', label: 'Home', icon: Home, href: '/' },
     { id: 'campaigns ', label: 'Campaigns ', icon: GiftIcon, href: '/causes' },
-    { id: 'contact', label: 'Contact', icon: Contact, href: '/contact-us' },
+    { id: 'cart', label: 'Cart', icon: ShoppingBag, href: '/cart' },
   ];
 
   const menuItems = [
     { label: 'About Us', href: '/about-us' },
     { label: 'How It Works', href: '/how-it-works' },
     { label: 'Contact Us', href: '/contact-us' },
+    { label: 'Cart', href: '/cart' },
     { label: 'Volunteer', href: '/volunteer' },
   ];
 

@@ -4,6 +4,7 @@ import { useScroll, useTransform, motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import Link from "next/link";
+import { CampaignFilters } from '@/lib/interface';
 
 // Types
 interface Campaign {
@@ -41,13 +42,6 @@ interface Campaign {
   updated_by_name?: string;
 }
 
-interface CampaignFilters {
-  selectedCategory?: number | null;
-  searchTerm?: string;
-  page?: number;
-  is_featured?: number;
-  pageSize?: number;
-}
 
 interface PaginationState {
   page: number;
@@ -77,6 +71,8 @@ const apiService = {
       if (filters.page) params.append('page', filters.page.toString());
       if (filters.pageSize) params.append('pageSize', filters.pageSize.toString());
       if (filters.selectedCategory) params.append('category_id', filters.selectedCategory.toString());
+      if (filters.sortBy) params.append('sortBy', filters.sortBy.toString());
+      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder.toString());
       params.append('is_featured', '1');
       if (filters.searchTerm) params.append('search', filters.searchTerm);
 
@@ -205,12 +201,12 @@ const HeroSlider = ({ slides, loading }: { slides: SliderData[], loading: boolea
               <source
                 media="(max-width: 767px)"
                 srcSet={
-                  slides[currentSlide].mobileImage || slides[currentSlide].image 
-                 }
+                  slides[currentSlide].mobileImage || slides[currentSlide].image
+                }
               />
               <img
                 alt={slides[currentSlide].title}
-                src={ slides[currentSlide].image   }
+                src={slides[currentSlide].image}
                 loading={currentSlide === 0 ? "eager" : "lazy"}
                 style={{
                   display: 'block',
@@ -302,6 +298,9 @@ const HeroSection = () => {
         const { campaigns: fetchedCampaigns } = await apiService.fetchCampaigns({
           page: 1,
           pageSize: 20,
+          status: 'Active',
+          sortBy: 'c.sequence',
+          sortOrder: 'ASC',
         });
 
         setCampaigns(fetchedCampaigns);

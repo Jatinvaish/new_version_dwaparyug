@@ -6,7 +6,6 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import {
-  Heart,
   Share2,
   MapPin,
   Calendar,
@@ -21,17 +20,12 @@ import {
   ChevronDown,
   ChevronUp,
   Play,
-  ExternalLink,
   Target,
   Clock,
   AlertCircle,
-  Star,
   ShoppingCart,
   Copy,
-  Facebook,
-  Twitter,
-  Linkedin,
-  MessageCircle,
+  ArrowRight,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -865,11 +859,11 @@ Powered by Your Platform Name - Making giving meaningful and transparent.`
 
                                     <div className="space-y-2 sm:space-y-3">
                                       <Button
-                                        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold cursor-pointer text-xs p-2.5 sm:text-sm sm:p-3"
+                                        className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold cursor-pointer text-xs p-2.5 sm:text-sm sm:p-3"
                                         onClick={() => handleAddToCart(product)}
                                         disabled={product.stock === 0}
                                       >
-                                        {getItemQuantity(product.id, campaign.id) > 0 ? 'ADD MORE' : 'ADD TO CART'} | ₹{product.price.toLocaleString()}
+                                        {getItemQuantity(product.id, campaign.id) > 0 ? 'ADD MORE' : 'Donate Now'} | ₹{product.price.toLocaleString()}
                                       </Button>
                                     </div>
                                   </CardContent>
@@ -955,35 +949,6 @@ Powered by Your Platform Name - Making giving meaningful and transparent.`
                       </div>
                     </div>
                   </Card>
-
-                  {/* Quick Donate */}
-                  {/* <Card className="p-4 shadow-lg sm:p-6 sm:shadow-xl">
-                    <h3 className="text-lg font-bold text-gray-900 mb-3 sm:text-xl sm:mb-4">Quick Donate</h3>
-                    <div className="grid grid-cols-2 gap-2 mb-4 sm:gap-3">
-                      {[500, 1000, 2500, 5000].map((amount) => (
-                        <Button
-                          key={amount}
-                          variant="outline"
-                          className="cursor-pointer hover:bg-blue-50 hover:border-blue-400 hover:text-blue-600 bg-transparent text-sm p-2 transition-colors sm:text-base sm:p-3"
-                          onClick={() => {
-                            // Set custom amount in localStorage and redirect
-                            localStorage.setItem('customDonationAmount', amount.toString())
-                            redirectToDonate()
-                          }}
-                        >
-                          ₹{amount}
-                        </Button>
-                      ))}
-                    </div>
-                    <Button
-                      className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold cursor-pointer text-sm p-3 sm:text-base"
-
-                      onClick={() => redirectToDonate()}
-                    >
-                      <Heart className="w-3 h-3 mr-2 sm:w-4 sm:h-4" />
-                      Donate Now
-                    </Button>
-                  </Card> */}
 
                   {/* Campaign Info */}
                   <Card className="p-4 shadow-lg sm:p-6 sm:shadow-xl">
@@ -1136,29 +1101,62 @@ Powered by Your Platform Name - Making giving meaningful and transparent.`
           </div>
         </section>
 
-        {/* Floating Cart Button */}
+
+        <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white border-t border-gray-200 safe-area-bottom">
+          <div className="px-3 py-2">
+            <button
+              className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold px-4 py-3 rounded-lg flex items-center justify-between cursor-pointer transition-colors"
+              onClick={totalItems > 0 ? redirectToCart : redirectToDonate}
+            >
+              <div className="flex flex-col items-start">
+                <div className="text-xs">
+                  {totalItems > 0 ? `${totalItems} ITEM${totalItems > 1 ? 'S' : ''}` : 'Support This Campaign'}
+                </div>
+                <div className="text-sm font-bold">
+                  ₹ {totalItems > 0 ? subtotal.toLocaleString() : campaign.donation_goal.toLocaleString()}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-sm font-bold">
+                {totalItems > 0 ? 'VIEW CART' : 'DONATE NOW'}
+                <ArrowRight className="w-4 h-4" />
+              </div>
+            </button>
+          </div>
+          <div className="flex items-center justify-center gap-2 py-1.5 bg-gray-50 text-xs text-gray-600">
+            <span>Secured by</span>
+            <img
+              src="/images/razorpay.avif"
+              alt="Razorpay"
+              style={{ width: '75px', height: '20px' }}
+              className="inline"
+            />
+
+          </div>
+        </div>
+
+        {/* Desktop Floating Cart Button - Shows only when cart has items */}
         {totalItems > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            className="fixed bottom-4 left-4 right-4 z-50 sm:bottom-6 sm:left-auto sm:right-6 sm:w-auto"
+            className="hidden lg:block fixed bottom-6 right-6 z-50"
           >
-            <Card className="p-3 shadow-2xl bg-white border-2 border-blue-400 sm:p-4">
-              <div className="flex items-center justify-between space-x-3 sm:space-x-4">
+            <Card className="p-4 shadow-2xl bg-white border-2 border-blue-400">
+              <div className="flex items-center justify-between space-x-4">
                 <div>
-                  <div className="font-semibold text-gray-900 text-sm sm:text-base">
+                  <div className="font-semibold text-gray-900 text-base">
                     {totalItems} items in cart
                   </div>
-                  <div className="text-base font-bold text-green-600 sm:text-lg">
+                  <div className="text-lg font-bold text-green-600">
                     Total: ₹{subtotal.toLocaleString()}
                   </div>
                 </div>
                 <Button
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold cursor-pointer text-sm p-2 sm:text-base sm:p-3"
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold cursor-pointer text-base p-3"
                   onClick={redirectToCart}
                 >
-                  <ShoppingCart className="w-3 h-3 mr-1 sm:w-4 sm:h-4 sm:mr-2" />
-                  View Cart
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Contribute Now
                 </Button>
               </div>
             </Card>

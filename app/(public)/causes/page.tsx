@@ -40,6 +40,9 @@ const apiService = {
       if (filters.pageSize) params.append('pageSize', filters.pageSize.toString());
       if (filters.selectedCategory) params.append('category_id', filters.selectedCategory.toString());
       if (filters.searchTerm) params.append('search', filters.searchTerm);
+      if (filters.status) params.append('status', filters.status);
+      if (filters.sortBy) params.append('sortBy', filters.sortBy);
+      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
       const response = await fetch(`/api/campaigns?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch campaigns');
@@ -75,11 +78,10 @@ const CategoryFilter: React.FC<{
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-4 md:px-0">
         <button
           onClick={() => onCategoryChange(null)}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap ${
-            !selectedCategory
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap ${!selectedCategory
               ? 'bg-red-600 text-white'
               : 'bg-yellow-400 text-black border border-gray-200'
-          }`}
+            }`}
         >
           ALL
         </button>
@@ -87,11 +89,10 @@ const CategoryFilter: React.FC<{
           <button
             key={category.id}
             onClick={() => onCategoryChange(category.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap ${
-              selectedCategory === category.id
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap ${selectedCategory === category.id
                 ? 'bg-red-600 text-white'
                 : 'bg-yellow-400 text-black border border-gray-200'
-            }`}
+              }`}
           >
             {category.name.toUpperCase()}
           </button>
@@ -126,21 +127,19 @@ const SearchBar: React.FC<{
         <div className="hidden md:flex bg-gray-100 rounded-lg p-1">
           <button
             onClick={() => onViewModeChange('grid')}
-            className={`p-2 rounded-md transition-all ${
-              viewMode === 'grid'
+            className={`p-2 rounded-md transition-all ${viewMode === 'grid'
                 ? 'bg-white text-gray-900'
                 : 'text-gray-500'
-            }`}
+              }`}
           >
             <Grid className="w-5 h-5" />
           </button>
           <button
             onClick={() => onViewModeChange('list')}
-            className={`p-2 rounded-md transition-all ${
-              viewMode === 'list'
+            className={`p-2 rounded-md transition-all ${viewMode === 'list'
                 ? 'bg-white text-gray-900'
                 : 'text-gray-500'
-            }`}
+              }`}
           >
             <List className="w-5 h-5" />
           </button>
@@ -192,7 +191,7 @@ const CampaignCard: React.FC<{
             <img
               src={campaign.image || '/api/placeholder/128/128'}
               alt={campaign.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full  "
             />
           </div>
 
@@ -241,9 +240,9 @@ const CampaignCard: React.FC<{
         <img
           src={campaign.image || '/api/placeholder/400/300'}
           alt={campaign.title}
-          className="w-full h-48 object-cover"
+          className="w-full h-48  "
         />
-        
+
         <div className="absolute top-3 left-3">
           <span className="bg-yellow-400 text-black px-3 py-1 rounded-full text-xs font-semibold">
             {campaign.category_name}
@@ -416,11 +415,10 @@ const IPagination: React.FC<{
           ) : (
             <button
               onClick={() => onPageChange(page as number)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                currentPage === page
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${currentPage === page
                   ? 'bg-yellow-400 text-black'
                   : 'bg-white border border-gray-200 text-gray-700'
-              }`}
+                }`}
             >
               {page}
             </button>
@@ -469,6 +467,9 @@ const CampaignList: React.FC<any> = ({
     selectedCategory: categoryFilter,
     searchTerm: '',
     page: 1,
+    status: 'Active',
+    sortBy: 'c.sequence',
+    sortOrder: 'ASC',
     pageSize: maxItems || pageSize,
     ...customFilters
   });

@@ -312,7 +312,7 @@ export default function DonatePage() {
             <p className="text-gray-600 mb-6">Add some products to get started.</p>
 
             <Link href="/causes">
-              <Button>Browse Campaigns</Button>
+              <Button className='bg-yellow-400 hover:bg-yellow-500 text-black font-bold'>Browse Campaigns</Button>
             </Link>
           </motion.div>
         </div>
@@ -773,7 +773,7 @@ export default function DonatePage() {
 
             <div className="flex gap-4">
               {currentStep < 2 && (
-                <Button onClick={handleNext} disabled={isSubmitting}>
+                <Button onClick={handleNext} className='bg-yellow-400 hover:bg-yellow-500 text-black font-semibold' disabled={isSubmitting}>
                   Next
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -781,6 +781,7 @@ export default function DonatePage() {
 
               {currentStep === 2 && (
                 <Button
+                  className='bg-yellow-400 hover:bg-yellow-500 text-black font-semibold'
                   onClick={handlePayment}
                   disabled={isSubmitting || isProcessing || !isRazorpayLoaded || grandTotal <= 0}
                 >
