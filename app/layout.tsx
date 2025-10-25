@@ -14,33 +14,66 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.dwaparyug.org"),
   title: {
-    default: "Dwaparyug NGO - Foundation",
+    default: "Dwaparyug Foundation – India’s Most Trusted NGO",
     template: "%s | Dwaparyug Foundation",
   },
   description:
-    "NGO Welfare Society dedicated to social causes and community development",
+    "Dwaparyug Foundation is a non-profit NGO in India dedicated to education, health, women hygiene, and food relief for underprivileged communities. Join us in creating a better future through donations, volunteering, and social development programs.",
   keywords: [
-    "India's most trusted NGO",
-    "India's Best NGO",
-    "Dwaparyug",
-    "underprivileged communities",
-    "food distribution drive",
-    "emergency food relief",
-    "women hygiene programs",
-    "volunteer opportunities in Delhi",
-    "NGO welfare society India",
-    "transparent donation platform",
-    "relief campaigns India",
-    "social development NGO"
+    "Dwaparyug Foundation",
+    "Dwaparyug NGO",
+    "non profit organization India",
+    "best NGO in Delhi",
+    "trusted NGO for donations",
+    "education NGO India",
+    "NGO for child education",
+    "women hygiene awareness programs",
+    "food distribution NGO India",
+    "free health camps Delhi",
+    "rural development NGO",
+    "volunteer opportunities Delhi",
+    "donate online to NGO India",
+    "emergency relief campaigns",
+    "community development NGO",
+    "medical camp NGO India",
+    "charity platform India",
+    "hunger relief NGO Delhi",
+    "sustainable development NGO",
+    "youth volunteering India"
   ],
-  generator: "AJPR WORLD & Jatin Vaishnav",
-  alternates: {
-    canonical: "https://www.dwaparyug.org/",
+  openGraph: {
+    title: "Dwaparyug Foundation – Empowering Lives Through Education, Health & Hope",
+    description:
+      "Join Dwaparyug Foundation in empowering underprivileged communities across India through education, health awareness, food drives, and women hygiene programs.",
+    url: "https://www.dwaparyug.org",
+    siteName: "Dwaparyug Foundation",
+    images: [
+      {
+        url: "https://www.dwaparyug.org/og-image.jpg", // 👈 Replace with your actual OG image
+        width: 1200,
+        height: 630,
+        alt: "Dwaparyug Foundation – NGO in India",
+      },
+    ],
+    locale: "en_IN",
+    type: "website",
   },
-  authors: [{ name: "Jatin Vaishnav", url: "https://jatindevv.netlify.app" },
+  twitter: {
+    card: "summary_large_image",
+    title: "Dwaparyug Foundation – India’s Most Trusted NGO",
+    description:
+      "Support education, health, and community welfare with Dwaparyug Foundation. Donate or volunteer to make a difference today!",
+    images: ["https://www.dwaparyug.org/og-image.jpg"], // 👈 same image as OG
+    creator: "@dwaparyug",
+  },
+  generator: "AJPR WORLD & Jatin Vaishnav",
+   alternates: {
+    canonical: "https://www.dwaparyug.org",
+  },
+   authors: [{ name: "Jatin Vaishnav", url: "https://jatindevv.netlify.app" },
   { name: "AJPR World", url: "https://ajprworld.com" }
   ]
-};
+ };
 
 export default function RootLayout({
   children,
@@ -49,6 +82,39 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+
+
+      <head>
+        {/* ✅ Meta Pixel Code */}
+        <Script
+          id="meta-pixel"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              !function(f,b,e,v,n,t,s)
+              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+              n.queue=[];t=b.createElement(e);t.async=!0;
+              t.src=v;s=b.getElementsByTagName(e)[0];
+              s.parentNode.insertBefore(t,s)}(window, document,'script',
+              'https://connect.facebook.net/en_US/fbevents.js');
+              fbq('init', '1216856133825801');
+              fbq('track', 'PageView');
+            `,
+          }}
+        />
+        <noscript>
+          <img
+            height="1"
+            width="1"
+            style={{ display: "none" }}
+            src="https://www.facebook.com/tr?id=1216856133825801&ev=PageView&noscript=1"
+          />
+        </noscript>
+        {/* ✅ End Meta Pixel Code */}
+      </head>
+
       <body className={inter.className}>
         <NextAuthProvider>
           <ToasterProvider />
