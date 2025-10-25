@@ -66,12 +66,14 @@ export const metadata: Metadata = {
     images: ["https://www.dwaparyug.org/og-image.jpg"], // 👈 same image as OG
     creator: "@dwaparyug",
   },
-  alternates: {
+  generator: "AJPR WORLD & Jatin Vaishnav",
+   alternates: {
     canonical: "https://www.dwaparyug.org",
   },
-  authors: [{ name: "Dwaparyug Foundation", url: "https://www.dwaparyug.org" }],
-  generator: "AJPR WORLD",
-};
+   authors: [{ name: "Jatin Vaishnav", url: "https://jatindevv.netlify.app" },
+  { name: "AJPR World", url: "https://ajprworld.com" }
+  ]
+ };
 
 export default function RootLayout({
   children,
