@@ -36,6 +36,7 @@ const campaignFormSchema = z.object({
   details: z.string().min(20, "Details must be at least 20 characters long."),
   donation_goal: z.coerce.number().min(1, "Donation goal must be at least ₹1."),
   beneficiaries: z.coerce.number().min(1, "Beneficiaries must be at least 1."),
+  sequence: z.coerce.number().min(1, "sequence must be at least 1."),
   total_raised: z.number().optional(),
   status: z.enum(["Active", "Inactive",]),
   is_featured: z.boolean().optional(),
@@ -198,6 +199,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
         category_id: Number(campaign.category_id) || 0,
         donation_goal: Number(campaign.donation_goal) || 0,
         beneficiaries: Number(campaign.beneficiaries) || 0,
+        sequence: Number(campaign.sequence) || 0,
         end_date: campaign.end_date
           ? new Date(campaign.end_date)
           : (() => {
@@ -315,6 +317,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
         category_id: Number(data.category_id),
         donation_goal: Number(data.donation_goal),
         beneficiaries: Number(data.beneficiaries),
+        sequence: Number(data.sequence),
         is_featured: data.is_featured ? 1 : 0,
         assignedProducts: (data.assignedProducts || []).map(product => ({
           ...product,
@@ -497,10 +500,10 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
           <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] gap-2">
             <div className="space-y-1">
               <Label htmlFor="code" className="text-sm">Code</Label>
-              <Input 
-                id="code" 
-                {...register("code")} 
-                placeholder="e.g., C001" 
+              <Input
+                id="code"
+                {...register("code")}
+                placeholder="e.g., C001"
                 className="h-8"
               />
               {errors.code && <p className="text-xs text-red-500">{errors.code.message}</p>}
@@ -645,7 +648,7 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">
               <Label htmlFor="verified" className="text-sm">Verified Campaign</Label>
               <div className="flex items-center space-x-2 pt-1">
@@ -686,6 +689,11 @@ export default function CampaignForm({ campaign, onSave, onCancel }: CampaignFor
                 </Label>
               </div>
               {errors.is_featured && <p className="text-xs text-red-500">{errors.is_featured.message}</p>}
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="sequence" className="text-sm">Sequence</Label>
+              <Input id="sequence" type="number" {...register("sequence")} className="h-8" />
+              {errors.sequence && <p className="text-xs text-red-500">{errors.sequence.message}</p>}
             </div>
           </div>
 

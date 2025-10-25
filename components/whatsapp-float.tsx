@@ -13,11 +13,11 @@ const WhatsAppFloat = () => {
       href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-15 right-6 z-50 bg-[#25D366] hover:bg-[#20BA5A] text-white rounded-full p-4 shadow-2xl hover:shadow-3xl transition-all duration-300 cursor-pointer group"
+      className="fixed bottom-25 right-6 z-50 bg-[#25D366] hover:bg-[#20BA5A] text-white rounded-full p-4 shadow-2xl hover:shadow-3xl transition-all duration-300 cursor-pointer group"
       initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
+      animate={{ scale: 0.85, opacity: 1 }}
       transition={{ duration: 0.3, delay: 0.5 }}
-      whileHover={{ scale: 1.1 }}
+      whileHover={{ scale: 0.85 }}
       whileTap={{ scale: 0.95 }}
     >
       {/* WhatsApp Icon */}

@@ -19,7 +19,7 @@ const impactStats = [
   },
   {
     icon: <Users className="w-8 h-8" />,
-    value: "3,000+",
+    value: "30,000+",
     label: "Unique Donors"
   },
   {

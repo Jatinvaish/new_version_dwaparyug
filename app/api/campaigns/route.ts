@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const category_id = searchParams.get('category_id');
     const search = searchParams.get('search') || '';
-    const sortBy = searchParams.get('sortBy') || 'c.created_at';
+    const sortBy = searchParams.get('sortBy') || 'c.sequence';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
     const is_featured = searchParams.get('is_featured');
 
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Validate sortBy and sortOrder (prevent SQL injection)
-    const allowedSortFields = ['c.created_at', 'cc.name', 'c.status', 'c.title', 'c.total_raised', 'c.donation_goal'];
+    const allowedSortFields = ['c.created_at','c.sequence', 'cc.name', 'c.status', 'c.title', 'c.total_raised', 'c.donation_goal'];
     const allowedSortOrders = ['asc', 'desc'];
 
     const safeSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'c.created_at';

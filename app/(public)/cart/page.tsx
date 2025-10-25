@@ -94,7 +94,7 @@ export default function CartPage() {
   const handleEditProduct = (item: any, campaignId: number) => {
     setEditingProduct({
       ...item,
-      id: item.productId, 
+      id: item.productId,
       productId: item.productId,
       campaignId,
       campaignTitle: Object.entries(getItemsByCampaign()).find(
@@ -127,11 +127,6 @@ export default function CartPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-4xl mx-auto py-4 sm:py-8 px-2 sm:px-4">
-          {/* Header */}
-          <div className="text-center mb-6 sm:mb-8">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">Your Cart</h1>
-            <p className="text-sm sm:text-base text-gray-600">Items you've selected for donation</p>
-          </div>
 
           {/* Empty Cart */}
           <motion.div
@@ -147,7 +142,7 @@ export default function CartPage() {
 
             <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 justify-center px-4">
               <Link href="/causes" className="w-full sm:w-auto">
-                <Button className="w-full sm:w-auto">
+                <Button className="bg-yellow-400 hover:bg-yellow-500 text-black font-bold w-full sm:w-auto">
                   Browse Campaigns
                 </Button>
               </Link>
@@ -643,24 +638,31 @@ export default function CartPage() {
                   <Button
                     onClick={handleProceedToDonate}
                     disabled={grandTotal <= 0}
-                    className="w-full h-11 sm:h-12 text-sm sm:text-base font-medium"
+                    className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold w-full h-11 sm:h-12 text-sm sm:text-base  "
                     size="lg"
                   >
-                    <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                    <span className="flex-1 text-center">
+                    <span className=" flex-1 text-start ">
                       Proceed to Donate
-                      {grandTotal > 0 && (
-                        <span className="block sm:inline sm:ml-2 text-xs sm:text-sm">
-                          ₹{grandTotal.toLocaleString()}
-                        </span>
-                      )}
                     </span>
+                    {grandTotal > 0 && (
+                      <span className="block sm:inline sm:ml-2 text-xs sm:text-sm">
+                        ₹{grandTotal.toLocaleString()}
+                      </span>
+                    )}
+                    <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+
                   </Button>
 
                   {/* Security Badge */}
-                  <div className="flex items-center justify-center text-xs text-gray-500 mt-3 sm:mt-4">
-                    <Zap className="w-3 h-3 mr-1" />
-                    Secured by Razorpay
+                  <div className="flex items-center justify-center gap-2 py-1.5 text-xs text-gray-600">
+                    <span>Secured by</span>
+                    <img
+                      src="/images/razorpay.avif"
+                      alt="Razorpay"
+                      style={{ width: '75px', height: '20px' }}
+                      className="inline"
+                    />
+
                   </div>
                 </CardContent>
               </Card>

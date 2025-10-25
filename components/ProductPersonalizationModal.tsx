@@ -117,7 +117,7 @@ export default function ProductPersonalizationModal({
   const [imageFile, setImageFile] = useState<File | null>(null)
 
   const [formData, setFormData] = useState<ProductPersonalizationData>({
-    donationDate: new Date(Date.now() + product?.min_tat * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    donationDate: product?.min_tat ? new Date(Date.now() + product?.min_tat * 24 * 60 * 60 * 1000)?.toISOString().split('T')[0]: '',
     donorName: product?.personalization?.donorName || '',
     donorCountry: product?.personalization?.donorCountry || 'IN',
     mobileNumber: product?.personalization?.mobileNumber || '',
@@ -299,9 +299,17 @@ export default function ProductPersonalizationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="sm:max-w-2xl h-[100dvh] sm:h-auto sm:max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="sticky top-0 bg-white z-10 px-6 pt-6 pb-4 border-b">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClose}
+            className="absolute right-4 top-4 h-8 w-8 p-0 rounded-full"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+          <DialogTitle className="flex items-center gap-2 pr-8">
             <Package className="w-5 h-5 text-blue-500" />
             {isEdit ? 'Edit Donation Details' : 'Personalize Your Donation'}
           </DialogTitle>
@@ -310,234 +318,237 @@ export default function ProductPersonalizationModal({
           </DialogDescription>
         </DialogHeader>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6 py-4"
-        >
-          {/* Product Summary */}
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                {product.image && (
-                  <Image
-                    src={product.image}
-                    alt={product.name}
-                    width={80}
-                    height={80}
-                    className="rounded-lg object-cover"
-                  />
-                )}
-                <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900">{product.name}</h4>
-                  <p className="text-sm text-gray-600">{product.campaignTitle}</p>
-                  <div className="flex items-center gap-3 mt-1">
-                    <p className="text-lg font-bold text-blue-600">
-                      ₹{product.price.toLocaleString()}{product.unit && ` per ${product.unit}`}
-                    </p>
-                    {product.quantity && (
-                      <Badge variant="outline">
-                        Qty: {product.quantity}
-                      </Badge>
-                    )}
+        <div className="flex-1 overflow-y-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6 py-4"
+          >
+            {/* Product Summary */}
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  {product.image && (
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      width={80}
+                      height={80}
+                      className="rounded-lg object-cover"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900">{product.name}</h4>
+                    <p className="text-sm text-gray-600">{product.campaignTitle}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <p className="text-lg font-bold text-blue-600">
+                        ₹{product.price.toLocaleString()}{product.unit && ` per ${product.unit}`}
+                      </p>
+                      {product.quantity && (
+                        <Badge variant="outline">
+                          Qty: {product.quantity}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Donation Date */}
+            <div className="space-y-2">
+              <Label htmlFor="donationDate">Donation Date *</Label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                <Input
+                  id="donationDate"
+                  type="date"
+                  value={formData.donationDate}
+                  onChange={(e) => updateFormData({ donationDate: e.target.value })}
+                  min={product.min_tat ? new Date(Date.now() + product.min_tat * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined}
+                  max={product.max_tat ? new Date(Date.now() + product.max_tat * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined}
+                  className="pl-10"
+                  required
+                />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Donation Date */}
-          <div className="space-y-2">
-            <Label htmlFor="donationDate">Donation Date *</Label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-              <Input
-                id="donationDate"
-                type="date"
-                value={formData.donationDate}
-                onChange={(e) => updateFormData({ donationDate: e.target.value })}
-                min={product.min_tat ? new Date(Date.now() + product.min_tat * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined}
-                max={product.max_tat ? new Date(Date.now() + product.max_tat * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined}
-                className="pl-10"
-                required
-              />
+              <p className="text-xs text-gray-500">
+                Select when you want this donation to be processed
+              </p>
+              {errors.donationDate && (
+                <p className="text-red-500 text-sm">{errors.donationDate}</p>
+              )}
             </div>
-            <p className="text-xs text-gray-500">
-              Select when you want this donation to be processed
-            </p>
-            {errors.donationDate && (
-              <p className="text-red-500 text-sm">{errors.donationDate}</p>
-            )}
-          </div>
 
-          {/* Personal Information */}
-          <div className="grid md:grid-cols-2 gap-4">
+            {/* Personal Information */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="donorName">Full Name *</Label>
+                <Input
+                  id="donorName"
+                  placeholder="Enter your full name"
+                  value={formData.donorName}
+                  onChange={(e) => updateFormData({ donorName: e.target.value })}
+                />
+                {errors.donorName && (
+                  <p className="text-red-500 text-sm mt-1">{errors.donorName}</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="donorCountry">Country *</Label>
+                <Select
+                  value={formData.donorCountry}
+                  onValueChange={(value) => updateFormData({ donorCountry: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countries.map((country) => (
+                      <SelectItem key={country.value} value={country.value}>
+                        {country.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div>
-              <Label htmlFor="donorName">Full Name *</Label>
+              <Label htmlFor="mobileNumber">Mobile Number *</Label>
               <Input
-                id="donorName"
-                placeholder="Enter your full name"
-                value={formData.donorName}
-                onChange={(e) => updateFormData({ donorName: e.target.value })}
+                id="mobileNumber"
+                placeholder="Enter your mobile number"
+                value={formData.mobileNumber}
+                maxLength={15}
+                onChange={(e) => {
+                  const input = e.target.value
+                  if (/^[\d+\-\s()]*$/.test(input)) {
+                    updateFormData({ mobileNumber: input })
+                  }
+                }}
               />
-              {errors.donorName && (
-                <p className="text-red-500 text-sm mt-1">{errors.donorName}</p>
+              {errors.mobileNumber && (
+                <p className="text-red-500 text-sm mt-1">{errors.mobileNumber}</p>
               )}
             </div>
 
             <div>
-              <Label htmlFor="donorCountry">Country *</Label>
-              <Select
-                value={formData.donorCountry}
-                onValueChange={(value) => updateFormData({ donorCountry: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your country" />
-                </SelectTrigger>
-                <SelectContent>
-                  {countries.map((country) => (
-                    <SelectItem key={country.value} value={country.value}>
-                      {country.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="donatedOnBehalfOf">Donating on behalf of someone?</Label>
+              <Input
+                id="donatedOnBehalfOf"
+                placeholder="Enter name if donating on someone's behalf"
+                value={formData.donatedOnBehalfOf}
+                onChange={(e) => updateFormData({ donatedOnBehalfOf: e.target.value })}
+              />
             </div>
-          </div>
 
-          <div>
-            <Label htmlFor="mobileNumber">Mobile Number *</Label>
-            <Input
-              id="mobileNumber"
-              placeholder="Enter your mobile number"
-              value={formData.mobileNumber}
-              maxLength={15}
-              onChange={(e) => {
-                const input = e.target.value
-                if (/^[\d+\-\s()]*$/.test(input)) {
-                  updateFormData({ mobileNumber: input })
-                }
-              }}
-            />
-            {errors.mobileNumber && (
-              <p className="text-red-500 text-sm mt-1">{errors.mobileNumber}</p>
-            )}
-          </div>
-
-          <div>
-            <Label htmlFor="donatedOnBehalfOf">Donating on behalf of someone?</Label>
-            <Input
-              id="donatedOnBehalfOf"
-              placeholder="Enter name if donating on someone's behalf"
-              value={formData.donatedOnBehalfOf}
-              onChange={(e) => updateFormData({ donatedOnBehalfOf: e.target.value })}
-            />
-          </div>
-
-          {/* Image Upload */}
-          <div className="space-y-2">
-            <Label>Get a photograph printed</Label>
-            <p className="text-xs text-gray-600">
-              Personalize your product by adding a custom image
-            </p>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-              {imagePreview ? (
-                <div className="relative">
-                  <Image
-                    src={imagePreview}
-                    alt="Custom upload"
-                    width={200}
-                    height={150}
-                    className="mx-auto rounded-lg object-cover"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    onClick={removeImage}
-                    className="absolute -top-2 -right-2 h-8 w-8 rounded-full p-0"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <Camera className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500 mb-3">Upload a custom image</p>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    id="image-upload"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => document.getElementById('image-upload')?.click()}
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    Choose Image
-                  </Button>
-                </div>
-              )}
+            {/* Image Upload */}
+            <div className="space-y-2">
+              <Label>Get a photograph printed</Label>
+              <p className="text-xs text-gray-600">
+                Personalize your product by adding a custom image
+              </p>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                {imagePreview ? (
+                  <div className="relative">
+                    <Image
+                      src={imagePreview}
+                      alt="Custom upload"
+                      width={200}
+                      height={150}
+                      className="mx-auto rounded-lg object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={removeImage}
+                      className="absolute -top-2 -right-2 h-8 w-8 rounded-full p-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <Camera className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500 mb-3">Upload a custom image</p>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('image-upload')?.click()}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Choose Image
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Optional Messages */}
-          <div>
-            <Label htmlFor="customMessage">Custom Message</Label>
-            <Textarea
-              id="customMessage"
-              placeholder="Add a personal message..."
-              value={formData.customMessage}
-              onChange={(e) => updateFormData({ customMessage: e.target.value })}
-              rows={2}
-            />
-          </div>
+            {/* Optional Messages */}
+            <div>
+              <Label htmlFor="customMessage">Custom Message</Label>
+              <Textarea
+                id="customMessage"
+                placeholder="Add a personal message..."
+                value={formData.customMessage}
+                onChange={(e) => updateFormData({ customMessage: e.target.value })}
+                rows={2}
+              />
+            </div>
 
-          <div>
-            <Label htmlFor="donationPurpose">Purpose of Donation</Label>
-            <Input
-              id="donationPurpose"
-              placeholder="e.g., Birthday celebration, In memory of..."
-              value={formData.donationPurpose}
-              onChange={(e) => updateFormData({ donationPurpose: e.target.value })}
-            />
-          </div>
+            <div>
+              <Label htmlFor="donationPurpose">Purpose of Donation</Label>
+              <Input
+                id="donationPurpose"
+                placeholder="e.g., Birthday celebration, In memory of..."
+                value={formData.donationPurpose}
+                onChange={(e) => updateFormData({ donationPurpose: e.target.value })}
+              />
+            </div>
 
-          <div>
-            <Label htmlFor="specialInstructions">Special Instructions</Label>
-            <Textarea
-              id="specialInstructions"
-              placeholder="Any special instructions..."
-              value={formData.specialInstructions}
-              onChange={(e) => updateFormData({ specialInstructions: e.target.value })}
-              rows={2}
-            />
-          </div>
+            <div>
+              <Label htmlFor="specialInstructions">Special Instructions</Label>
+              <Textarea
+                id="specialInstructions"
+                placeholder="Any special instructions..."
+                value={formData.specialInstructions}
+                onChange={(e) => updateFormData({ specialInstructions: e.target.value })}
+                rows={2}
+              />
+            </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="isAnonymous"
-              checked={formData.isAnonymous}
-              onCheckedChange={(checked) => updateFormData({ isAnonymous: !!checked })}
-            />
-            <Label htmlFor="isAnonymous">Donate anonymously</Label>
-          </div>
-        </motion.div>
+            <div className="flex items-center space-x-2 pb-4">
+              <Checkbox
+                id="isAnonymous"
+                checked={formData.isAnonymous}
+                onCheckedChange={(checked) => updateFormData({ isAnonymous: !!checked })}
+              />
+              <Label htmlFor="isAnonymous">Donate anonymously</Label>
+            </div>
+          </motion.div>
+        </div>
 
-        <DialogFooter className="flex justify-between items-center">
+        <div className="sticky left-0 right-0 bg-white z-10 px-6 py-4 border-t flex gap-3 shrink-0">
           <Button
             variant="outline"
             onClick={handleClose}
             disabled={isSubmitting}
+            className="flex-1"
           >
             Cancel
           </Button>
 
-          <Button onClick={handleSave} disabled={isSubmitting}>
+          <Button onClick={handleSave} disabled={isSubmitting} className="bg-yellow-400 hover:bg-yellow-500 text-black font-bold flex-1">
             {isSubmitting ? (
               <>Processing...</>
             ) : (
@@ -546,9 +557,8 @@ export default function ProductPersonalizationModal({
               </>
             )}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   )
 }
-
