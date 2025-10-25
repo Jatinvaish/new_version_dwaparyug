@@ -176,7 +176,7 @@ export const useDonationCart = () => {
   const removeFromCart = useCallback((productId: number, campaignId: number) => {
     const cart = getCartFromStorage()
     const existingIndex = cart.findIndex(
-      cartItem => cartItem.productId === productId && cartItem.campaignId === campaignId
+      cartItem => cartItem.productId === Number(productId) && cartItem.campaignId === Number(campaignId)
     )
     
     if (existingIndex > -1) {
@@ -193,10 +193,10 @@ export const useDonationCart = () => {
   }, [])
 
   // Update item quantity
-  const updateQuantity = useCallback((productId: number, campaignId: number, newQuantity: number) => {
+   const updateQuantity = useCallback((productId: number, campaignId: number, newQuantity: number) => {
     const cart = getCartFromStorage()
     const existingIndex = cart.findIndex(
-      cartItem => cartItem.productId === productId && cartItem.campaignId === campaignId
+      cartItem => cartItem.productId === Number(productId) && cartItem.campaignId === Number(campaignId)
     )
     
     if (existingIndex > -1) {
@@ -206,13 +206,13 @@ export const useDonationCart = () => {
         const maxQty = cart[existingIndex].maxQty || cart[existingIndex].stock || 999
         cart[existingIndex].quantity = Math.min(newQuantity, maxQty)
       }
+      
+      saveCartToStorage(cart)
+      setCartItems(cart)
     }
     
-    saveCartToStorage(cart)
-    setCartItems(cart)
     return cart
   }, [])
-
   // Clear entire cart
   const clearCart = useCallback(() => {
     saveCartToStorage([])
@@ -233,7 +233,7 @@ export const useDonationCart = () => {
   // Get item quantity
   const getItemQuantity = useCallback((productId: number, campaignId: number): number => {
     const item = cartItems.find(
-      cartItem => cartItem.productId === productId && cartItem.campaignId === campaignId
+      cartItem => cartItem.productId === Number(productId) && cartItem.campaignId === Number(campaignId)
     )
     return item ? item.quantity : 0
   }, [cartItems])
