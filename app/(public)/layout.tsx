@@ -9,7 +9,7 @@ import WhatsAppFloat from "@/components/whatsapp-float"
 export const metadata: Metadata = {
   title: "Dwaparyug NGO - Welfare Society",
   description: "NGO Welfare Society dedicated to social causes and community development",
-  generator: 'v0.dev'
+  generator: 'Jatin Vaishnav',
 }
 
 export default function RootLayout({

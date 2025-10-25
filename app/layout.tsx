@@ -33,10 +33,13 @@ export const metadata: Metadata = {
     "relief campaigns India",
     "social development NGO"
   ],
-  generator: "AJPR WORLD",
+  generator: "AJPR WORLD & Jatin Vaishnav",
   alternates: {
     canonical: "https://www.dwaparyug.org/",
   },
+  authors: [{ name: "Jatin Vaishnav", url: "https://jatindevv.netlify.app" },
+  { name: "AJPR World", url: "https://ajprworld.com" }
+  ]
 };
 
 export default function RootLayout({
