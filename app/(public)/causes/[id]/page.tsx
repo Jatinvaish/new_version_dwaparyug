@@ -1185,9 +1185,11 @@ Powered by Your Platform Name - Making giving meaningful and transparent.`
                 <div className="text-xs">
                   {totalItems > 0 ? `${totalItems} ITEM${totalItems > 1 ? 'S' : ''}` : 'Support This Campaign'}
                 </div>
-                <div className="text-sm font-bold">
-                  ₹ {totalItems > 0 ? subtotal.toLocaleString() : campaign.donation_goal.toLocaleString()}
-                </div>
+                {totalItems > 0 &&
+                  <div className="text-sm font-bold">
+                    ₹ {totalItems > 0 && subtotal.toLocaleString()  }
+                  </div>
+                }
               </div>
               <div className="flex items-center gap-2 text-sm font-bold">
                 {totalItems > 0 ? 'VIEW CART' : 'DONATE NOW'}
