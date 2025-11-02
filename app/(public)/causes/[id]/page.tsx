@@ -641,15 +641,12 @@ Powered by Your Platform Name - Making giving meaningful and transparent.`
                           )}
                         </div>
                       ) : (
-                        // Regular Image
-                        <Image
-                          src={currentMedia?.url || "/placeholder.svg"}
+                        <img
+                          src={currentMedia.url || '/images/testimonials/no-profile.png'}
                           alt={campaign.title}
-                          width={800}
-                          height={600}
-                          className="w-full h-full object-cover"
-                          priority
+                          className="w-full h-full  "
                         />
+                         
                       )}
 
                       {/* Navigation Arrows */}
@@ -821,12 +818,18 @@ Powered by Your Platform Name - Making giving meaningful and transparent.`
                               >
                                 <Card className=" h-full overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
                                   <div className="relative">
-                                    <Image
+                                    {/* <Image
                                       src={product.image || "/placeholder.svg"}
                                       alt={product.description || `Product ${product.id}`}
                                       width={300}
                                       height={200}
                                       className="w-full h-40 object-cover sm:h-48"
+                                    /> */}
+
+                                    <img
+                                      src={product.image || "/placeholder.svg"}
+                                      alt={product.description || `Product ${product.id}`}
+                                      className="w-full h-48  "
                                     />
 
                                     {product.stock !== undefined && product.stock < 10 && (
@@ -1187,7 +1190,7 @@ Powered by Your Platform Name - Making giving meaningful and transparent.`
                 </div>
                 {totalItems > 0 &&
                   <div className="text-sm font-bold">
-                    ₹ {totalItems > 0 && subtotal.toLocaleString()  }
+                    ₹ {totalItems > 0 && subtotal.toLocaleString()}
                   </div>
                 }
               </div>
