@@ -5,9 +5,9 @@ import "./globals.css";
 import NextAuthProvider from "@/providers/providers";
 import ToasterProvider from "@/components/ui/sooner";
 import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next"
-import Script from "next/script"; // ✅ import Next.js Script
-import { GoogleTagManager } from '@next/third-parties/google'
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import Script from "next/script";
+import { GoogleTagManager } from "@next/third-parties/google";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -39,17 +39,18 @@ export const metadata: Metadata = {
     "charity platform India",
     "hunger relief NGO Delhi",
     "sustainable development NGO",
-    "youth volunteering India"
+    "youth volunteering India",
   ],
   openGraph: {
-    title: "Dwaparyug Foundation – Empowering Lives Through Education, Health & Hope",
+    title:
+      "Dwaparyug Foundation – Empowering Lives Through Education, Health & Hope",
     description:
       "Join Dwaparyug Foundation in empowering underprivileged communities across India through education, health awareness, food drives, and women hygiene programs.",
     url: "https://www.dwaparyug.org",
     siteName: "Dwaparyug Foundation",
     images: [
       {
-        url: "https://www.dwaparyug.org/og-image.jpg", // 👈 Replace with your actual OG image
+        url: "https://www.dwaparyug.org/og-image.jpg",
         width: 1200,
         height: 630,
         alt: "Dwaparyug Foundation – NGO in India",
@@ -63,17 +64,18 @@ export const metadata: Metadata = {
     title: "Dwaparyug Foundation – India’s Most Trusted NGO",
     description:
       "Support education, health, and community welfare with Dwaparyug Foundation. Donate or volunteer to make a difference today!",
-    images: ["https://www.dwaparyug.org/og-image.jpg"], // 👈 same image as OG
+    images: ["https://www.dwaparyug.org/og-image.jpg"],
     creator: "@dwaparyug",
   },
   generator: "AJPR WORLD & Jatin Vaishnav",
-   alternates: {
+  alternates: {
     canonical: "https://www.dwaparyug.org",
   },
-   authors: [{ name: "Jatin Vaishnav", url: "https://jatindevv.netlify.app" },
-  { name: "AJPR World", url: "https://ajprworld.com" }
-  ]
- };
+  authors: [
+    { name: "Jatin Vaishnav", url: "https://jatindevv.netlify.app" },
+    { name: "AJPR World", url: "https://ajprworld.com" },
+  ],
+};
 
 export default function RootLayout({
   children,
@@ -82,8 +84,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-
-
       <head>
         {/* ✅ Meta Pixel Code */}
         <Script
@@ -99,7 +99,7 @@ export default function RootLayout({
               t.src=v;s=b.getElementsByTagName(e)[0];
               s.parentNode.insertBefore(t,s)}(window, document,'script',
               'https://connect.facebook.net/en_US/fbevents.js');
-              fbq('init', '1216856133825801');
+              fbq('init', '1318765186360746');  // 👈 your pixel ID
               fbq('track', 'PageView');
             `,
           }}
@@ -109,7 +109,8 @@ export default function RootLayout({
             height="1"
             width="1"
             style={{ display: "none" }}
-            src="https://www.facebook.com/tr?id=1216856133825801&ev=PageView&noscript=1"
+            src="https://www.facebook.com/tr?id=1318765186360746&ev=PageView&noscript=1"
+            alt="facebook pixel"
           />
         </noscript>
         {/* ✅ End Meta Pixel Code */}
