@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, ChangeEvent } from 'react';
-import { Plus, Trash2, Upload, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import React, { useState, ChangeEvent, useEffect } from 'react';
+import { Plus, Trash2, Upload, AlertCircle, CheckCircle2, Loader2, Search, ChevronDown } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,13 +52,67 @@ interface ResponseState {
   status: number;
 }
 
+interface Campaign {
+  id: number;
+  code: string;
+  title: string;
+  status: string;
+}
+
 export default function ManualDonationPage() {
-  const [campaignCode, setCampaignCode] = useState<string>('BVP');
+  const [campaignCode, setCampaignCode] = useState<string>('');
+  const [campaignSearch, setCampaignSearch] = useState<string>('');
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [filteredCampaigns, setFilteredCampaigns] = useState<Campaign[]>([]);
+  const [showDropdown, setShowDropdown] = useState<boolean>(false);
+  const [loadingCampaigns, setLoadingCampaigns] = useState<boolean>(false);
+  
   const [donations, setDonations] = useState<Donation[]>([
     { mobileNumber: '', amount: '', message: '' }
   ]);
   const [loading, setLoading] = useState<boolean>(false);
   const [response, setResponse] = useState<ResponseState | null>(null);
+
+  // Fetch campaigns on mount
+  useEffect(() => {
+    fetchCampaigns();
+  }, []);
+
+  // Filter campaigns based on search
+  useEffect(() => {
+    if (campaignSearch.trim() === '') {
+      setFilteredCampaigns(campaigns);
+    } else {
+      const filtered = campaigns.filter(
+        (campaign) =>
+          campaign.code.toLowerCase().includes(campaignSearch.toLowerCase()) ||
+          campaign.title.toLowerCase().includes(campaignSearch.toLowerCase())
+      );
+      setFilteredCampaigns(filtered);
+    }
+  }, [campaignSearch, campaigns]);
+
+  const fetchCampaigns = async (): Promise<void> => {
+    setLoadingCampaigns(true);
+    try {
+      const response = await fetch('/api/campaigns/search?status=Active&pageSize=100');
+      const data = await response.json();
+      if (response.ok && data.campaigns) {
+        setCampaigns(data.campaigns);
+        setFilteredCampaigns(data.campaigns);
+      }
+    } catch (error) {
+      console.error('Error fetching campaigns:', error);
+    } finally {
+      setLoadingCampaigns(false);
+    }
+  };
+
+  const selectCampaign = (campaign: Campaign): void => {
+    setCampaignCode(campaign.code);
+    setCampaignSearch(`${campaign.code} - ${campaign.title}`);
+    setShowDropdown(false);
+  };
 
   const addDonation = (): void => {
     setDonations([...donations, { mobileNumber: '', amount: '', message: '' }]);
@@ -73,17 +127,12 @@ export default function ManualDonationPage() {
   const updateDonation = (index: number, field: keyof Donation, value: string): void => {
     const updated = [...donations];
     
-    // Validation for mobile number - only digits, max 14
     if (field === 'mobileNumber') {
       const digitsOnly = value.replace(/\D/g, '');
       updated[index][field] = digitsOnly.slice(0, 14);
-    }
-    // Validation for message - max 100 characters
-    else if (field === 'message') {
+    } else if (field === 'message') {
       updated[index][field] = value.slice(0, 100);
-    }
-    // Amount - only numbers and decimal
-    else if (field === 'amount') {
+    } else if (field === 'amount') {
       if (value === '' || /^\d*\.?\d*$/.test(value)) {
         updated[index][field] = value;
       }
@@ -96,7 +145,11 @@ export default function ManualDonationPage() {
   };
 
   const handleSubmit = async (): Promise<void> => {
-    // Validate before submission
+    if (!campaignCode.trim()) {
+      alert('Please select a campaign');
+      return;
+    }
+
     const invalidDonations = donations.filter(d => 
       !d.mobileNumber || 
       !d.amount || 
@@ -196,7 +249,7 @@ export default function ManualDonationPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-base">Campaign Settings</CardTitle>
-                  <CardDescription className="text-xs">Configure campaign code</CardDescription>
+                  <CardDescription className="text-xs">Select campaign and import CSV</CardDescription>
                 </div>
                 <Button 
                   type="button" 
@@ -216,15 +269,73 @@ export default function ManualDonationPage() {
                 />
               </div>
             </CardHeader>
-            <CardContent className="pt-0">
-              <Input
-                id="campaignCode"
-                value={campaignCode}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setCampaignCode(e.target.value)}
-                placeholder="Campaign code"
-                className="h-8"
-              />
-              <p className="text-xs text-gray-500 mt-1">
+            <CardContent className="pt-0 space-y-2">
+              {/* Campaign Search Combobox */}
+              <div className="relative">
+                <label className="text-xs font-medium text-gray-700 mb-1 block">
+                  Campaign <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-2 top-2 h-4 w-4 text-gray-400" />
+                  <Input
+                    value={campaignSearch}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                      setCampaignSearch(e.target.value);
+                      setShowDropdown(true);
+                    }}
+                    onFocus={() => setShowDropdown(true)}
+                    placeholder="Search by code or title..."
+                    className="h-8 pl-8 pr-8"
+                  />
+                  <ChevronDown className="absolute right-2 top-2 h-4 w-4 text-gray-400" />
+                </div>
+                
+                {/* Dropdown */}
+                {showDropdown && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={() => setShowDropdown(false)}
+                    />
+                    <div className="absolute z-20 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {loadingCampaigns ? (
+                        <div className="p-3 text-sm text-gray-500 text-center">
+                          <Loader2 className="w-4 h-4 animate-spin mx-auto mb-1" />
+                          Loading campaigns...
+                        </div>
+                      ) : filteredCampaigns.length === 0 ? (
+                        <div className="p-3 text-sm text-gray-500 text-center">
+                          No campaigns found
+                        </div>
+                      ) : (
+                        filteredCampaigns.map((campaign) => (
+                          <button
+                            key={campaign.id}
+                            type="button"
+                            onClick={() => selectCampaign(campaign)}
+                            className="w-full text-left px-3 py-2 hover:bg-gray-100 border-b last:border-b-0 transition-colors"
+                          >
+                            <div className="font-medium text-sm text-gray-900">
+                              {campaign.code}
+                            </div>
+                            <div className="text-xs text-gray-600 truncate">
+                              {campaign.title}
+                            </div>
+                            <div className="text-xs text-gray-400 mt-0.5">
+                              Status: <span className={campaign.status === 'active' ? 'text-green-600' : 'text-gray-500'}>
+                                {campaign.status}
+                              </span>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
+             
+              <p className="text-xs text-gray-500 mt-2">
                 CSV format: mobileNumber,amount,message | 
                 <button 
                   onClick={() => {
@@ -325,7 +436,7 @@ export default function ManualDonationPage() {
               <div className="mt-3 flex justify-end">
                 <Button
                   onClick={handleSubmit}
-                  disabled={loading}
+                  disabled={loading || !campaignCode}
                   size="sm"
                   className="bg-indigo-600 hover:bg-indigo-700"
                 >
