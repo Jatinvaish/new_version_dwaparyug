@@ -118,12 +118,16 @@ export default function CauseDetailsPage() {
       try {
         setLoading(true)
 
-        const response = await fetch(`/api/campaigns/${params.id}`)
+        console.log('Fetching campaign with slug:', params.slug)
+
+        const response = await fetch(`/api/frontstore/campaigns/${params.slug}`)
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
 
         const campaignData = await response.json()
+        console.log('Campaign data received:', campaignData)
         setCampaign(campaignData)
       } catch (error) {
         console.error('Error fetching campaign:', error)
@@ -132,10 +136,11 @@ export default function CauseDetailsPage() {
       }
     }
 
-    if (params.id) {
+    if (params.slug) {
       fetchCampaign()
     }
-  }, [params.id])
+  }, [params.slug])
+
 
 
   // Function to generate rich, professional share content
@@ -646,7 +651,7 @@ Powered by Your Platform Name - Making giving meaningful and transparent.`
                           alt={campaign.title}
                           className="w-full h-full  "
                         />
-                         
+
                       )}
 
                       {/* Navigation Arrows */}

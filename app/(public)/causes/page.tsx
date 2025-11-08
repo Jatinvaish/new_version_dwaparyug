@@ -19,6 +19,7 @@ import {
   Zap
 } from 'lucide-react';
 import { Category, CampaignFilters, Campaign, CampaignListProps, PaginationState } from '@/lib/interface';
+import { titleToSlug } from '@/lib/slug-helper';
 
 // API Service
 const apiService = {
@@ -79,8 +80,8 @@ const CategoryFilter: React.FC<{
         <button
           onClick={() => onCategoryChange(null)}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap ${!selectedCategory
-              ? 'bg-red-600 text-white'
-              : 'bg-yellow-400 text-black border border-gray-200'
+            ? 'bg-red-600 text-white'
+            : 'bg-yellow-400 text-black border border-gray-200'
             }`}
         >
           ALL
@@ -90,8 +91,8 @@ const CategoryFilter: React.FC<{
             key={category.id}
             onClick={() => onCategoryChange(category.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap ${selectedCategory === category.id
-                ? 'bg-red-600 text-white'
-                : 'bg-yellow-400 text-black border border-gray-200'
+              ? 'bg-red-600 text-white'
+              : 'bg-yellow-400 text-black border border-gray-200'
               }`}
           >
             {category.name.toUpperCase()}
@@ -128,8 +129,8 @@ const SearchBar: React.FC<{
           <button
             onClick={() => onViewModeChange('grid')}
             className={`p-2 rounded-md transition-all ${viewMode === 'grid'
-                ? 'bg-white text-gray-900'
-                : 'text-gray-500'
+              ? 'bg-white text-gray-900'
+              : 'text-gray-500'
               }`}
           >
             <Grid className="w-5 h-5" />
@@ -137,8 +138,8 @@ const SearchBar: React.FC<{
           <button
             onClick={() => onViewModeChange('list')}
             className={`p-2 rounded-md transition-all ${viewMode === 'list'
-                ? 'bg-white text-gray-900'
-                : 'text-gray-500'
+              ? 'bg-white text-gray-900'
+              : 'text-gray-500'
               }`}
           >
             <List className="w-5 h-5" />
@@ -169,17 +170,22 @@ const CampaignCard: React.FC<{
   const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
   const isExpired = daysLeft <= 0;
 
+  // UPDATED: Use slug instead of ID
+
   const handleCardClick = () => {
-    router.push(`/causes/${campaign.id}`);
+    const slug = titleToSlug(campaign.title);
+    localStorage.setItem('selectedCampaignId', campaign.id.toString());
+    router.push(`/causes/${slug}`);
     onViewDetails?.(campaign.id);
   };
 
   const handleDonate = (e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(`/causes/${campaign.id}`);
+    const slug = titleToSlug(campaign.title);
+    localStorage.setItem('selectedCampaignId', campaign.id.toString());
+    router.push(`/causes/${slug}`);
     onDonate?.(campaign.id);
   };
-
   if (viewMode === 'list') {
     return (
       <div
@@ -416,8 +422,8 @@ const IPagination: React.FC<{
             <button
               onClick={() => onPageChange(page as number)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${currentPage === page
-                  ? 'bg-yellow-400 text-black'
-                  : 'bg-white border border-gray-200 text-gray-700'
+                ? 'bg-yellow-400 text-black'
+                : 'bg-white border border-gray-200 text-gray-700'
                 }`}
             >
               {page}
