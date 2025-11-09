@@ -1,6 +1,6 @@
 import { SelectQuery, InsertQuery } from '@/lib/database';
 import { NextRequest, NextResponse } from 'next/server';
-import { hashPassword } from '../[...nextauth]/route';
+import { hashPassword } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
