@@ -2,13 +2,55 @@ import NextAuth, { NextAuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import GithubProvider from "next-auth/providers/github";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt, { JwtPayload, SignOptions } from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { SelectQuery } from "@/lib/database";
 import { errorResponse } from "@/lib/api-response";
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
-const AUTH_TOKEN_COOKIE_EXPIRY = parseInt(process.env.AUTH_TOKEN_COOKIE_EXPIRY || "1296000"); // 6 months in seconds
+const AUTH_TOKEN_COOKIE_EXPIRY = parseInt(
+  process.env.AUTH_TOKEN_COOKIE_EXPIRY || "1296000"
+); // 15 days
+
+// Generate JWT token
+function generateToken(payload: {
+  userId: number;
+  email: string;
+  name: string;
+  role: string;
+  provider?: string;
+}): string {
+  if (!JWT_SECRET) {
+    throw new Error("Missing JWT_SECRET environment variable");
+  }
+
+  const options: SignOptions = {
+    expiresIn: AUTH_TOKEN_COOKIE_EXPIRY, // use seconds (type-safe + clean)
+  };
+
+  return jwt.sign(payload, JWT_SECRET as jwt.Secret, options);
+}
+
+// Verify JWT token
+function verifyToken(token: string): JwtPayload {
+  try {
+    return jwt.verify(token, JWT_SECRET as jwt.Secret) as JwtPayload;
+  } catch (error) {
+    throw new Error("Invalid token");
+  }
+}
+
+// Password helpers
+async function hashPassword(password: string): Promise<string> {
+  return await bcrypt.hash(password, 10);
+}
+
+async function comparePasswords(
+  password: string,
+  hashedPassword: string
+): Promise<boolean> {
+  return await bcrypt.compare(password, hashedPassword);
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -55,8 +97,10 @@ export const authOptions: NextAuthOptions = {
 
           delete user.password;
 
-          // Ensure name is always a string. Use full_name or a combination, with a fallback.
-          const userName = user.full_name || `${user.first_name} ${user.last_name}` || 'Anonymous';
+          const userName =
+            user.full_name ||
+            `${user.first_name} ${user.last_name}`.trim() ||
+            "Anonymous";
 
           const token = generateToken({
             userId: user.id,
@@ -76,16 +120,19 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+
   secret: JWT_SECRET,
+
   session: {
     strategy: "jwt",
     maxAge: AUTH_TOKEN_COOKIE_EXPIRY,
   },
+
   callbacks: {
     async jwt({ token, user, account }) {
       if (user) {
-        // Ensure name is always a string, with a fallback
-        const userName = (user as any).full_name || (user as any).name || 'Anonymous';
+        const userName =
+          (user as any).full_name || (user as any).name || "Anonymous";
 
         token.accessToken = (user as any).accessToken;
         token.userId = (user as any).id;
@@ -94,31 +141,30 @@ export const authOptions: NextAuthOptions = {
         token.role = (user as any).role_name;
       }
 
-      if (account && (account.provider === 'google' || account.provider === 'github')) {
-        // Here, the 'user' object from NextAuth might have a 'name' that's potentially null or undefined.
-        // We'll use a similar check.
-        const userName = user.name || 'Anonymous';
-
-        const role = 'Donor'; // Placeholder for OAuth user role
+      if (account && (account.provider === "google" || account.provider === "github")) {
+        const userName = (user as any)?.name || "Anonymous";
+        const role = "Donor"; // default for OAuth users
 
         const customToken = generateToken({
-          //@ts-ignore
+          // @ts-ignore
           userId: user.id,
-          //@ts-ignore
+          // @ts-ignore
           email: user.email,
           name: userName,
-          role: role,
+          role,
           provider: account.provider,
         });
+
         token.accessToken = customToken;
-        token.userId = user.id;
-        token.email = user.email;
+        token.userId = (user as any).id;
+        token.email = (user as any).email;
         token.name = userName;
         token.role = role;
       }
 
       return token;
     },
+
     async session({ session, token }: any) {
       session.accessToken = token.accessToken;
       session.user.id = token.userId;
@@ -129,45 +175,15 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
+
   pages: {
-    signIn: '/auth/signin',
-    signOut: '/auth/signout',
-    error: '/auth/error',
+    signIn: "/auth/signin",
+    signOut: "/auth/signout",
+    error: "/auth/error",
   },
+
   debug: process.env.NEXT_PUBLIC_APP_ENV !== "production",
 };
-
-// Updated the payload to make 'provider' optional
-export function generateToken(payload: {
-  userId: number;
-  email: string;
-  name: string;
-  role: string;
-  provider?: string;
-}): string {
-  const expirationTime: any = Math.floor(AUTH_TOKEN_COOKIE_EXPIRY / 3600) + 'h'; // Convert seconds to hours
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: expirationTime });
-}
-
-export function verifyToken(token: string): jwt.JwtPayload {
-  try {
-    return jwt.verify(token, JWT_SECRET) as JwtPayload;
-  } catch (error) {
-    throw new Error("Invalid token");
-  }
-}
-
-export async function hashPassword(password: string): Promise<string> {
-  const saltRounds = 10;
-  return await bcrypt.hash(password, saltRounds);
-}
-
-export async function comparePasswords(
-  password: string,
-  hashedPassword: string
-): Promise<boolean> {
-  return await bcrypt.compare(password, hashedPassword);
-}
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
