@@ -1,14 +1,13 @@
-// app/api/donations/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { SelectQuery } from '@/lib/database'
 
-// GET - Get donation detail by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const donationId = parseInt(params.id)
+    const { id } = await params
+    const donationId = parseInt(id)
     
     if (isNaN(donationId)) {
       return NextResponse.json(
@@ -17,7 +16,6 @@ export async function GET(
       )
     }
     
-    // Get donation details with related data
     const donationQuery = `
       SELECT 
         d.*,
@@ -62,7 +60,6 @@ export async function GET(
 
     const donation = donationResult[0]
 
-    // Get donation items with personalization if it's a product-based donation
     let donationItems: any = []
     if (donation.donation_type === 'product_based') {
       const itemsQuery = `
@@ -103,7 +100,6 @@ export async function GET(
       donationItems = await SelectQuery(itemsQuery, [donationId])
     }
 
-    // Get impact stories if donation has generated impact
     let impactStories: any = []
     if (donation.impact_generated) {
       const impactQuery = `
@@ -135,9 +131,7 @@ export async function GET(
       impactStories = await SelectQuery(impactQuery, [donationId])
     }
 
-    // Format the response with better structure
     const response = {
-      // Basic donation info
       id: donation.id,
       donation_amount: parseFloat(donation.donation_amount),
       tip_amount: parseFloat(donation.tip_amount || 0),
@@ -151,16 +145,12 @@ export async function GET(
       beneficiaries_reached: donation.beneficiaries_reached || 0,
       created_at: donation.created_at,
       updated_at: donation.updated_at,
-      
-      // Payment info
       razorpay_payment_id: donation.razorpay_payment_id,
       razorpay_signature: donation.razorpay_signature,
       razorpay_order_id: donation.razorpay_order_id,
       payment_status: donation.payment_status,
       payment_created_at: donation.payment_created_at,
       payment_currency: donation.payment_currency || 'INR',
-      
-      // Formatted amounts
       total_amount_formatted: parseFloat(donation.total_amount).toLocaleString('en-IN', {
         style: 'currency',
         currency: donation.payment_currency || 'INR'
@@ -173,8 +163,6 @@ export async function GET(
         style: 'currency',
         currency: donation.payment_currency || 'INR'
       }),
-      
-      // User/Donor info
       user: donation.user_id ? {
         id: donation.user_id,
         name: donation.user_name,
@@ -183,8 +171,6 @@ export async function GET(
         email: donation.user_email,
         mobile: donation.user_mobile
       } : null,
-      
-      // Campaign info
       campaign: {
         id: donation.campaign_id,
         title: donation.campaign_title,
@@ -203,8 +189,6 @@ export async function GET(
           description: donation.campaign_category_description
         }
       },
-      
-      // Donation items (for product-based donations) with personalization
       items: donationItems.map((item: any) => ({
         id: item.id,
         campaign_product_id: item.campaign_product_id,
@@ -212,7 +196,7 @@ export async function GET(
         price_per_unit: parseFloat(item.price_per_unit),
         total_price: parseFloat(item.total_price),
         fulfillment_status: item.fulfillment_status,
-        donation_date: item.donation_date, // Product donation date
+        donation_date: item.donation_date,
         product: {
           independent_product_id: item.independent_product_id,
           name: item.product_name,
@@ -245,8 +229,6 @@ export async function GET(
         created_at: item.created_at,
         updated_at: item.updated_at
       })),
-      
-      // Impact stories
       impact_stories: impactStories.map((impact: any) => ({
         tracking_id: impact.id,
         contribution_percentage: parseFloat(impact.contribution_percentage || 0),
@@ -295,13 +277,13 @@ export async function GET(
   }
 }
 
-// PUT - Update donation item and personalization
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const donationItemId = parseInt(params.id)
+    const { id } = await params
+    const donationItemId = parseInt(id)
     
     if (isNaN(donationItemId)) {
       return NextResponse.json(
@@ -311,13 +293,8 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const {
-      quantity,
-      donation_date,
-      personalization
-    } = body
+    const { quantity, donation_date, personalization } = body
 
-    // Validate required fields
     if (!quantity || quantity <= 0) {
       return NextResponse.json(
         { error: 'Valid quantity is required' },
@@ -325,7 +302,6 @@ export async function PUT(
       )
     }
 
-    // Get current donation item details
     const currentItemQuery = `
       SELECT di.*, cp.price as campaign_product_price
       FROM donation_items di
@@ -345,7 +321,6 @@ export async function PUT(
     const pricePerUnit = parseFloat(currentItem.campaign_product_price || currentItem.price_per_unit)
     const totalPrice = quantity * pricePerUnit
 
-    // Update donation item
     const updateItemQuery = `
       UPDATE donation_items
       SET 
@@ -366,9 +341,7 @@ export async function PUT(
 
     await SelectQuery(updateItemQuery, updateItemParams)
 
-    // Update personalization if provided
     if (personalization) {
-      // Check if personalization exists
       const checkPersonalizationQuery = `
         SELECT id FROM personalization_options
         WHERE donation_item_id = $1
@@ -376,36 +349,35 @@ export async function PUT(
       const personalizationResult = await SelectQuery(checkPersonalizationQuery, [donationItemId])
 
       if (personalizationResult.length > 0) {
-        // Update existing personalization
         const personalizationId = personalizationResult[0].id
         const updateFields: string[] = []
         const updateValues: any[] = []
         let paramIndex = 1
 
         if (personalization.donor_name !== undefined) {
-          updateFields.push(`donor_name = ${paramIndex++}`)
+          updateFields.push(`donor_name = $${paramIndex++}`)
           updateValues.push(personalization.donor_name)
         }
         if (personalization.donor_country !== undefined) {
-          updateFields.push(`donor_country = ${paramIndex++}`)
+          updateFields.push(`donor_country = $${paramIndex++}`)
           updateValues.push(personalization.donor_country)
         }
         if (personalization.custom_message !== undefined) {
-          updateFields.push(`custom_message = ${paramIndex++}`)
+          updateFields.push(`custom_message = $${paramIndex++}`)
           updateValues.push(personalization.custom_message)
         }
         if (personalization.donation_purpose !== undefined) {
-          updateFields.push(`donation_purpose = ${paramIndex++}`)
+          updateFields.push(`donation_purpose = $${paramIndex++}`)
           updateValues.push(personalization.donation_purpose)
         }
         if (personalization.special_instructions !== undefined) {
-          updateFields.push(`special_instructions = ${paramIndex++}`)
+          updateFields.push(`special_instructions = $${paramIndex++}`)
           updateValues.push(personalization.special_instructions)
         }
         if (personalization.custom_image !== undefined) {
-          updateFields.push(`custom_image = ${paramIndex++}`)
+          updateFields.push(`custom_image = $${paramIndex++}`)
           updateValues.push(personalization.custom_image)
-          updateFields.push(`is_image_available = ${paramIndex++}`)
+          updateFields.push(`is_image_available = $${paramIndex++}`)
           updateValues.push(!!personalization.custom_image)
         }
 
@@ -414,12 +386,11 @@ export async function PUT(
           const updatePersonalizationQuery = `
             UPDATE personalization_options
             SET ${updateFields.join(', ')}
-            WHERE id = ${paramIndex}
+            WHERE id = $${paramIndex}
           `
           await SelectQuery(updatePersonalizationQuery, updateValues)
         }
       } else {
-        // Create new personalization
         const insertPersonalizationQuery = `
           INSERT INTO personalization_options (
             donation_item_id,
@@ -446,7 +417,6 @@ export async function PUT(
       }
     }
 
-    // Fetch and return updated data
     const updatedItemQuery = `
       SELECT 
         di.*,
