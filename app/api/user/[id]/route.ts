@@ -6,10 +6,10 @@ import bcrypt from 'bcryptjs'
 // GET single user by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = params.id
+    const { id: userId } = await params
 
     const userQuery = `
       SELECT 
@@ -45,11 +45,10 @@ export async function GET(
 // PUT update user by ID (Admin only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    //@ts-ignore
-    const userId = params?.id
+    const { id: userId } = await params
     const body = await request.json()
 
     // Extract data from JSON body
@@ -116,8 +115,8 @@ export async function PUT(
       RETURNING id, first_name, last_name, full_name, mobile_no, dob, email, is_verified, role_id, updated_at
     `
 
-    const params:any = [userId, ...Object.values(updateData)]
-    const result:any = await UpdateQuery(updateQuery, params)
+    const queryParams: any = [userId, ...Object.values(updateData)]
+    const result: any = await UpdateQuery(updateQuery, queryParams)
 
     if (!result || result.length === 0) {
       return NextResponse.json(
@@ -143,10 +142,10 @@ export async function PUT(
 // DELETE user by ID (Admin only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = params.id
+    const { id: userId } = await params
 
     // Check if user exists
     const userExists = await SelectQuery(
