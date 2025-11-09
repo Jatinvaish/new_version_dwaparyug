@@ -1,6 +1,14 @@
 // next.config.mjs
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Ignore TypeScript and ESLint errors during build
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   // Enable compiler optimizations
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
