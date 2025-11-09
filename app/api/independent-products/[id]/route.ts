@@ -1,13 +1,12 @@
 import { SelectQuery } from '@/lib/database';
 import { NextRequest, NextResponse } from 'next/server';
 
-// GET - Get single product by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const productId = params.id;
+    const { id: productId } = await params;
     
     if (!productId) {
       return NextResponse.json(
@@ -16,7 +15,6 @@ export async function GET(
       );
     }
     
-    // Validate ID is numeric
     if (!/^\d+$/.test(productId)) {
       return NextResponse.json(
         { error: 'Invalid product ID format' },
@@ -24,7 +22,6 @@ export async function GET(
       );
     }
     
-    // Get product details
     const productQuery = `
       SELECT 
         id, name, description, price, unit_id, image, min_qty, max_qty,
