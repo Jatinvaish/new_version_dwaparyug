@@ -1,4 +1,3 @@
-// File: app/api/batches/[id]/stickers/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { SelectQuery } from '@/lib/database'
 
@@ -17,19 +16,18 @@ interface StickerData {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const batchId = params.id
+    const { id: batchId } = await params
     const { searchParams } = new URL(request.url)
     
-    // Query parameters for filtering and pagination
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
     const template = searchParams.get('template') || 'template1'
-    const format = searchParams.get('format') || '4' // 4, 8, 12 per page
+    const format = searchParams.get('format') || '4'
     const includeImages = searchParams.get('includeImages') === 'true'
-    const filterByImages = searchParams.get('filterByImages') // 'with', 'without', 'all'
+    const filterByImages = searchParams.get('filterByImages')
 
     if (!batchId || isNaN(parseInt(batchId))) {
       return NextResponse.json(
@@ -38,7 +36,6 @@ export async function GET(
       )
     }
 
-    // Validate pagination
     if (page < 1 || pageSize < 1 || pageSize > 200) {
       return NextResponse.json(
         { error: 'Invalid pagination parameters' },
@@ -48,7 +45,6 @@ export async function GET(
 
     const offset = (page - 1) * pageSize
 
-    // First verify batch exists
     const batchCheck = await SelectQuery(
       'SELECT id, batch_name, campaign_id FROM distribution_batches WHERE id = $1',
       [batchId]
@@ -63,7 +59,6 @@ export async function GET(
 
     const batch = batchCheck[0]
 
-    // Get campaign info
     const campaignInfo = await SelectQuery(
       'SELECT title FROM campaigns WHERE id = $1',
       [batch.campaign_id]
@@ -71,7 +66,6 @@ export async function GET(
 
     const campaignTitle = campaignInfo?.[0]?.title || 'Campaign'
 
-    // Build main query to get sticker data
     let baseQuery = `
       SELECT 
         bi.id as batch_item_id,
@@ -85,7 +79,6 @@ export async function GET(
         po.donation_purpose,
         po.custom_image,
         po.is_image_available,
-        -- Donor info from user if available
         COALESCE(po.donor_name, u.first_name || ' ' || u.last_name) as final_donor_name
       FROM batch_items bi
       INNER JOIN donation_items di ON bi.donation_item_id = di.id
@@ -100,20 +93,17 @@ export async function GET(
     let queryParams = [batchId]
     let paramCounter = 2
 
-    // Add image filter if specified
     if (filterByImages === 'with') {
       baseQuery += ` AND po.is_image_available = true`
     } else if (filterByImages === 'without') {
       baseQuery += ` AND (po.is_image_available = false OR po.is_image_available IS NULL)`
     }
 
-    // Add ordering and pagination
     baseQuery += ` ORDER BY ip.name ASC, po.donor_name ASC LIMIT $${paramCounter} OFFSET $${paramCounter + 1}`
     queryParams.push(pageSize.toString(), offset.toString())
 
     const results = await SelectQuery(baseQuery, queryParams)
 
-    // Get total count
     let countQuery = `
       SELECT COUNT(*) as total
       FROM batch_items bi
@@ -136,7 +126,6 @@ export async function GET(
     const countResult = await SelectQuery(countQuery, countParams)
     const totalCount = countResult?.[0]?.total || 0
 
-    // Transform data for stickers - expand by quantity
     const stickerData: StickerData[] = []
     
     results?.forEach(item => {
@@ -149,7 +138,7 @@ export async function GET(
           custom_message: item.custom_message || '',
           donation_purpose: item.donation_purpose || '',
           product_name: item.product_name || 'Food Package',
-          quantity: 1, // Individual sticker represents 1 item
+          quantity: 1,
           batch_name: batch.batch_name,
           campaign_title: campaignTitle,
           custom_image: (includeImages && item.is_image_available) ? item.custom_image : null,
@@ -158,7 +147,6 @@ export async function GET(
       }
     })
 
-    // Calculate pagination for expanded data
     const totalStickers = stickerData.length
     const totalPages = Math.ceil(parseInt(totalCount) / pageSize)
 
@@ -198,13 +186,12 @@ export async function GET(
   }
 }
 
-// POST endpoint for printing configuration
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const batchId = params.id
+    const { id: batchId } = await params
     const body = await request.json()
     
     const {
@@ -213,10 +200,9 @@ export async function POST(
       include_images = false,
       filter_by_images = 'all',
       custom_batch_name,
-      page_range, // e.g., { start: 1, end: 5 } or 'all'
+      page_range,
     } = body
 
-    // Validate template
     const validTemplates = ['template1', 'template2', 'template3', 'template4']
     if (!validTemplates.includes(template)) {
       return NextResponse.json(
@@ -225,7 +211,6 @@ export async function POST(
       )
     }
 
-    // Validate format
     const validFormats = [4, 8, 12]
     if (!validFormats.includes(format)) {
       return NextResponse.json(
@@ -233,11 +218,6 @@ export async function POST(
         { status: 400 }
       )
     }
-
-    // Here you would typically:
-    // 1. Generate the print configuration
-    // 2. Save print job to database if needed
-    // 3. Return success with job ID
 
     return NextResponse.json({
       success: true,
