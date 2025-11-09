@@ -30,7 +30,7 @@ type ContactUsProps = {
   isHomePage?: boolean;
 };
 
-const ContactPage: React.FC<ContactUsProps> = ({ isHomePage = false }) => {
+export default function ContactUsPage({ isHomePage = false }: ContactUsProps) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -404,4 +404,4 @@ const ContactPage: React.FC<ContactUsProps> = ({ isHomePage = false }) => {
   )
 }
 
-export default ContactPage;
+ 
