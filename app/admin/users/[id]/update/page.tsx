@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -23,11 +24,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Download, Mail } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import { useRouter } from "next/navigation";
 
-// Form validation schema
+// ✅ Form validation schema
 const userSchema = z.object({
   first_name: z.string().min(1, "First name is required").max(50, "Name too long"),
   last_name: z.string().min(1, "Last name is required").max(50, "Name too long"),
@@ -46,21 +46,19 @@ interface UserRole {
   name: string;
 }
 
-export default function UserUpdatePage({ params }: { params: { id: string } }) {
+export default function UserUpdatePage() {
+  const { id } = useParams<{ id: string }>(); // ✅ get [id] from URL
   const router = useRouter();
-  const resolvedParams = React.use(params as unknown as Promise<any>);
-  const userId = resolvedParams.id;
-  
+
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [certificateLoading, setCertificateLoading] = useState(false);
   const [roles] = useState<UserRole[]>([
-    { id: 1, name: 'Admin' },
-    { id: 2, name: 'Campaign Manager' },
-    { id: 3, name: 'Distribution Manager' },
-    { id: 4, name: 'Content Manager' },
-    { id: 5, name: 'User' },
-    { id: 6, name: 'Donor' }
+    { id: 1, name: "Admin" },
+    { id: 2, name: "Campaign Manager" },
+    { id: 3, name: "Distribution Manager" },
+    { id: 4, name: "Content Manager" },
+    { id: 5, name: "User" },
+    { id: 6, name: "Donor" },
   ]);
 
   const form = useForm<UserFormData>({
@@ -77,27 +75,21 @@ export default function UserUpdatePage({ params }: { params: { id: string } }) {
     },
   });
 
-  // Fetch single user data
+  // ✅ Fetch single user data
   const fetchUser = async () => {
     try {
       setInitialLoading(true);
-      const response = await fetch(`/api/users/${userId}`);
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch user');
-      }
+      const response = await fetch(`/api/users/${id}`);
+      if (!response.ok) throw new Error("Failed to fetch user");
 
       const data = await response.json();
       const user = data.user;
+      if (!user) throw new Error("User not found");
 
-      if (!user) {
-        throw new Error('User not found');
-      }
+      // Format DOB for date input
+      const formattedDob = user.dob ? user.dob.split("T")[0] : "";
 
-      // Format date for input
-      const formattedDob = user.dob ? user.dob.split('T')[0] : '';
-
-      // Reset form with fetched data
+      // Reset form with fetched user data
       form.reset({
         first_name: user.first_name || "",
         last_name: user.last_name || "",
@@ -106,11 +98,10 @@ export default function UserUpdatePage({ params }: { params: { id: string } }) {
         dob: formattedDob,
         role_id: user.role_id || undefined,
         is_verified: user.is_verified ?? false,
-        password: "", // Never populate password field
+        password: "",
       });
-
     } catch (error) {
-      console.error('Error fetching user:', error);
+      console.error("Error fetching user:", error);
       toast({
         title: "Error",
         description: "Failed to load user data",
@@ -122,41 +113,35 @@ export default function UserUpdatePage({ params }: { params: { id: string } }) {
   };
 
   useEffect(() => {
-    fetchUser();
-  }, [userId]);
+    if (id) fetchUser();
+  }, [id]);
 
-  // Submit form
+  // ✅ Submit form
   const onSubmit = async (data: UserFormData) => {
     try {
       setLoading(true);
-
-      const response = await fetch(`/api/users/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch(`/api/users/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update user');
+        throw new Error(errorData.error || "Failed to update user");
       }
-
-      const result = await response.json();
 
       toast({
         title: "Success",
         description: "User updated successfully",
       });
 
-      router.push('/admin/users');
-
+      router.push("/admin/users");
     } catch (error) {
-      console.error('Error updating user:', error);
+      console.error("Error updating user:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : 'Failed to update user',
+        description: error instanceof Error ? error.message : "Failed to update user",
         variant: "destructive",
       });
     } finally {
@@ -177,7 +162,6 @@ export default function UserUpdatePage({ params }: { params: { id: string } }) {
     <div className="p-4 pt-0">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          
           {/* Personal Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
@@ -193,7 +177,6 @@ export default function UserUpdatePage({ params }: { params: { id: string } }) {
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="last_name"
@@ -218,17 +201,12 @@ export default function UserUpdatePage({ params }: { params: { id: string } }) {
                 <FormItem>
                   <FormLabel>Email *</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      type="email"
-                      placeholder="Enter email address"
-                    />
+                    <Input type="email" {...field} placeholder="Enter email" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="mobile_no"
@@ -236,11 +214,7 @@ export default function UserUpdatePage({ params }: { params: { id: string } }) {
                 <FormItem>
                   <FormLabel>Mobile Number *</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      type="tel"
-                      placeholder="Enter mobile number"
-                    />
+                    <Input type="tel" {...field} placeholder="Enter mobile number" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -256,10 +230,7 @@ export default function UserUpdatePage({ params }: { params: { id: string } }) {
               <FormItem>
                 <FormLabel>Date of Birth</FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    type="date"
-                  />
+                  <Input type="date" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -275,7 +246,9 @@ export default function UserUpdatePage({ params }: { params: { id: string } }) {
                 <FormItem>
                   <FormLabel>Role</FormLabel>
                   <Select
-                    onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
+                    onValueChange={(value) =>
+                      field.onChange(value ? parseInt(value) : undefined)
+                    }
                     defaultValue={field.value?.toString()}
                   >
                     <FormControl>
@@ -295,7 +268,6 @@ export default function UserUpdatePage({ params }: { params: { id: string } }) {
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="is_verified"
@@ -303,15 +275,10 @@ export default function UserUpdatePage({ params }: { params: { id: string } }) {
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <div className="space-y-0.5">
                     <FormLabel className="text-base">Verified Status</FormLabel>
-                    <FormDescription>
-                      Mark user as verified
-                    </FormDescription>
+                    <FormDescription>Mark user as verified</FormDescription>
                   </div>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}
@@ -327,8 +294,8 @@ export default function UserUpdatePage({ params }: { params: { id: string } }) {
                 <FormLabel>New Password</FormLabel>
                 <FormControl>
                   <Input
-                    {...field}
                     type="password"
+                    {...field}
                     placeholder="Leave empty to keep current password"
                   />
                 </FormControl>
