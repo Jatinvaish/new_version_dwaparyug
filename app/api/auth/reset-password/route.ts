@@ -2,12 +2,10 @@ import { SelectQuery, InsertQuery } from '@/lib/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { hashPassword } from '../[...nextauth]/route';
 
-// POST - Reset Password with OTP verification
 export async function POST(request: NextRequest) {
   try {
     const { email, otp, newPassword } = await request.json();
 
-    // Validate required fields
     if (!email || !otp || !newPassword) {
       return NextResponse.json(
         { error: 'Email, OTP, and new password are required' },
@@ -15,7 +13,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate password strength
     if (newPassword.length < 6) {
       return NextResponse.json(
         { error: 'Password must be at least 6 characters long' },
@@ -23,7 +20,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get OTP from database
     const otpResult = await SelectQuery(
       'SELECT user_id, otp, expires_at FROM otp_verifications WHERE email = $1 ORDER BY created_at DESC LIMIT 1',
       [email]
@@ -38,7 +34,6 @@ export async function POST(request: NextRequest) {
 
     const otpRecord = otpResult[0];
 
-    // Check if OTP is expired
     if (new Date() > new Date(otpRecord.expires_at)) {
       return NextResponse.json(
         { error: 'OTP has expired. Please request a new password reset.' },
@@ -46,7 +41,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify OTP
     if (otpRecord.otp !== otp) {
       return NextResponse.json(
         { error: 'Invalid OTP' },
@@ -54,22 +48,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Hash the new password
     const hashedPassword = await hashPassword(newPassword);
 
-    // Update user password
     await InsertQuery(
       'UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
       [hashedPassword, otpRecord.user_id]
     );
 
-    // Delete used OTP
     await InsertQuery(
       'DELETE FROM otp_verifications WHERE email = $1',
       [email]
     );
 
-    // Get updated user details for confirmation
     const userResult = await SelectQuery(
       'SELECT id, first_name, last_name, email FROM users WHERE id = $1',
       [otpRecord.user_id]

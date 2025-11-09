@@ -1,4 +1,4 @@
-import NextAuth, { NextAuthOptions } from "next-auth";
+import { NextAuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import GithubProvider from "next-auth/providers/github";
@@ -10,7 +10,7 @@ import { errorResponse } from "@/lib/api-response";
 const JWT_SECRET = process.env.JWT_SECRET as string;
 const AUTH_TOKEN_COOKIE_EXPIRY = parseInt(
   process.env.AUTH_TOKEN_COOKIE_EXPIRY || "1296000"
-); // 15 days
+);
 
 // Generate JWT token
 function generateToken(payload: {
@@ -25,14 +25,14 @@ function generateToken(payload: {
   }
 
   const options: SignOptions = {
-    expiresIn: AUTH_TOKEN_COOKIE_EXPIRY, // use seconds (type-safe + clean)
+    expiresIn: AUTH_TOKEN_COOKIE_EXPIRY,
   };
 
   return jwt.sign(payload, JWT_SECRET as jwt.Secret, options);
 }
 
 // Verify JWT token
-function verifyToken(token: string): JwtPayload {
+export function verifyToken(token: string): JwtPayload {
   try {
     return jwt.verify(token, JWT_SECRET as jwt.Secret) as JwtPayload;
   } catch (error) {
@@ -41,11 +41,11 @@ function verifyToken(token: string): JwtPayload {
 }
 
 // Password helpers
-async function hashPassword(password: string): Promise<string> {
+export async function hashPassword(password: string): Promise<string> {
   return await bcrypt.hash(password, 10);
 }
 
-async function comparePasswords(
+export async function comparePasswords(
   password: string,
   hashedPassword: string
 ): Promise<boolean> {
@@ -143,7 +143,7 @@ export const authOptions: NextAuthOptions = {
 
       if (account && (account.provider === "google" || account.provider === "github")) {
         const userName = (user as any)?.name || "Anonymous";
-        const role = "Donor"; // default for OAuth users
+        const role = "Donor";
 
         const customToken = generateToken({
           // @ts-ignore
@@ -184,6 +184,3 @@ export const authOptions: NextAuthOptions = {
 
   debug: process.env.NEXT_PUBLIC_APP_ENV !== "production",
 };
-
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
