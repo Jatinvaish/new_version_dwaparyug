@@ -1,14 +1,13 @@
-// app/api/donation-items/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { SelectQuery } from '@/lib/database'
 
-// GET - Get single donation item with personalization
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const donationItemId = parseInt(params.id)
+    const { id } = await params
+    const donationItemId = parseInt(id)
     
     if (isNaN(donationItemId)) {
       return NextResponse.json(
@@ -104,13 +103,13 @@ export async function GET(
   }
 }
 
-// PUT - Update donation item and personalization
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const donationItemId = parseInt(params.id)
+    const { id } = await params
+    const donationItemId = parseInt(id)
     
     if (isNaN(donationItemId)) {
       return NextResponse.json(
@@ -120,13 +119,8 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const {
-      quantity,
-      donation_date,
-      personalization
-    } = body
+    const { quantity, donation_date, personalization } = body
 
-    // Validate required fields
     if (quantity !== undefined && (quantity <= 0 || isNaN(quantity))) {
       return NextResponse.json(
         { error: 'Valid quantity is required' },
@@ -134,7 +128,6 @@ export async function PUT(
       )
     }
 
-    // Get current donation item details
     const currentItemQuery = `
       SELECT di.*, cp.price as campaign_product_price
       FROM donation_items di
@@ -152,7 +145,6 @@ export async function PUT(
 
     const currentItem = currentItemResult[0]
 
-    // Build update query for donation item
     const updateFields: string[] = []
     const updateValues: any[] = []
     let paramIndex = 1
@@ -172,7 +164,6 @@ export async function PUT(
       updateValues.push(donation_date)
     }
 
-    // Update donation item if there are changes
     if (updateFields.length > 0) {
       updateFields.push(`updated_at = CURRENT_TIMESTAMP`)
       updateValues.push(donationItemId)
@@ -187,9 +178,7 @@ export async function PUT(
       await SelectQuery(updateItemQuery, updateValues)
     }
 
-    // Update personalization if provided
     if (personalization) {
-      // Check if personalization exists
       const checkPersonalizationQuery = `
         SELECT id FROM personalization_options
         WHERE donation_item_id = $1
@@ -197,7 +186,6 @@ export async function PUT(
       const personalizationResult = await SelectQuery(checkPersonalizationQuery, [donationItemId])
 
       if (personalizationResult.length > 0) {
-        // Update existing personalization
         const personalizationId = personalizationResult[0].id
         const updatePersonalizationFields: string[] = []
         const updatePersonalizationValues: any[] = []
@@ -240,7 +228,6 @@ export async function PUT(
           await SelectQuery(updatePersonalizationQuery, updatePersonalizationValues)
         }
       } else {
-        // Create new personalization
         const insertPersonalizationQuery = `
           INSERT INTO personalization_options (
             donation_item_id,
@@ -267,7 +254,6 @@ export async function PUT(
       }
     }
 
-    // Fetch and return updated data
     const updatedItemQuery = `
       SELECT 
         di.*,
