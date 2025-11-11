@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import Link from "next/link";
 import { CampaignFilters } from '@/lib/interface';
+import { titleToSlug } from '@/lib/slug-helper';
 
 // Types
 interface Campaign {
@@ -88,16 +89,20 @@ const apiService = {
 
 
 const transformCampaignsToSlides = (campaigns: Campaign[]): SliderData[] => {
-  return campaigns.map((campaign) => ({
-    id: campaign.id,
-    title: campaign.title,
-    subtitle: campaign.category_name || 'Making a Difference',
-    description: campaign.overview || campaign.about_campaign || campaign.details || 'Join us in making a positive impact in the community.',
-    image: campaign.image || (campaign.images_array && campaign.images_array[0]) || '/images/placeholder-campaign.jpg',
-    mobileImage: campaign.mobile_banner_image || campaign.image || (campaign.images_array && campaign.images_array[0]) || '/images/placeholder-campaign.jpg',
-    ctaText: 'Donate Now',
-    ctaLink: `/causes/${campaign.id}`,
-  }));
+  const obj = campaigns.map((campaign) => {
+    const slug = titleToSlug(campaign.title);
+    return {
+      id: campaign.id,
+      title: campaign.title,
+      subtitle: campaign.category_name || 'Making a Difference',
+      description: campaign.overview || campaign.about_campaign || campaign.details || 'Join us in making a positive impact in the community.',
+      image: campaign.image || (campaign.images_array && campaign.images_array[0]) || '/images/placeholder-campaign.jpg',
+      mobileImage: campaign.mobile_banner_image || campaign.image || (campaign.images_array && campaign.images_array[0]) || '/images/placeholder-campaign.jpg',
+      ctaText: 'Donate Now',
+      ctaLink: `/causes/${slug}`,
+    }
+  })
+  return obj;
 };
 
 const instantFade = {
