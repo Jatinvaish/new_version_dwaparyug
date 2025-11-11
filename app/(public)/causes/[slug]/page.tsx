@@ -823,19 +823,19 @@ Powered by Your Platform Name - Making giving meaningful and transparent.`
                               >
                                 <Card className=" h-full overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
                                   <div className="relative">
-                                    {/* <Image
+                                    <Image
                                       src={product.image || "/placeholder.svg"}
                                       alt={product.description || `Product ${product.id}`}
                                       width={300}
                                       height={200}
                                       className="w-full h-40 object-cover sm:h-48"
-                                    /> */}
+                                    />
 
-                                    <img
+                                    {/* <img
                                       src={product.image || "/placeholder.svg"}
                                       alt={product.description || `Product ${product.id}`}
                                       className="w-full h-48  "
-                                    />
+                                    /> */}
 
                                     {product.stock !== undefined && product.stock < 10 && (
                                       <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
