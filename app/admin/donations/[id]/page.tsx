@@ -538,7 +538,7 @@ export default function DonationDetailsPage() {
                                   <div className="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
                                     <div className="flex items-center gap-2 mb-2">
                                       <MessageSquare className="w-4 h-4 text-blue-600" />
-                                      <div className="text-xs font-semibold text-blue-900 uppercase tracking-wide">Custom Message</div>
+                                      <div className="text-xs font-semibold text-blue-900 uppercase tracking-wide">Message to be printed</div>
                                     </div>
                                     <p className="text-sm italic text-gray-700 leading-relaxed">"{item.personalization.custom_message}"</p>
                                   </div>

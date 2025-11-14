@@ -72,8 +72,8 @@ interface ProductPersonalizationModalProps {
     description?: string
     productId?: number
     quantity?: number
-    max_tat: number   
-    min_tat: number   
+    max_tat: number
+    min_tat: number
     personalization?: Partial<ProductPersonalizationData>
   }
   onAddToCart?: (productData: any) => void
@@ -115,9 +115,10 @@ export default function ProductPersonalizationModal({
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [imagePreview, setImagePreview] = useState<string | null>(product?.personalization?.customImage || null)
   const [imageFile, setImageFile] = useState<File | null>(null)
-
+  const MAX_WORDS = 35;
+  const [remainingWords, setRemainingWords] = useState(MAX_WORDS);
   const [formData, setFormData] = useState<ProductPersonalizationData>({
-    donationDate: product?.min_tat ? new Date(Date.now() + product?.min_tat * 24 * 60 * 60 * 1000)?.toISOString().split('T')[0]: '',
+    donationDate: product?.min_tat ? new Date(Date.now() + product?.min_tat * 24 * 60 * 60 * 1000)?.toISOString().split('T')[0] : '',
     donorName: product?.personalization?.donorName || '',
     donorCountry: product?.personalization?.donorCountry || 'IN',
     mobileNumber: product?.personalization?.mobileNumber || '',
@@ -277,6 +278,22 @@ export default function ProductPersonalizationModal({
       setIsSubmitting(false)
     }
   }
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    let input = e.target.value;
+
+    // Split words (ignoring extra spaces)
+    const words = input.trim().split(/\s+/).filter(Boolean);
+
+    // Stop typing after limit
+    if (words.length > MAX_WORDS) {
+      input = words.slice(0, MAX_WORDS).join(" ");
+    }
+
+    updateFormData({ customMessage: input });
+
+    const wordCount = input.trim().split(/\s+/).filter(Boolean).length;
+    setRemainingWords(MAX_WORDS - wordCount);
+  };
 
   const handleClose = () => {
     setFormData({
@@ -496,15 +513,24 @@ export default function ProductPersonalizationModal({
 
             {/* Optional Messages */}
             <div>
-              <Label htmlFor="customMessage">Custom Message</Label>
+              <Label htmlFor="customMessage">Message to be printed</Label>
               <Textarea
                 id="customMessage"
-                placeholder="Add a personal message..."
+                placeholder="Add message that will print..."
                 value={formData.customMessage}
-                onChange={(e) => updateFormData({ customMessage: e.target.value })}
+                onChange={handleInputChange}
                 rows={2}
               />
+              <p
+                className={`text-sm ${remainingWords < 5 ? "text-red-500" : "text-muted-foreground"
+                  }`}
+              >
+                {remainingWords >= 0
+                  ? `${remainingWords} word${remainingWords !== 1 ? "s" : ""} remaining`
+                  : "Word limit reached"}
+              </p>
             </div>
+
 
             <div>
               <Label htmlFor="donationPurpose">Purpose of Donation</Label>
