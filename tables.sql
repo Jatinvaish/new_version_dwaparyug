@@ -658,3 +658,6 @@ ALTER TABLE campaigns
 ADD COLUMN sequence  INT ;
 
 
+ALTER TABLE personalization_options
+ADD COLUMN insta_id  VARCHAR(100),
+ADD COLUMN video_wishes  VARCHAR(100) ;

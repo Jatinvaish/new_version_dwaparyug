@@ -69,9 +69,10 @@ export default function DonatePage() {
     donationPurpose: '',
     specialInstructions: '',
     isAnonymous: false,
-    customAmount: 0
+    customAmount: 0,
+    instaId: '',        // NEW FIELD
+    videoWishes: ''     // NEW FIELD
   })
-
   // Payment state
   const [selectedTip, setSelectedTip] = useState<number | 'custom' | null>(5)
   const [customTipValue, setCustomTipValue] = useState("")
@@ -205,6 +206,7 @@ export default function DonatePage() {
   const handleBack = () => {
     setCurrentStep(prev => prev - 1)
   }
+  console.log('cartItems cartItems', cartItems)
 
   const handlePayment = async () => {
     if (!validateStep(2)) return
@@ -222,13 +224,14 @@ export default function DonatePage() {
         toast.error('Payment system is loading. Please wait and try again.')
         return
       }
-
       const orderData = await createPaymentOrder({
         cartItems: cartItems,
         customDonationId: 0,
         //@ts-ignore
         formData: {
           ...formData,
+          // instaId: cartItems?.instaId,
+          // videoWishes: cartItems?.videoWishes,
           customAmount: customAmount,
           customImage: uploadedImageUrl,
           tipAmount: tipAmount,
@@ -290,6 +293,7 @@ export default function DonatePage() {
       setIsSubmitting(false)
     }
   }
+  console.log("🚀 ~ handlePayment ~ cartItems:", cartItems)
 
   // Empty cart message
   if (!hasProducts && customAmount === 0) {

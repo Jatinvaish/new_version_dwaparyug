@@ -15,7 +15,7 @@ export interface CartItem {
   maxQty?: number
   stock?: number
   description?: string
-   personalization?: {
+  personalization?: {
     donationDate: string
     donorName: string
     donorCountry: string
@@ -39,16 +39,18 @@ export interface DonationFormData {
   specialInstructions?: string
   donatedOnBehalfOf?: string
   donorMessage?: string
+  videoWishes?: string
+  instaId?: string
   isPublic: boolean
   isAnonymous: boolean
-  
+
   // Custom donation amount (for direct donations)
   customAmount?: number
-  
+
   // Tip amount
   tipAmount: number
   tipPercentage?: number
-  
+
   // Image
   customImage?: File | string
 }
@@ -157,7 +159,7 @@ export const useDonationCart = () => {
     const existingIndex = cart.findIndex(
       cartItem => cartItem.productId === item.productId && cartItem.campaignId === item.campaignId
     )
-    
+
     if (existingIndex > -1) {
       const maxQty = item.maxQty || item.stock || 999
       if (cart[existingIndex].quantity < maxQty) {
@@ -166,7 +168,7 @@ export const useDonationCart = () => {
     } else {
       cart.push({ ...item, quantity: 1 })
     }
-    
+
     saveCartToStorage(cart)
     setCartItems(cart)
     return cart
@@ -178,7 +180,7 @@ export const useDonationCart = () => {
     const existingIndex = cart.findIndex(
       cartItem => cartItem.productId === Number(productId) && cartItem.campaignId === Number(campaignId)
     )
-    
+
     if (existingIndex > -1) {
       if (cart[existingIndex].quantity > 1) {
         cart[existingIndex].quantity -= 1
@@ -186,19 +188,19 @@ export const useDonationCart = () => {
         cart.splice(existingIndex, 1)
       }
     }
-    
+
     saveCartToStorage(cart)
     setCartItems(cart)
     return cart
   }, [])
 
   // Update item quantity
-   const updateQuantity = useCallback((productId: number, campaignId: number, newQuantity: number) => {
+  const updateQuantity = useCallback((productId: number, campaignId: number, newQuantity: number) => {
     const cart = getCartFromStorage()
     const existingIndex = cart.findIndex(
       cartItem => cartItem.productId === Number(productId) && cartItem.campaignId === Number(campaignId)
     )
-    
+
     if (existingIndex > -1) {
       if (newQuantity <= 0) {
         cart.splice(existingIndex, 1)
@@ -206,11 +208,11 @@ export const useDonationCart = () => {
         const maxQty = cart[existingIndex].maxQty || cart[existingIndex].stock || 999
         cart[existingIndex].quantity = Math.min(newQuantity, maxQty)
       }
-      
+
       saveCartToStorage(cart)
       setCartItems(cart)
     }
-    
+
     return cart
   }, [])
   // Clear entire cart
@@ -243,7 +245,7 @@ export const useDonationCart = () => {
     const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
     const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
     const uniqueCampaigns = new Set(cartItems.map(item => item.campaignId)).size
-    
+
     return {
       subtotal,
       totalItems,

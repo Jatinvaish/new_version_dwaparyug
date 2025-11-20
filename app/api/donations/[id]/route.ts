@@ -87,6 +87,8 @@ export async function GET(
           po.is_image_available,
           po.custom_message,
           po.donation_purpose,
+          po.insta_id,
+          po.video_wishes,
           po.special_instructions
         FROM donation_items di
         LEFT JOIN campaign_products cp ON cp.id = di.campaign_product_id
@@ -224,6 +226,8 @@ export async function GET(
           is_image_available: item.is_image_available,
           custom_message: item.custom_message,
           donation_purpose: item.donation_purpose,
+          video_wishes: item?.video_wishes || '',
+          insta_id: item?.insta_id || '',
           special_instructions: item.special_instructions
         } : null,
         created_at: item.created_at,

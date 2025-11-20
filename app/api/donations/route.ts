@@ -123,7 +123,6 @@ export async function POST(request: NextRequest) {
       mobileNumber
     } = body
 
-    console.log("🚀 ~ POST ~ formData:", formData)
 
     // Validation
     if (!totalAmount || totalAmount <= 0) {
@@ -149,6 +148,8 @@ export async function POST(request: NextRequest) {
           donatedOnBehalfOf: firstItemWithPersonalization.personalization.donatedOnBehalfOf || donorInfo.donatedOnBehalfOf,
           customMessage: firstItemWithPersonalization.personalization.customMessage || donorInfo.customMessage,
           donationPurpose: firstItemWithPersonalization.personalization.donationPurpose || donorInfo.donationPurpose,
+          videoWishes: firstItemWithPersonalization.personalization.videoWishes || donorInfo.videoWishes,
+          instaId: firstItemWithPersonalization.personalization.instaId || donorInfo.instaId,
           isAnonymous: firstItemWithPersonalization.personalization.isAnonymous ?? donorInfo.isAnonymous
         };
       }

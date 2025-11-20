@@ -54,6 +54,8 @@ interface ProductPersonalizationData {
   donationPurpose?: string
   specialInstructions?: string
   isAnonymous: boolean
+  instaId?: string
+  videoWishes?: string
 }
 
 interface ProductPersonalizationModalProps {
@@ -82,7 +84,6 @@ interface ProductPersonalizationModalProps {
 
 const CART_STORAGE_KEY = 'donationCart'
 
-// Helper functions
 const getCartFromStorage = () => {
   if (typeof window === 'undefined') return []
   try {
@@ -127,10 +128,11 @@ export default function ProductPersonalizationModal({
     customMessage: product?.personalization?.customMessage || '',
     donationPurpose: product?.personalization?.donationPurpose || '',
     specialInstructions: product?.personalization?.specialInstructions || '',
-    isAnonymous: product?.personalization?.isAnonymous || false
+    isAnonymous: product?.personalization?.isAnonymous || false,
+    instaId: product?.personalization?.instaId || '',
+    videoWishes: product?.personalization?.videoWishes || ''
   })
 
-  // Update form data when product changes
   useEffect(() => {
     if (product?.personalization) {
       setFormData({
@@ -143,7 +145,9 @@ export default function ProductPersonalizationModal({
         customMessage: product.personalization.customMessage || '',
         donationPurpose: product.personalization.donationPurpose || '',
         specialInstructions: product.personalization.specialInstructions || '',
-        isAnonymous: product.personalization.isAnonymous || false
+        isAnonymous: product.personalization.isAnonymous || false,
+        instaId: product.personalization.instaId || '',
+        videoWishes: product.personalization.videoWishes || ''
       })
       setImagePreview(product.personalization.customImage || null)
     }
@@ -193,7 +197,6 @@ export default function ProductPersonalizationModal({
     return Object.keys(newErrors).length === 0
   }
 
-
   const handleSave = async () => {
     if (!validateForm()) return
 
@@ -201,7 +204,6 @@ export default function ProductPersonalizationModal({
     try {
       let uploadedImageUrl = formData.customImage
 
-      // Upload image only if it's a new file
       if (imageFile) {
         const uploadedUrls = await uploadImages([imageFile])
         uploadedImageUrl = uploadedUrls[0]
@@ -210,20 +212,17 @@ export default function ProductPersonalizationModal({
       const productId = product.productId || product.id
       const campaignId = product.campaignId
 
-      // Direct localStorage manipulation
       const cart = getCartFromStorage()
 
-      // FIX: Convert both to numbers for comparison to handle type mismatch
       const itemIndex = cart.findIndex(
         (item: any) => Number(item.productId) === Number(productId) && Number(item.campaignId) === Number(campaignId)
       )
 
       if (itemIndex > -1) {
-        // Update existing item - keep quantity, update personalization
         cart[itemIndex] = {
           ...cart[itemIndex],
-          productId: Number(productId), // Normalize to number
-          campaignId: Number(campaignId), // Normalize to number
+          productId: Number(productId),
+          campaignId: Number(campaignId),
           personalization: {
             donationDate: formData.donationDate,
             donorName: formData.donorName,
@@ -234,14 +233,15 @@ export default function ProductPersonalizationModal({
             customMessage: formData.customMessage,
             donationPurpose: formData.donationPurpose,
             specialInstructions: formData.specialInstructions,
-            isAnonymous: formData.isAnonymous
+            isAnonymous: formData.isAnonymous,
+            instaId: formData.instaId,
+            videoWishes: formData.videoWishes
           }
         }
       } else {
-        // Add new item
         const cartItemWithPersonalization = {
-          productId: Number(productId), // Normalize to number
-          campaignId: Number(campaignId), // Normalize to number
+          productId: Number(productId),
+          campaignId: Number(campaignId),
           campaignTitle: product.campaignTitle,
           name: product.name,
           price: product.price,
@@ -261,7 +261,9 @@ export default function ProductPersonalizationModal({
             customMessage: formData.customMessage,
             donationPurpose: formData.donationPurpose,
             specialInstructions: formData.specialInstructions,
-            isAnonymous: formData.isAnonymous
+            isAnonymous: formData.isAnonymous,
+            instaId: formData.instaId,
+            videoWishes: formData.videoWishes
           }
         }
         cart.push(cartItemWithPersonalization)
@@ -278,13 +280,11 @@ export default function ProductPersonalizationModal({
       setIsSubmitting(false)
     }
   }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     let input = e.target.value;
-
-    // Split words (ignoring extra spaces)
     const words = input.trim().split(/\s+/).filter(Boolean);
 
-    // Stop typing after limit
     if (words.length > MAX_WORDS) {
       input = words.slice(0, MAX_WORDS).join(" ");
     }
@@ -306,7 +306,9 @@ export default function ProductPersonalizationModal({
       customMessage: product?.personalization?.customMessage || '',
       donationPurpose: product?.personalization?.donationPurpose || '',
       specialInstructions: product?.personalization?.specialInstructions || '',
-      isAnonymous: product?.personalization?.isAnonymous || false
+      isAnonymous: product?.personalization?.isAnonymous || false,
+      instaId: product?.personalization?.instaId || '',
+      videoWishes: product?.personalization?.videoWishes || ''
     })
     setImagePreview(product?.personalization?.customImage || null)
     setImageFile(null)
@@ -341,7 +343,6 @@ export default function ProductPersonalizationModal({
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6 py-4"
           >
-            {/* Product Summary */}
             <Card className="bg-blue-50 border-blue-200">
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
@@ -372,7 +373,6 @@ export default function ProductPersonalizationModal({
               </CardContent>
             </Card>
 
-            {/* Donation Date */}
             <div className="space-y-2">
               <Label htmlFor="donationDate">Donation Date *</Label>
               <div className="relative">
@@ -396,7 +396,6 @@ export default function ProductPersonalizationModal({
               )}
             </div>
 
-            {/* Personal Information */}
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="donorName">Full Name *</Label>
@@ -460,7 +459,26 @@ export default function ProductPersonalizationModal({
               />
             </div>
 
-            {/* Image Upload */}
+            <div>
+              <Label htmlFor="instaId">Instagram ID</Label>
+              <Input
+                id="instaId"
+                placeholder="Enter your Instagram ID"
+                value={formData.instaId}
+                onChange={(e) => updateFormData({ instaId: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="videoWishes">Video Wishes</Label>
+              <Input
+                id="videoWishes"
+                placeholder="Enter video wishes details"
+                value={formData.videoWishes}
+                onChange={(e) => updateFormData({ videoWishes: e.target.value })}
+              />
+            </div>
+
             <div className="space-y-2">
               <Label>Get a photograph printed</Label>
               <p className="text-xs text-gray-600">
@@ -511,7 +529,6 @@ export default function ProductPersonalizationModal({
               </div>
             </div>
 
-            {/* Optional Messages */}
             <div>
               <Label htmlFor="customMessage">Message to be printed</Label>
               <Textarea
@@ -530,7 +547,6 @@ export default function ProductPersonalizationModal({
                   : "Word limit reached"}
               </p>
             </div>
-
 
             <div>
               <Label htmlFor="donationPurpose">Purpose of Donation</Label>

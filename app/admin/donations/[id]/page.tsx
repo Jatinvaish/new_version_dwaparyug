@@ -87,7 +87,7 @@ interface DonationItem {
   fulfillment_status: string
   donation_date: string
   product: Product
-  personalization: PersonalizationOption | null
+  personalization: PersonalizationOption | any
   created_at: string
 }
 
@@ -99,6 +99,8 @@ interface DonationDetails {
   donation_type: 'direct' | 'product_based'
   is_public: boolean
   donation_date: string
+  insta_id?: string
+  video_wishes: string
   donated_on_behalf_of: string
   donor_message: string
   impact_generated: boolean
@@ -230,6 +232,8 @@ export default function DonationDetailsPage() {
     )
   }
 
+  console.log("🚀 ~ DonationDetailsPage ~ donation:", donation)
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-full mx-auto">
@@ -273,6 +277,14 @@ export default function DonationDetailsPage() {
                   <div>
                     <span className="text-muted-foreground">Email:</span>
                     <div className="font-medium break-all">{donation.user.email}</div>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Insta Id:</span>
+                    <div className="font-medium break-all">{donation.items[0] && donation.items[0]?.personalization && donation.items[0]?.personalization?.insta_id || ''}</div>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Video wishes:</span>
+                    <div className="font-medium break-all">{donation.items[0] && donation.items[0]?.personalization && donation.items[0]?.personalization?.insta_id || ''}</div>
                   </div>
                   {donation.user.mobile && (
                     <div>
