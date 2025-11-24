@@ -116,7 +116,7 @@ export default function ProductPersonalizationModal({
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [imagePreview, setImagePreview] = useState<string | null>(product?.personalization?.customImage || null)
   const [imageFile, setImageFile] = useState<File | null>(null)
-  const MAX_WORDS = 35;
+  const MAX_WORDS = 30;
   const [remainingWords, setRemainingWords] = useState(MAX_WORDS);
   const [formData, setFormData] = useState<ProductPersonalizationData>({
     donationDate: product?.min_tat ? new Date(Date.now() + product?.min_tat * 24 * 60 * 60 * 1000)?.toISOString().split('T')[0] : '',
