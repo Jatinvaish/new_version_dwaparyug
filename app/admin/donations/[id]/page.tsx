@@ -283,7 +283,7 @@ export default function DonationDetailsPage() {
                     <div className="font-medium break-all">{donation.items[0] && donation.items[0]?.personalization && donation.items[0]?.personalization?.insta_id || ''}</div>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Video wishes:</span>
+                    <span className="text-muted-foreground">Wishing Videos:</span>
                     <div className="font-medium break-all">{donation.items[0] && donation.items[0]?.personalization && donation.items[0]?.personalization?.insta_id || ''}</div>
                   </div>
                   {donation.user.mobile && (

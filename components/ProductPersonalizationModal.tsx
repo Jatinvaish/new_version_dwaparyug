@@ -470,7 +470,7 @@ export default function ProductPersonalizationModal({
             </div>
 
             <div>
-              <Label htmlFor="videoWishes">Video Wishes</Label>
+              <Label htmlFor="videoWishes">Wishing Videos</Label>
               <Input
                 id="videoWishes"
                 placeholder="Enter video wishes details"
