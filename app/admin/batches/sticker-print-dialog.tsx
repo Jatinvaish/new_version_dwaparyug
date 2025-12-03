@@ -9,8 +9,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Separator } from "@/components/ui/separator"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Printer, Download, Eye, Loader2, Image as ImageIcon, FileText } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 // Removed import - using base64 approach instead

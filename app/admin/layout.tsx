@@ -16,6 +16,7 @@ import {
   ChevronUp,
   LogOut,
   User,
+  Sticker,
 } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
@@ -65,6 +66,7 @@ const adminLinks: AdminLink[] = [
     icon: Package,
     subLinks: [
       { name: "All Batches", href: "/admin/batches", icon: ListChecks },
+      { name: "Manual Stickers", href: "/admin/batches/manual-stickers", icon: Sticker },
       { name: "Add Batches", href: "/admin/batches/add", icon: PlusCircle },
     ],
   },
