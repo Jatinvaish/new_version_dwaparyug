@@ -246,7 +246,8 @@ export default function CSVStickerGenerator() {
           }
           
           .donor-name { 
-            font-size: 18px; 
+            font-size: 20px; 
+            font-weight: 700; 
             color: #000; 
             line-height: 1.25;
             text-align: center;
