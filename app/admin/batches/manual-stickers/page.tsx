@@ -28,6 +28,18 @@ export default function CSVStickerGenerator() {
     };
     reader.readAsText(file);
   };
+ const getProxiedImageUrl = (url: string): string => {
+    if (!url) return '';
+    
+    // Convert Google Drive URLs to direct format
+    const driveMatch = url.match(/\/file\/d\/([^\/]+)/);
+    if (driveMatch) {
+      url = `https://drive.google.com/uc?export=view&id=${driveMatch[1]}`;
+    }
+    
+    // Use wsrv.nl proxy for all URLs to handle CORS and authentication
+    return `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
+  };
 
   const parseCSV = (text: string) => {
     const lines = text.split('\n').filter(line => line.trim());
@@ -44,7 +56,7 @@ export default function CSVStickerGenerator() {
       if (values.length >= 3) {
         const name = values[0];
         const count = parseInt(values[1]) || 1;
-        const imageUrl = values[2];
+        const imageUrl = getProxiedImageUrl(values[2]);
 
         // Create multiple stickers based on count - numbering restarts for each person
         for (let j = 0; j < count; j++) {
